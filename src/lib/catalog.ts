@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import fallback from '../../../seed/projects.json'
-import fallbackSite from '../../../seed/site.json'
+import fallback from '../../seed/projects.json'
+import fallbackSite from '../../seed/site.json'
 const mediaUrl=(m:any):string=>typeof m==='object'&&m&&typeof m.url==='string'?m.url:''
 const mediaValue=(m:any,fallbackValue='')=>mediaUrl(m)||fallbackValue
 export async function getCatalog(){
