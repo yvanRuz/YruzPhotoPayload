@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "payload generate:importmap && next build",
     "start": "next start",
     "seed": "tsx tools/seed.ts",
     "generate:importmap": "payload generate:importmap",
