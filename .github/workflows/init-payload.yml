@@ -1,5 +1,5 @@
 
-name: Initialiser la base Payload
+name: Initialiser Payload CMS
 
 on:
   workflow_dispatch:
@@ -8,9 +8,14 @@ permissions:
   contents: read
 
 jobs:
-  migrate:
+  init-database:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+      NODE_ENV: production
 
     steps:
       - name: Recuperer le projet
@@ -21,13 +26,26 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Verifier les secrets
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$PAYLOAD_SECRET"
+
       - name: Installer les dependances
         run: npm install
 
-      - name: Initialiser PostgreSQL avec Payload
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
-          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
-          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      - name: Generer la migration initiale
+        run: npx payload migrate:create initial-schema --skip-empty
+
+      - name: Sauvegarder les fichiers de migration
+        uses: actions/upload-artifact@v4
+        with:
+          name: payload-migrations
+          path: src/migrations/
+          if-no-files-found: error
+
+      - name: Creer les tables PostgreSQL
         run: npx payload migrate
+
+      - name: Verifier les migrations
+        run: npx payload migrate:status
