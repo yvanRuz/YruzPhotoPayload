@@ -1,0 +1,35 @@
+{
+  "name": "yruzphoto-payload",
+  "version": "32.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "seed": "tsx tools/seed.ts",
+    "generate:importmap": "payload generate:importmap",
+    "migrate": "payload migrate",
+    "migrate:create": "payload migrate:create"
+  },
+  "dependencies": {
+    "next": "15.4.11",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "payload": "3.59.1",
+    "@payloadcms/next": "3.59.1",
+    "@payloadcms/db-postgres": "3.59.1",
+    "@payloadcms/richtext-lexical": "3.59.1",
+    "@payloadcms/storage-vercel-blob": "3.59.1",
+    "sharp": "^0.34.0",
+    "pg": "^8.16.0",
+    "graphql": "^16.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "tsx": "^4.20.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0"
+  }
+}
