@@ -53,6 +53,25 @@
     const url=media(config['story_image_'+i]);
     if(img && url) img.src=url;
   }
+
+  const navEntries = [
+    ['a[href="#accueil"], nav a[href="index.html#accueil"]',config.nav_home_label],
+    ['nav a[href="portfolio.html"]',config.nav_portfolio_label],
+    ['nav a[href="tarifs.html"]',config.nav_services_label],
+    ['nav a[href="equipement.html"]',config.nav_equipment_label],
+    ['nav a[href="contact.html"]:not(.nav-cta)',config.nav_contact_label]
+  ];
+  for(const [selector,labelValue] of navEntries)text(selector,labelValue);
+  const descriptionKeys=['services_photo_description','services_video_description','services_design_description'];
+  descriptionKeys.forEach((key,i)=>{
+    const column=cols[i];
+    if (!column || typeof config[key] !== 'string' || !config[key].trim())return;
+    // Existing services use lists; preserve structure if no dedicated description.
+    let paragraph=column.querySelector('.service-cms-description');
+    if(!paragraph){paragraph=document.createElement('p');paragraph.className='service-cms-description';column.querySelector('.service-caption')?.after(paragraph);}
+    paragraph.textContent=config[key];
+  });
+
   text('.follow-action',config.contact_instagram_cta);
   if(config.seo_home_title && document.querySelector('#accueil')) document.title=config.seo_home_title;
   if(config.seo_home_description && document.querySelector('#accueil')) {

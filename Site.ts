@@ -34,4 +34,13 @@ export const Site:GlobalConfig={slug:'site',label:'Personnalisation du site',adm
 {name:'contact_instagram_cta',type:'text',label:'Contact — texte du lien Instagram'},
 {name:'seo_home_title',type:'text',label:'Référencement — titre page accueil'},
 {name:'seo_home_description',type:'textarea',label:'Référencement — description accueil'}
+
+,{name:'nav_home_label',type:'text',label:'Menu — Accueil'}
+,{name:'nav_portfolio_label',type:'text',label:'Menu — Portfolio'}
+,{name:'nav_services_label',type:'text',label:'Menu — Services'}
+,{name:'nav_equipment_label',type:'text',label:'Menu — Équipement'}
+,{name:'nav_contact_label',type:'text',label:'Menu — Contact'}
+,{name:'services_photo_description',type:'textarea',label:'Services — description PHOTO'}
+,{name:'services_video_description',type:'textarea',label:'Services — description VIDÉO'}
+,{name:'services_design_description',type:'textarea',label:'Services — description DESIGN'}
 ]}
