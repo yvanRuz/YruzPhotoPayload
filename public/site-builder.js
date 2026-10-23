@@ -102,6 +102,28 @@
     if (key === 'accueil') {
       updateButton('.hero-actions .btn.light', data.mainButtonLabel, data.mainButtonUrl);
       updateButton('.hero-actions .btn.outline', data.secondButtonLabel, data.secondButtonUrl);
+      const urls = (data.heroImages || []).map(item => safeImage(item?.url)).filter(Boolean);
+      if (urls.length && typeof window.yruzSetHeroImages === 'function') window.yruzSetHeroImages(urls);
+    }
+    if (key === 'services') {
+      (data.serviceCards || []).forEach((item, index) => {
+        const scope = `.services-board .service-column:nth-child(${index + 1})`;
+        const photo = safeImage(item?.image?.url);
+        const img = document.querySelector(`${scope} .service-visual img`);
+        if (img && photo) { img.src = photo; img.alt = item.image.alt || img.alt; }
+        replaceText(`${scope} .service-caption`, item.caption);
+        updateButton(`${scope} .service-link`, item.buttonLabel, item.buttonUrl);
+      });
+    }
+    if (key === 'histoire') {
+      (data.storyCards || []).forEach((item, index) => {
+        const scope = `.story-panel:nth-child(${index + 1})`;
+        const photo = safeImage(item?.image?.url);
+        const img = document.querySelector(`${scope} .story-photo img`);
+        if (img && photo) { img.src = photo; img.alt = item.image.alt || img.alt; }
+        replaceText(`${scope} .story-copy h2`, item.title);
+        replaceText(`${scope} .story-copy p`, item.body);
+      });
     }
     const html = (data.sections || []).map(section => renderSection(section, projects)).join('');
     if (!html) return;
@@ -171,7 +193,7 @@
   };
   const currentFile = location.pathname.split('/').pop() || 'index.html';
   const currentPage = ({ 'index.html': 'accueil', 'portfolio.html': 'portfolio', 'tarifs.html': 'services', 'contact.html': 'contact', 'equipement.html': 'equipement' })[currentFile];
-  const pages = currentPage === 'accueil' ? ['accueil', 'histoire'] : currentPage ? [currentPage] : ['portfolio'];
+  const pages = currentPage === 'accueil' ? ['accueil', 'histoire', 'services'] : currentPage ? [currentPage] : ['portfolio'];
   const load = async (key, first) => {
     try {
       const response = await fetch(`/cms-content?page=${encodeURIComponent(key)}`, { cache: 'no-store' });

@@ -3,7 +3,7 @@
  const params=new URLSearchParams(location.search);
  const view=document.body.dataset.page;
  const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const validMedia = u => {const s=String(u||'').trim();return /^(https?:\/\/|assets\/|medias\/)/i.test(s)&&!/[<>"'`]/.test(s)?s:''};
+ const validMedia = u => {const s=String(u||'').trim();return /^(https?:\/\/|\/api\/media\/|\/assets\/|assets\/|medias\/)/i.test(s)&&!/[<>"'`]/.test(s)?s:''};
  const mediaImg=(url,alt,loading='lazy')=>`<img ${loading==='lazy'?'loading="lazy"':''} src="${escapeHtml(validMedia(url))}" alt="${escapeHtml(alt)}">`;
  const card=p=>`<a class="catalog-card" href="${yruzProjectUrl(p)}" aria-label="Ouvrir ${escapeHtml(p.title)}"><span class="catalog-image">${mediaImg(p.cover,p.title)}</span><span class="catalog-meta"><span class="catalog-kind">${p.mode==='video'?'▶ VIDÉO':'◈ PHOTO'} · ${escapeHtml(p.category)}</span><span class="catalog-title">${escapeHtml(p.title)}</span><span class="catalog-arrow" aria-hidden="true">↗</span></span></a>`;
  if(view==='catalog'){

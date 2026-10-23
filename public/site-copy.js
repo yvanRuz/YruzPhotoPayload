@@ -2,7 +2,7 @@
  const s=window.YRUZ_SITE_CONFIG;
  if(!s)return;
  const text=(sel,val)=>{if(typeof val!=='string'||!val.trim())return;document.querySelectorAll(sel).forEach(el=>el.textContent=val)};
- const image=(sel,url)=>{if(typeof url!=='string'||!/^https?:\/\//.test(url))return;document.querySelectorAll(sel).forEach(el=>{el.src=url;el.loading='lazy'})};
+ const image=(sel,url)=>{if(typeof url!=='string'||! /^(?:https?:\/\/|\/api\/media\/|\/assets\/|assets\/)/.test(url))return;document.querySelectorAll(sel).forEach(el=>{el.src=url;el.loading='lazy'})};
  const urlSafe=url=>{
    if(typeof url!=='string'||!url.trim())return null;
    const v=url.trim();

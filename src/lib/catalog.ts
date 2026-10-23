@@ -13,13 +13,6 @@ export async function getCatalog(){
  }catch(error){console.error('Payload catalogue indisponible',error);return fallback}
 }
 export async function getSite(){
- try{const payload=await getPayload({config});const doc:any=await payload.findGlobal({slug:'site',depth:1,overrideAccess:true});return {...fallbackSite,...doc,
-   homeImages:[mediaUrl(doc.home_image_1),mediaUrl(doc.home_image_2)].filter(Boolean),
-   service_photo_image_url:mediaUrl(doc.service_photo_image),
-   service_video_image_url:mediaUrl(doc.service_video_image),
-   service_design_image_url:mediaUrl(doc.service_design_image),
-   story_image_1_url:mediaUrl(doc.story_image_1),
-   story_image_2_url:mediaUrl(doc.story_image_2),
-   story_image_3_url:mediaUrl(doc.story_image_3)}}
+ try{const payload=await getPayload({config});const doc:any=await payload.findGlobal({slug:'site',depth:1,overrideAccess:true});return {...fallbackSite,...doc,homeImages:[mediaUrl(doc.home_image_1),mediaUrl(doc.home_image_2)].filter(Boolean)}}
  catch(error){console.error('Payload site indisponible',error);return fallbackSite}
 }

@@ -1,0 +1,27 @@
+name: YRUZPHOTO V40 - Vérifier le code avant déploiement
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Installer les dépendances
+        run: npm install --no-audit --no-fund
+      - name: Vérifier l'arborescence
+        run: npm run check:structure
+      - name: Compiler Next.js et Payload sans Neon de production
+        env:
+          DATABASE_URL: postgresql://test:test@127.0.0.1:5432/test
+          PAYLOAD_SECRET: verif-v40-utiliser-cle-fictive-pour-les-tests
+          BLOB_READ_WRITE_TOKEN: ''
+        run: npm run build

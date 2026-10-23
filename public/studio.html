@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#071726">
+<title>YRUZPHOTO STUDIO — Administration</title>
+<link rel="stylesheet" href="/studio.css">
+<script defer src="/studio.js"></script>
+</head>
+<body>
+<div class="studio-shell">
+  <aside class="studio-sidebar">
+    <a class="brand" href="/studio" aria-label="Accueil du Studio"><span class="brand-mark">Y<span>R</span></span><span><strong>YRUZPHOTO</strong><small>STUDIO / ADMIN</small></span></a>
+    <div class="side-label">CONTENUS DU SITE</div>
+    <nav id="pageNav" aria-label="Pages à administrer"></nav>
+    <div class="side-label">ORGANISATION</div>
+    <nav class="static-nav">
+      <button class="side-item" data-nav="links"><span class="side-icon">↗</span><span>Menus et liens</span><span class="side-arrow">›</span></button>
+      <a class="side-item" href="/admin/collections/projects" target="_blank" rel="noopener"><span class="side-icon">◉</span><span>Reportages</span><span class="side-arrow">↗</span></a>
+      <a class="side-item" href="/admin/collections/media" target="_blank" rel="noopener"><span class="side-icon">▦</span><span>Médiathèque</span><span class="side-arrow">↗</span></a>
+      <a class="side-item" href="/admin/globals/site" target="_blank" rel="noopener"><span class="side-icon">⚙</span><span>Fonds et coordonnées</span><span class="side-arrow">↗</span></a>
+    </nav>
+    <div class="sidebar-foot"><div class="foot-dot"></div><span>Connecté à Payload + Blob</span><a href="/admin" target="_blank" rel="noopener">Payload ↗</a></div>
+  </aside>
+  <main class="studio-main">
+    <header class="topbar">
+      <div><div class="crumb" id="crumb">PAGES DU SITE / ACCUEIL</div><h1 id="editorTitle">Chargement…</h1><p id="editorSubtitle">Modifiez vos contenus sans toucher au code.</p></div>
+      <div class="top-actions"><span id="saveStatus" class="save-status">Connexion au CMS…</span><button id="saveBtn" class="save-btn" disabled>Publier les modifications ↗</button></div>
+    </header>
+    <div class="main-layout"><div id="editor" class="editor-pane" aria-live="polite"></div>
+      <aside class="preview-pane"><div class="preview-heading"><div><small>APERÇU</small><h2>Votre page</h2></div><a id="viewLive" href="/index.html" target="_blank" rel="noopener">Voir le site ↗</a></div><div id="previewBody"></div><p class="preview-note">Aperçu schématique. Cliquez sur « Voir le site » pour consulter la version publiée.</p></aside>
+    </div>
+  </main>
+</div>
+<dialog id="mediaModal" class="media-modal"><div class="modal-heading"><div><small>MÉDIATHÈQUE</small><h2>Choisir une photographie</h2></div><button type="button" id="closeMedia" aria-label="Fermer">✕</button></div><div class="modal-toolbar"><input id="mediaSearch" type="search" placeholder="Rechercher une photo (nom, description)"><a href="/admin/collections/media/create" target="_blank" rel="noopener">Importer une photo ↗</a><button id="refreshMedia">Actualiser</button></div><div id="mediaGrid" class="media-grid"></div><p class="modal-note">Tu peux importer plusieurs photos depuis « Médiathèque → Bulk Upload » dans Payload, puis actualiser cette fenêtre.</p></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

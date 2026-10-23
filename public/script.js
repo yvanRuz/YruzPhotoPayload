@@ -3,6 +3,7 @@ let photos = window.YRUZ_PROJECTS.filter(p=>p.mode==='photo');
 const mansProject = (window.YRUZ_PROJECTS || []).find(p => p.id === 'mans-nuit');
 const heroImages=(window.YRUZ_SITE_CONFIG?.homeImages?.length ? window.YRUZ_SITE_CONFIG.homeImages : [photos[0]?.gallery?.[1]||photos[0]?.cover,photos[0]?.gallery?.[2]||photos[0]?.cover]).filter(Boolean);
 let heroIndex=0;
+window.yruzSetHeroImages = function (urls) { if (!Array.isArray(urls) || !urls.length) return; heroImages.splice(0, heroImages.length, ...urls); heroIndex = 0; drawHero(); };
 function drawHero(){
   const bg=document.getElementById('heroBg');
   if(!bg||!heroImages.length)return;
