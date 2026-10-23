@@ -1,0 +1,35 @@
+name: Initialiser les pages du CMS V39 - NEON TEST SEULEMENT
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-neon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Never set this secret to the live production database.
+      DATABASE_URL: ${{ secrets.DATABASE_URL_CMS_TEST }}
+      PRODUCTION_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
+      BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+      NODE_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Stop if no isolated Neon test branch
+        shell: bash
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$PRODUCTION_DATABASE_URL"
+          test -n "$PAYLOAD_SECRET"
+          if [ "$DATABASE_URL" = "$PRODUCTION_DATABASE_URL" ]; then
+            echo 'ERROR: the CMS test database is the production database.'
+            exit 1
+          fi
+      - name: Installer les dependances
+        run: npm install --no-audit --no-fund
+      - name: Add new schema tables and initial page entries in TEST database
+        run: npm run seed:pages

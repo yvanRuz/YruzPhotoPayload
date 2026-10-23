@@ -1,0 +1,21 @@
+name: Valider le code du Site Builder V39
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Installer les dependances
+        run: npm install --no-audit --no-fund
+      - name: Compiler sans acces a Neon production
+        env:
+          PAYLOAD_SECRET: cms-v39-only-validation-no-real-secret
+          DATABASE_URL: postgresql://test:test@127.0.0.1:5432/test
+        run: npm run build
