@@ -1,0 +1,211 @@
+/* YRUZPHOTO V46 — presentation MOBILE uniquement.
+   Cette feuille est chargee avec media="screen and (max-width: 767px)".
+   Les styles de bureau (style.css, site-builder.css) restent intacts. */
+@media screen and (max-width: 767px) {
+  :root { --yruz-mobile-gutter: clamp(16px, 4.6vw, 26px); }
+  html { scroll-padding-top: 78px; }
+  body { width: 100%; min-width: 0; overflow-x: clip; }
+  main, section, article, .subpage, .catalog-page, .project-page { min-width: 0; }
+  img, video, iframe, svg { max-width: 100%; }
+  .demo { display: none; }
+
+  /* Navigation au doigt : palette et typographies conservees. */
+  #header { position: fixed; z-index: 200; top: 0; left: 0; right: 0; height: 66px;
+    padding: 0 var(--yruz-mobile-gutter); background: rgba(4, 18, 30, .94);
+    border-bottom: 1px solid rgba(183, 222, 246, .14); backdrop-filter: blur(18px); }
+  #header.is-scrolled { top: 0; }
+  #header .logo { font-size: 27px; line-height: 1; position: relative; z-index: 2; }
+  #header .mobile-toggle { position: relative; z-index: 3; display: grid; place-items: center;
+    width: 46px; height: 44px; padding: 0; color: #f5faff; font-size: 27px;
+    background: #122c40; border: 1px solid #749dbb66; border-radius: 11px; }
+  #header .mobile-toggle[aria-expanded="true"] { background: #1c425b; }
+  #header nav { display: none; position: fixed; top: 66px; left: 0; right: 0; width: 100%;
+    max-height: calc(100dvh - 66px); overflow-y: auto; padding: 20px var(--yruz-mobile-gutter) 28px;
+    flex-direction: column; align-items: stretch; gap: 0; background: rgba(5, 22, 36, .985);
+    border: 0; border-top: 1px solid #93b6d128; box-shadow: 0 24px 40px #0009;
+    border-radius: 0; backdrop-filter: blur(20px); }
+  #header nav.open { display: flex; }
+  #header nav a { display: flex; align-items: center; min-height: 52px; width: 100%;
+    border-bottom: 1px solid #c4e1f01c; font-size: 12px; letter-spacing: 1.3px;
+    opacity: 1; padding: 13px 2px; }
+  #header nav a.active { border-bottom: 1px solid #b9deed88; color: white; }
+  #header nav .nav-cta { margin: 18px 0 8px; width: 100%; min-height: 48px;
+    justify-content: center; border: 1px solid #b9d6ed82; border-radius: 24px; padding: 12px 15px; }
+  #header nav .nav-instagram { display: flex; border: 0; }
+  .subpage { padding-top: 66px; }
+
+  /* Accueil : meme direction artistique, composition verticale. */
+  .hero { min-height: 560px; height: min(850px, 100svh); padding: 90px var(--yruz-mobile-gutter) 100px; }
+  .hero-background { background-position: center center; }
+  .hero-inner { width: 100%; padding: 0; }
+  .hero .eyebrow { font-size: 10px; letter-spacing: 2.7px; }
+  .hero h1 { font-size: clamp(64px, 17.2vw, 110px); letter-spacing: -.01em;
+    line-height: .95; margin: 23px 0 20px; overflow-wrap: anywhere; }
+  .hero-inner p { max-width: 450px; margin: auto; font-size: 12px; line-height: 1.75; }
+  .hero-inner p br { display: none; }
+  .hero-actions { margin: 28px auto 0; display: flex; justify-content: center;
+    flex-wrap: wrap; max-width: 450px; gap: 10px; }
+  .hero-actions .btn { flex: 1 1 145px; min-height: 46px; display: flex;
+    align-items: center; justify-content: center; padding: 12px 15px; white-space: normal; }
+  .hero-arrow { top: auto; bottom: 87px; font-size: 29px; width: 44px; height: 44px;
+    display: grid; place-items: center; }
+  .hero-arrow.left { left: var(--yruz-mobile-gutter); }
+  .hero-arrow.right { right: var(--yruz-mobile-gutter); }
+  .hero-counter { bottom: 46px; right: var(--yruz-mobile-gutter); }
+  .scroll-hint { bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 8px; white-space: nowrap; }
+  .scroll-hint .mouse { display: none; }
+
+  /* Histoire : les 3 chapitres passent en lecture verticale sur telephone. */
+  .story { height: auto; }
+  .story-sticky { position: relative; height: auto; min-height: 0; }
+  .story-window { overflow: visible; }
+  .story-track { position: relative; display: block; transform: none !important; }
+  .story-panel { display: flex; flex-direction: column; gap: 22px; min-height: 0;
+    height: auto; padding: 48px var(--yruz-mobile-gutter) 50px; }
+  .story-photo-tall, .story-photo-landscape, .story-photo-small {
+    width: 100%; max-width: 520px; height: clamp(240px, 78vw, 395px); align-self: center; }
+  .story-copy { max-width: 100%; width: 100%; transform: none !important; }
+  .story-copy h2 { font-size: clamp(48px, 12vw, 74px); line-height: .95; }
+  .story-copy p { font-size: 13px; line-height: 1.75; }
+  .story-topline, .story-bottomline { padding: 17px var(--yruz-mobile-gutter); gap: 8px; }
+  .story-topline span, .story-bottomline span { min-width: 0; }
+  .story-progress-label, .story-meter { display: none; }
+  .story-small-note { position: static; }
+
+  /* Carrousel principal : carte lisible, voisines apercues, glissement tactile. */
+  .portfolio-v42 { padding: 76px var(--yruz-mobile-gutter) 48px; min-height: 0; }
+  .portfolio-v42 .section-top { margin-bottom: 20px; gap: 13px; }
+  .portfolio-v42 .section-top h2 { font-size: clamp(44px, 11vw, 66px); }
+  .portfolio-v42 .section-top p { font-size: 12px; line-height: 1.75; }
+  .portfolio-v42 .home-portfolio-switch { flex-direction: column; align-items: stretch;
+    margin: 22px 0 0; gap: 12px; }
+  .portfolio-v42 .mode-switch, .catalog-toolbar .mode-switch { display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; max-width: 100%; padding: 4px; gap: 3px; }
+  .portfolio-v42 .mode-switch button, .catalog-toolbar .mode-switch button {
+    display: flex; align-items: center; justify-content: center; min-width: 0;
+    min-height: 43px; padding: 9px 5px; font-size: clamp(9px, 2.65vw, 11px);
+    letter-spacing: .65px; white-space: nowrap; }
+  .portfolio-v42 .top-view-all { align-self: flex-end; font-size: 10px; }
+  .portfolio-v42 .floating-stage { height: 375px !important; margin: 4px calc(-1 * var(--yruz-mobile-gutter)) 0 !important;
+    overflow: hidden !important; touch-action: pan-y; }
+  .portfolio-v42 .floating-card { top: 14px !important; width: clamp(205px, 58vw, 265px) !important;
+    height: clamp(298px, 82vw, 354px) !important; }
+  .portfolio-v42 .floating-card .card-title { font-size: clamp(19px, 5vw, 24px) !important; }
+  .portfolio-v42 .floating-card .card-text { left: 17px; right: 52px; bottom: 22px; }
+  .portfolio-v42 .carousel-controls { display: flex; align-items: center; justify-content: space-between;
+    gap: 10px !important; margin: 0 auto 18px !important; }
+  .portfolio-v42 .carousel-controls > button { min-width: 44px; min-height: 44px; }
+  .portfolio-v42 .rotation-dial { flex: 1; min-width: 82px !important; max-width: none !important; }
+  .portfolio-v42 .scroll-label { display: none; }
+  .portfolio-v42 .text-link { margin-top: 15px; font-size: 10px; }
+
+  /* Portfolio : cartes bord a bord dans une grille mobile confortable. */
+  .catalog-page { padding: 60px var(--yruz-mobile-gutter) 72px; }
+  .catalog-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 28px; }
+  .catalog-heading h1 { font-size: clamp(55px, 15vw, 90px); margin: 13px 0; }
+  .catalog-heading p { font-size: 12px; line-height: 1.7; }
+  .catalog-count { font-size: 10px; }
+  .catalog-toolbar { display: flex; flex-direction: column; align-items: stretch;
+    gap: 13px; margin-bottom: 22px; padding: 13px 0; }
+  .catalog-toolbar > span { text-align: center; line-height: 1.6; font-size: 9px; }
+  .catalog-grid { grid-template-columns: 1fr; gap: 16px; }
+  .catalog-card { aspect-ratio: 1.22; min-height: 245px; border-radius: 15px; }
+  .catalog-meta { padding: 18px 58px 20px 18px; min-height: 98px; }
+  .catalog-title { font-size: clamp(27px, 8vw, 37px); line-height: 1; }
+  .catalog-arrow { width: 39px; height: 39px; bottom: 18px; right: 16px; }
+  .catalog-bottom { flex-wrap: wrap; line-height: 1.8; }
+
+  /* Fiche projet, photos, video et visionneuse. */
+  .project-page { padding: 55px var(--yruz-mobile-gutter) 72px; }
+  .project-overline { font-size: 10px; letter-spacing: 1.8px; line-height: 1.6; }
+  .project-page h1 { font-size: clamp(48px, 12vw, 83px); line-height: .96; overflow-wrap: anywhere; }
+  .project-actions { margin: 20px 0 25px; gap: 14px; }
+  .project-state { font-size: 9px; line-height: 1.6; }
+  .project-cover { height: auto; aspect-ratio: 4 / 3; border-radius: 12px; }
+  .project-gallery { grid-template-columns: 1fr; gap: 12px; }
+  .gallery-image { min-height: 0; aspect-ratio: 4 / 3; border-radius: 10px; }
+  .gallery-heading { display: flex; align-items: flex-start; flex-direction: column; gap: 12px; margin-top: 38px; }
+  .gallery-heading > span { font-size: 9px; line-height: 1.5; }
+  .project-next { margin-top: 60px; }
+  .project-next h2 { font-size: 43px; }
+  .mans-carousel-view { height: clamp(300px, 70svh, 490px); }
+  .mans-carousel-footer { gap: 10px; font-size: 9px; }
+  .mans-filmstrip { -webkit-overflow-scrolling: touch; }
+  .yruz-lightbox figure { max-width: 100%; }
+  .project-video-embed, .project-page video { max-width: 100%; }
+
+  /* Services, temoignages, contact : une colonne, memes couleurs. */
+  .services, .testimonials, .contact { padding: 64px var(--yruz-mobile-gutter); }
+  .section-top { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .section-top h2, .services h2, .testimonials h2, .contact h2 { font-size: clamp(42px, 11.5vw, 69px); }
+  .service-grid, .testimonial-grid { grid-template-columns: 1fr; }
+  .service-grid { margin-top: 24px; }
+  .service-card { min-height: 225px; }
+  .services-board { display: grid; grid-template-columns: 1fr; gap: 38px; }
+  .service-column { min-width: 0; }
+  .service-column-head h2 { font-size: 49px; }
+  .service-visual { aspect-ratio: 1.5; }
+  .service-caption { margin-top: 15px; }
+  .services-page { padding: 54px var(--yruz-mobile-gutter) 70px; }
+  .services-heading h1 { font-size: clamp(65px, 15vw, 90px); }
+  .services-cta { flex-direction: column; align-items: flex-start; margin-top: 45px; padding-top: 30px; }
+  .contact { display: grid; grid-template-columns: 1fr; gap: 38px; }
+  .contact input, .contact textarea, .contact select { font-size: 16px; }
+  .contact-page { padding-top: 20px; }
+  .contact-page-intro { padding: 30px var(--yruz-mobile-gutter) 8px; }
+  .contact-page-intro h1 { font-size: clamp(62px, 14vw, 88px); }
+  .contact-page .contact { padding-top: 35px; }
+  .email { max-width: 100%; overflow-wrap: anywhere; }
+  .follow-section { padding-left: var(--yruz-mobile-gutter); padding-right: var(--yruz-mobile-gutter); }
+  .footer { padding: 30px var(--yruz-mobile-gutter); display: flex;
+    justify-content: flex-start; flex-wrap: wrap; align-items: center; gap: 14px 20px;
+    font-size: 9px; line-height: 1.5; }
+  .footer strong { flex-basis: 100%; }
+
+  /* Inventaire materiel et fenetres. */
+  .equip-container { padding: 55px var(--yruz-mobile-gutter) 65px; }
+  .equip-intro { flex-direction: column; align-items: stretch; gap: 20px; }
+  .equip-intro h1 { font-size: clamp(54px, 13vw, 85px); }
+  .equip-layout, .equip-side { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  .equip-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .equip-inventory, .equip-loadout, .equip-detail { padding: 15px; min-width: 0; }
+  .equip-item { padding: 12px; min-height: 175px; }
+  .equip-filters { gap: 7px; }
+  .equip-filters button { min-height: 42px; padding: 9px 12px; }
+  .equip-bottom { flex-direction: column; align-items: flex-start; }
+  .equip-modal-panel { max-width: calc(100vw - 20px); max-height: 92dvh; overflow-y: auto; }
+
+  /* Contenus geres depuis Payload : aucun changement du CMS, seulement le rendu mobile. */
+  .cms-block { padding: 42px var(--yruz-mobile-gutter); }
+  .cms-image-text { grid-template-columns: 1fr; }
+  .cms-image-text.cms-image-right .cms-image-text-media { order: 0; }
+  .cms-photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .cms-photo-carousel { padding: 10px; }
+  .cms-carousel-open img { height: clamp(250px, 60svh, 460px); }
+  .cms-project-card { flex-basis: min(78vw, 310px); }
+  .cms-nav-arrow { width: 42px; height: 42px; }
+  .cms-button-row { align-items: stretch; }
+  .cms-button-row .cms-cta { justify-content: center; }
+  button, .btn, a.btn { -webkit-tap-highlight-color: transparent; }
+}
+
+@media screen and (max-width: 359px) {
+  .portfolio-v42 .floating-card { width: 205px !important; height: 302px !important; }
+  .portfolio-v42 .floating-stage { height: 345px !important; }
+  .hero h1 { font-size: 59px; }
+  .hero-actions .btn { flex-basis: 100%; }
+  .hero { padding-bottom: 95px; }
+  .catalog-toolbar .mode-switch button, .portfolio-v42 .mode-switch button { font-size: 9px; letter-spacing: 0; }
+}
+
+@media screen and (min-width: 600px) and (max-width: 767px) {
+  .catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portfolio-v42 .floating-stage { height: 410px !important; }
+  .portfolio-v42 .floating-card { width: 275px !important; height: 378px !important; }
+  .services-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero h1 { font-size: 110px; }
+}
+
+@media screen and (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .hero-background, .portfolio-v42 .floating-card, .catalog-card, .cms-photo-grid img { transition: none !important; }
+}

@@ -5,7 +5,7 @@
  const counter=document.querySelector('#storyNumber');
  if(!section||!track)return;
  const panels=[...track.querySelectorAll('.story-panel')];
- const mq=window.matchMedia('(max-width:700px), (prefers-reduced-motion:reduce)');
+ const mq=window.matchMedia('(max-width:767px), (prefers-reduced-motion:reduce)');
  let raf=0,eased=0,target=0;
  function update(){
   raf=0;
