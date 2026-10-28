@@ -8,11 +8,7 @@ const $ = s => document.querySelector(s);
 const e = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const validSrc = s => { const x=String(s||'').trim(); return /^(https?:\/\/[^\s<>"'`]+|\/api\/media\/[^\s<>"'`]+|\/?assets\/[^\s<>"'`]+)$/i.test(x)?x:'' };
 const clone = x => JSON.parse(JSON.stringify(x));
-<<<<<<< HEAD
 let state=null, media=[], projects=[], selection='accueil', dirty=false, loading=false, picker=null, uploadTarget=null, uploading=false;
-=======
-let state=null, media=[], projects=[], selection='accueil', dirty=false, loading=false, picker=null;
->>>>>>> dc89838217ecc90b5cf233e956fdd2c6cdc1add3
 let toastTimer;
 function message(txt,error=false){const el=$('#toast');el.textContent=txt;el.classList.toggle('error',error);el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),4500)}
 function setStatus(txt,warning=false){const el=$('#saveStatus');el.textContent=txt;el.classList.toggle('unsaved',warning)}
@@ -28,11 +24,7 @@ function field(label,path,value,kind='text',options=[]){
 }
 function mediaField(indexPath,image,label='Photo choisie'){
   const src=validSrc(image?.url);
-<<<<<<< HEAD
   return `<div class="media-choice">${src?`<img src="${e(src)}" alt="${e(image?.alt||label)}">`:'<div style="width:104px;height:82px;display:grid;place-items:center;background:#1a3447">▧</div>'}<div><strong>${src?e(image.alt||label):'Aucune photographie sélectionnée'}</strong><button type="button" class="outline-btn" data-action="choose-image" data-path="${e(indexPath)}">${src?'Changer':'Choisir dans la médiathèque'} ↗</button><button type="button" class="outline-btn" data-action="upload-field" data-path="${e(indexPath)}">↑ Importer ici</button></div></div>`;
-=======
-  return `<div class="media-choice">${src?`<img src="${e(src)}" alt="${e(image?.alt||label)}">`:'<div style="width:104px;height:82px;display:grid;place-items:center;background:#1a3447">▧</div>'}<div><strong>${src?e(image.alt||label):'Aucune photographie sélectionnée'}</strong><button type="button" class="outline-btn" data-action="choose-image" data-path="${e(indexPath)}">${src?'Changer':'Choisir dans la médiathèque'} ↗</button></div></div>`;
->>>>>>> dc89838217ecc90b5cf233e956fdd2c6cdc1add3
 }
 function action(action,label,attrs='',danger=false){return `<button type="button" class="mini-btn ${danger?'delete':''}" data-action="${e(action)}" ${attrs}>${e(label)}</button>`}
 const blockDefault = type => ({
@@ -53,11 +45,7 @@ function renderSection(block,index){
    f=field('Titre',`${base}.title`,block.title)+(block.type==='carrouselPhotos'?field('Description',`${base}.description`,block.description,'textarea'):field('Colonnes',`${base}.columns`,block.columns,'select',[['2','2 colonnes'],['3','3 colonnes'],['4','4 colonnes']]))+
    `<p class="small-counter">${rows.length} photographie${rows.length>1?'s':''} — ordre modifiable</p><div class="collection-items">`+
    rows.map((row,j)=>`<div class="collection-item">${row.image?.url?`<img src="${e(validSrc(row.image.url))}" alt="">`:''}<div class="item-fields">${field('Légende',`${base}.${arrKey}.${j}.caption`,row.caption)}${block.type==='carrouselPhotos'?field('Lien au clic (optionnel)',`${base}.${arrKey}.${j}.link`,row.link):''}</div><div class="item-actions">${action('swap-image','Changer',`data-path="${base}.${arrKey}.${j}.image"`)}${action('move-item','↑',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="-1"`)}${action('move-item','↓',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="1"`)}${action('remove-item','✕',`data-index="${index}" data-key="${arrKey}" data-item="${j}"`,true)}</div></div>`).join('')+
-<<<<<<< HEAD
    `</div><div class="add-row">${action('add-image','+ Choisir une photographie',`data-index="${index}" data-key="${arrKey}"`)}${action('upload-gallery','↑ Importer plusieurs photos',`data-index="${index}" data-key="${arrKey}"`)}</div>`;
-=======
-   `</div><div class="add-row">${action('add-image','+ Ajouter une photographie',`data-index="${index}" data-key="${arrKey}"`)}</div>`;
->>>>>>> dc89838217ecc90b5cf233e956fdd2c6cdc1add3
  }
  if(block.type==='carrouselProjets'){
    f=field('Titre',`${base}.title`,block.title)+field('Afficher',`${base}.mode`,block.mode,'select',[['photo','Photographies'],['video','Vidéos'],['all','Photo et vidéo']])+field('Sélection',`${base}.selection`,block.selection,'select',[['auto','Automatique : tous les projets publiés'],['manual','Sélection manuelle']])+field('Nombre maximum de projets',`${base}.limit`,block.limit);
@@ -109,7 +97,6 @@ function move(arr,from,to){if(!Array.isArray(arr)||to<0||to>=arr.length)return f
 function openPicker(callback){picker=callback;$('#mediaModal').showModal();$('#mediaSearch').value='';showMedia()}
 function showMedia(){const query=$('#mediaSearch').value.trim().toLowerCase();const filtered=media.filter(m=>(m.alt+' '+m.filename).toLowerCase().includes(query));$('#mediaGrid').innerHTML=filtered.length?filtered.map((m,i)=>`<button type="button" data-photo="${i}"><img loading="lazy" src="${e(validSrc(m.url))}" alt=""><small>${e(m.alt||m.filename)}</small></button>`).join(''):'<p>Aucune image. Importez une photo dans la médiathèque Payload puis actualisez.</p>';window._currentMedia=filtered}
 function closePicker(){$('#mediaModal').close();picker=null}
-<<<<<<< HEAD
 function applyUploaded(photos,target){
  if(!photos.length||!state)return;
  const root=currentRoot();
@@ -155,8 +142,6 @@ async function importPhotos(files){
  else message(`${photos.length} photo(s) importée(s) dans Payload${target?' et ajoutée(s) à la page':''}. Clique sur Publier pour les afficher sur le site.`);
 }
 
-=======
->>>>>>> dc89838217ecc90b5cf233e956fdd2c6cdc1add3
 async function refreshMedia(){try{const r=await fetch('/studio-api',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();media=data.media||[];projects=data.projects||[];showMedia();message(`${media.length} photos disponibles`)}catch(err){message('Impossible d’actualiser la médiathèque.',true)}}
 async function initialLoad(){try{const r=await fetch('/studio-api',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;$('#saveBtn').disabled=false;setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render()}catch(error){console.error(error);setStatus('Connexion impossible',true);$('#editor').innerHTML='<div class="danger-message">Impossible de charger le Studio. Vérifiez votre connexion Payload et la variable BLOB_READ_WRITE_TOKEN dans Vercel.</div>';message('Chargement impossible',true)}}
 async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
@@ -167,11 +152,8 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='remove-section'){if(confirm('Supprimer cette section de votre page ?')){sections.splice(index,1);markDirty();render()}return}
  if(command==='choose-image'||command==='swap-image'){const path=btn.dataset.path;openPicker(photo=>{setNested(root,path,{url:photo.url,alt:photo.alt});markDirty();render()});return}
  if(command==='add-image'){const key=btn.dataset.key;openPicker(photo=>{sections[index][key].push({image:{url:photo.url,alt:photo.alt},caption:'',link:''});markDirty();render()});return}
-<<<<<<< HEAD
  if(command==='upload-field'){uploadTarget={kind:'field',path:btn.dataset.path};$('#directUploadInput').click();return}
  if(command==='upload-gallery'){uploadTarget={kind:'gallery',index,key:btn.dataset.key};$('#directUploadInput').click();return}
-=======
->>>>>>> dc89838217ecc90b5cf233e956fdd2c6cdc1add3
  if(command==='move-item'||command==='remove-item'){const list=sections[index][btn.dataset.key];if(command==='move-item')move(list,i,i+dir);else list.splice(i,1);markDirty();render();return}
  if(command==='add-button'){sections[index].buttons.push({label:'Nouveau bouton',url:'contact.html',style:'primary'});markDirty();render();return}
  if(command==='add-nav'){root.links.push({label:'NOUVEAU LIEN',url:'portfolio.html',enabled:true,newTab:false});markDirty();render();return}
@@ -187,10 +169,7 @@ $('#closeMedia').addEventListener('click',closePicker);
 $('#mediaModal').addEventListener('click',event=>{if(event.target===$('#mediaModal'))closePicker();const btn=event.target.closest('[data-photo]');if(btn){const photo=window._currentMedia[Number(btn.dataset.photo)];if(photo&&picker){const callback=picker;closePicker();callback(photo)}}});
 $('#mediaSearch').addEventListener('input',showMedia);
 $('#refreshMedia').addEventListener('click',refreshMedia);
-<<<<<<< HEAD
 $('#studioUploadBtn').addEventListener('click',()=>{uploadTarget=null;$('#directUploadInput').click()});
 $('#directUploadInput').addEventListener('change',event=>{const files=Array.from(event.target.files||[]);importPhotos(files)});
-=======
->>>>>>> dc89838217ecc90b5cf233e956fdd2c6cdc1add3
 initialLoad();
 })();
