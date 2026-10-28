@@ -1,5 +1,9 @@
 // YRUZPHOTO V26 — carrousel triptyque miroir, synchronisé avec le cadran.
-let photos = window.YRUZ_PROJECTS.filter(p=>p.mode==='photo');
+// Les creations graphiques sont des projets photo avec la categorie GRAPHISME.
+// Pas de nouvelle colonne PostgreSQL : publication directe depuis Payload.
+const isGraphicProject = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
+const projectsForMode = selected => (window.YRUZ_PROJECTS || []).filter(p => selected === 'graphisme' ? isGraphicProject(p) : selected === 'photo' ? p.mode === 'photo' && !isGraphicProject(p) : p.mode === 'video');
+let photos = projectsForMode('photo');
 const mansProject = (window.YRUZ_PROJECTS || []).find(p => p.id === 'mans-nuit');
 const heroImages=(window.YRUZ_SITE_CONFIG?.homeImages?.length ? window.YRUZ_SITE_CONFIG.homeImages : [photos[0]?.gallery?.[1]||photos[0]?.cover,photos[0]?.gallery?.[2]||photos[0]?.cover]).filter(Boolean);
 let heroIndex=0;
@@ -25,7 +29,7 @@ document.getElementById('prevHero')?.addEventListener('click',()=>changeHero(-1)
 drawHero();
 
 let mode='photo';
-let projects=window.YRUZ_PROJECTS.filter(p=>p.mode===mode);
+let projects=projectsForMode(mode);
 let current=0;
 let activeValue=0;
 let cards=[];
@@ -83,8 +87,8 @@ function renderCarousel(value=activeValue){
   current=selected;
   const narrow=window.innerWidth<650;
   const medium=window.innerWidth<1100;
-  const primaryShift=narrow?126:medium?208:286;
-  const secondaryShift=narrow?205:medium?326:460;
+  const primaryShift=narrow?145:medium?218:284;
+  const secondaryShift=narrow?232:medium?346:470;
   cards.forEach((card,i)=>{
     const d=distanceFromCenter(i,activeValue);
     const mag=Math.abs(d);
@@ -95,11 +99,11 @@ function renderCarousel(value=activeValue){
     if(mag<=1.05){
       const influence=mag;
       x=d*primaryShift;
-      y=mag*32;
-      z=-mag*120;
-      scale=1-(mag*.15);
-      rotateY=-d*28;
-      rotateZ=-d*1.25;
+      y=mag*25;
+      z=-mag*145;
+      scale=1-(mag*.18);
+      rotateY=-d*25;
+      rotateZ=-d*.65;
       opacity=1-(mag*.14);
       blur=mag*.2;
       bright=1-(mag*.1);
@@ -109,12 +113,12 @@ function renderCarousel(value=activeValue){
     } else if(mag<=2.35){
       const extra=mag-1;
       x=side*(secondaryShift+extra*76);
-      y=40+extra*22;
-      z=-220-extra*55;
-      scale=.79-extra*.09;
-      rotateY=-side*(34+extra*4);
-      rotateZ=-side*(1.8+extra*.8);
-      opacity=Math.max(.12,.34-extra*.19);
+      y=42+extra*16;
+      z=-245-extra*68;
+      scale=.77-extra*.09;
+      rotateY=-side*(32+extra*5);
+      rotateZ=-side*.9;
+      opacity=Math.max(.16,.56-extra*.24);
       blur=.35+extra*.55;
       bright=.8-extra*.13;
       sat=.9-extra*.08;
@@ -157,9 +161,21 @@ function animateTo(target,{duration}={}){
 }
 function mountCards(){
   if(!stage)return;
-  stage.querySelectorAll('.portfolio-card').forEach(node=>node.remove());
+  stage.querySelectorAll('.portfolio-card,.portfolio-empty-v42').forEach(node=>node.remove());
   if(dots)dots.replaceChildren();
   cards=[];
+  if(prevBtn)prevBtn.disabled=projects.length<2;
+  if(nextBtn)nextBtn.disabled=projects.length<2;
+  if(!projects.length){
+    const empty=document.createElement('div');
+    empty.className='portfolio-empty-v42';
+    empty.innerHTML='<span class="portfolio-empty-kicker">À VENIR / GRAPHISME</span><strong>DE NOUVELLES CRÉATIONS<br>TRÈS BIENTÔT.</strong><p>Les projets graphiques apparaîtront ici dès leur publication dans le back-office.</p><a href="contact.html">PARLONS DE VOTRE PROJET ↗</a>';
+    stage.append(empty);
+    if(progressBar)progressBar.style.width='0%';
+    if(knob)knob.style.setProperty('--dial-position','0%');
+    if(counter)counter.textContent='00 / 00';
+    return;
+  }
   projects.forEach((p,i)=>{
     const card=document.createElement('button');
     card.type='button';
@@ -210,7 +226,7 @@ function mountCards(){
 }
 function applyMode(newMode){
   mode=newMode;
-  projects=window.YRUZ_PROJECTS.filter(p=>p.mode===mode);
+  projects=projectsForMode(mode);
   document.querySelectorAll('[data-home-mode]').forEach(btn=>{
     const on=btn.dataset.homeMode===mode;
     btn.classList.toggle('active',on);

@@ -41,7 +41,11 @@
         return `<section class="cms-block cms-grid-block">${heading(section.title)}<div class="cms-photo-grid" style="--cms-cols:${cols}">${photos.map(item => `<a class="cms-photo-grid-item" href="${escapeHtml(safeImage(item.image.url))}" target="_blank" rel="noopener noreferrer">${img(item.image, item.caption)}${item.caption ? `<span>${escapeHtml(item.caption)}</span>` : ''}</a>`).join('')}</div></section>`;
       }
       case 'carrouselProjets': {
-        let selected = (projects || []).filter(p => p && (section.mode === 'all' || p.mode === section.mode));
+        let selected = (projects || []).filter(p => {
+          if (!p) return false;
+          const graphic = p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
+          return section.mode === 'all' || (section.mode === 'graphisme' ? graphic : section.mode === 'photo' ? p.mode === 'photo' && !graphic : p.mode === 'video');
+        });
         if (section.selection === 'manual') {
           const ids = section.chosenSlugs || [];
           selected = ids.map(id => selected.find(p => p.id === id)).filter(Boolean);

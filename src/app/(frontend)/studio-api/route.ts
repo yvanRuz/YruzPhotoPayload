@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       payload.find({ collection: 'media', limit: 200, sort: '-createdAt', depth: 0, overrideAccess: true }),
       payload.find({ collection: 'projects', limit: 200, sort: 'order', depth: 0, overrideAccess: true }),
     ])
-    return Response.json({ content, media: media.docs.map((m: any) => ({ id:m.id, url:m.url||'', alt:m.alt||'', filename:m.filename||'' })).filter(m=>m.url), projects: projects.docs.map((p:any)=>({id:p.id,slug:p.slug,title:p.title,mode:p.mode})) }, { headers })
+    return Response.json({ content, media: media.docs.map((m: any) => ({ id:m.id, url:m.url||'', alt:m.alt||'', filename:m.filename||'' })).filter(m=>m.url), projects: projects.docs.map((p:any)=>({id:p.id,slug:p.slug,title:p.title,mode:p.mode,category:p.category||''})) }, { headers })
   } catch (error) {
     console.error('Studio read error:', error)
     return Response.json({ error: 'Lecture du Studio impossible. Vérifiez Vercel Blob.' }, { status: 503, headers })
