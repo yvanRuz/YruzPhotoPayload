@@ -13,6 +13,28 @@ export async function GET(request: Request) {
   try {
     const { payload, user } = await authenticated(request)
     if (!user) return Response.json({ error: 'Connexion requise' }, { status: 401, headers })
+    // Independent, paginated library. Authenticated users can browse beyond the
+    // 200 images loaded into the original page editor; no new database tables.
+    const params = new URL(request.url).searchParams
+    if (params.get('view') === 'media') {
+      const pageParam = Number.parseInt(params.get('page') || '1', 10)
+      const page = Number.isFinite(pageParam) ? Math.max(1, Math.min(pageParam, 10000)) : 1
+      const search = (params.get('search') || '').trim().slice(0, 80)
+      const result = await payload.find({
+        collection: 'media',
+        page,
+        limit: 36,
+        sort: '-createdAt',
+        depth: 0,
+        overrideAccess: true,
+        ...(search ? { where: { or: [{ alt: { contains: search } }, { filename: { contains: search } }] } } : {}),
+      })
+      return Response.json({
+        media: result.docs.map((m: any) => ({ id: m.id, url: m.url || '', alt: m.alt || '', filename: m.filename || '' })).filter((m) => m.url),
+        page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs,
+        hasNextPage: result.hasNextPage, hasPrevPage: result.hasPrevPage,
+      }, { headers })
+    }
     const [content, media, projects] = await Promise.all([
       getStudioContent(),
       payload.find({ collection: 'media', limit: 200, sort: '-createdAt', depth: 0, overrideAccess: true }),

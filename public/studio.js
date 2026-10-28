@@ -9,6 +9,9 @@ const e = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':
 const validSrc = s => { const x=String(s||'').trim(); return /^(https?:\/\/[^\s<>"'`]+|\/api\/media\/[^\s<>"'`]+|\/?assets\/[^\s<>"'`]+)$/i.test(x)?x:'' };
 const clone = x => JSON.parse(JSON.stringify(x));
 let state=null, media=[], projects=[], selection='accueil', dirty=false, loading=false, picker=null, uploadTarget=null, uploading=false;
+// Client-side view state only. Media files remain in Payload/Blob, not this page JSON.
+const library={page:1,totalPages:1,totalDocs:0,items:[],search:'',selected:new Map(),loading:false,requestId:0};
+let libraryDestination='portfolio', pickerPage=1, pickerPages=1, librarySearchTimer, pickerSearchTimer;
 let toastTimer;
 function message(txt,error=false){const el=$('#toast');el.textContent=txt;el.classList.toggle('error',error);el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),4500)}
 function setStatus(txt,warning=false){const el=$('#saveStatus');el.textContent=txt;el.classList.toggle('unsaved',warning)}
@@ -58,7 +61,7 @@ function renderSection(block,index){
 }
 function renderSidebar(){
  $('#pageNav').innerHTML=Object.entries(pageNames).map(([key,name])=>`<button type="button" class="side-item ${selection===key?'active':''}" data-nav="${key}"><span class="side-icon">${pageIcons[key]}</span><span>${name}</span><span class="side-arrow">›</span></button>`).join('');
- document.querySelectorAll('[data-nav="links"]').forEach(el=>el.classList.toggle('active',selection==='links'));
+ document.querySelectorAll('[data-nav="links"], [data-nav="media"]').forEach(el=>el.classList.toggle('active',selection===el.dataset.nav));
 }
 function renderPage(){
  const p=currentRoot();const blocks=Array.isArray(p.sections)?p.sections:[];
@@ -69,8 +72,97 @@ function renderPage(){
 function renderNavigation(){
  const n=currentRoot();return `<section class="form-panel"><div class="panel-eyebrow">MENU PRINCIPAL</div><h2>Liens de navigation</h2><p>Modifiez l’ordre, les titres et les destinations. Les changements s’appliquent sur toutes les pages.</p>${(n.links||[]).map((x,i)=>`<div class="nav-line"><div>${field('Titre',`links.${i}.label`,x.label)}</div><div>${field('Lien',`links.${i}.url`,x.url)}</div><div class="nav-options">${field('Visible',`links.${i}.enabled`,x.enabled,'checkbox')}${field('Nouvel onglet',`links.${i}.newTab`,x.newTab,'checkbox')}</div><div class="item-actions">${action('move-nav','↑',`data-index="${i}" data-dir="-1"`)}${action('move-nav','↓',`data-index="${i}" data-dir="1"`)}${action('remove-nav','✕',`data-index="${i}"`,true)}</div></div>`).join('')}<div class="add-row">${action('add-nav','+ Ajouter un lien')}</div></section><section class="form-panel"><div class="panel-eyebrow">BOUTONS ET RÉSEAUX</div><h2>Autres liens</h2><div class="field-row">${field('Texte du bouton contact','ctaLabel',n.ctaLabel)}${field('Destination','ctaUrl',n.ctaUrl)}</div>${field('Adresse Instagram','instagramUrl',n.instagramUrl)}<div class="field-row">${field('Footer : libellé contact','footerContactLabel',n.footerContactLabel)}${field('Footer : destination','footerContactUrl',n.footerContactUrl)}</div></section>`;
 }
+// Single media hub: search the entire Payload collection, upload without leaving
+// Studio, and reuse selected photos in a new gallery or carousel on any page.
+function renderLibrary(){
+ return `<section class="form-panel library-intro">
+   <div class="panel-eyebrow">MÉDIATHÈQUE / PHOTOGRAPHIES</div>
+   <h2>Toutes tes photographies au même endroit</h2>
+   <p>Importe tes fichiers dans Payload + Vercel Blob, puis sélectionne les images pour alimenter la page de ton choix.</p>
+   <div id="libraryDropzone" class="library-dropzone" tabindex="0" role="button" aria-label="Importer des photographies">
+     <div class="library-drop-icon">↑</div>
+     <strong>Dépose tes images ici</strong>
+     <span>ou clique pour sélectionner plusieurs photographies</span>
+     <small>JPG, PNG, WebP, GIF, AVIF — 3,5 Mo par fichier pour cet import direct</small>
+   </div>
+   <p id="libraryUploadProgress" class="library-progress" role="status" hidden></p>
+ </section>
+ <section class="form-panel library-panel">
+  <div class="library-heading"><div><div class="panel-eyebrow">BIBLIOTHÈQUE</div><h2>Photographies disponibles <span id="libraryCount" class="library-total"></span></h2></div><button class="outline-btn" data-library-action="reload">Actualiser ↻</button></div>
+  <div class="library-tools"><input id="librarySearch" type="search" placeholder="Rechercher une photo par son nom…" value="${e(library.search)}" aria-label="Rechercher une photographie"><button class="outline-btn" data-library-action="clear">Effacer la sélection</button></div>
+  <div id="libraryGrid" class="library-grid" aria-live="polite"><p class="library-hint">Chargement des photographies…</p></div>
+  <div id="libraryPager" class="library-pager"></div>
+ </section>
+ <section class="form-panel library-publish">
+  <div class="panel-eyebrow">UTILISER SUR LE SITE</div><h2>Créer un carrousel ou une galerie</h2>
+  <p>Sélectionne des photos ci-dessus puis indique la page à alimenter. Les photos sont déjà importées ; il ne reste qu'à publier la nouvelle section.</p>
+  <div class="library-publish-row"><label for="libraryDestination">Ajouter à la page</label><select id="libraryDestination">${Object.entries(pageNames).map(([key,name])=>`<option value="${key}" ${libraryDestination===key?'selected':''}>${e(name)}</option>`).join('')}</select></div>
+  <div class="library-publish-actions"><span id="librarySelectionCount" class="library-selection-count">0 photo sélectionnée</span><button type="button" class="primary-btn" data-library-action="carousel" disabled>+ Créer un carrousel</button><button type="button" class="outline-btn" data-library-action="gallery" disabled>+ Créer une grille photo</button></div>
+ </section>`;
+}
+function syncLibraryView(){
+ const grid=$('#libraryGrid');if(!grid)return;
+ const selected=library.selected;
+ grid.innerHTML=library.items.length?library.items.map(m=>{
+  const key=String(m.id),src=validSrc(m.url),checked=selected.has(key);
+  return `<article class="library-photo ${checked?'selected':''}"><button type="button" class="library-select" data-library-action="toggle" data-id="${e(key)}" aria-pressed="${checked?'true':'false'}" aria-label="${checked?'Désélectionner':'Sélectionner'} ${e(m.alt||m.filename)}"><img loading="lazy" src="${e(src)}" alt="${e(m.alt||m.filename)}"><span class="library-tick">${checked?'✓':'+'}</span></button><div class="library-photo-info"><strong title="${e(m.alt||m.filename)}">${e(m.alt||m.filename||'Sans titre')}</strong><div class="library-photo-actions"><a href="${e(src)}" target="_blank" rel="noopener">Voir ↗</a><button type="button" data-library-action="copy" data-id="${e(key)}">Copier le lien</button></div></div></article>`
+ }).join(''):'<div class="empty-state">Aucune photographie trouvée. Importe tes premières photos ci-dessus.</div>';
+ const c=$('#libraryCount');if(c)c.textContent=`(${library.totalDocs})`;
+ const pager=$('#libraryPager');if(pager)pager.innerHTML=`<span>Page ${library.page} sur ${library.totalPages}</span><div><button type="button" data-library-action="prev" ${library.page<=1?'disabled':''}>← Précédente</button><button type="button" data-library-action="next" ${library.page>=library.totalPages?'disabled':''}>Suivante →</button></div>`;
+ const count=$('#librarySelectionCount');if(count)count.textContent=`${selected.size} photographie${selected.size>1?'s':''} sélectionnée${selected.size>1?'s':''}`;
+ document.querySelectorAll('[data-library-action="carousel"],[data-library-action="gallery"],[data-library-action="clear"]').forEach(btn=>{btn.disabled=!selected.size});
+}
+async function loadLibrary(page=1){
+ const requestId=++library.requestId;library.loading=true;
+ const grid=$('#libraryGrid');if(grid)grid.innerHTML='<p class="library-hint">Chargement de la médiathèque…</p>';
+ try{
+  const query=new URLSearchParams({view:'media',page:String(page),search:library.search});
+  const response=await fetch(`/studio-api?${query}`,{cache:'no-store',credentials:'same-origin'});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(result.error||`Erreur HTTP ${response.status}`);
+  if(requestId!==library.requestId)return;
+  library.items=Array.isArray(result.media)?result.media:[];
+  library.page=Number(result.page)||page;
+  library.totalPages=Math.max(1,Number(result.totalPages)||1);
+  library.totalDocs=Number(result.totalDocs)||0;
+  syncLibraryView();
+ }catch(err){
+  if(requestId!==library.requestId)return;
+  if(grid)grid.innerHTML=`<div class="danger-message">Impossible de charger les photographies : ${e(err.message)}. Vérifie ta session Payload.</div>`;
+ }finally{if(requestId===library.requestId)library.loading=false}
+}
+function createFromLibrary(type){
+ if(!state||!library.selected.size)return;
+ const page=libraryDestination;
+ const root=state.content?.pages?.[page];if(!root){message('Page introuvable',true);return}
+ if(!Array.isArray(root.sections))root.sections=[];
+ const photos=[...library.selected.values()].map(m=>({image:{url:m.url,alt:m.alt||m.filename||''},caption:'',link:''}));
+ const section=clone(blockDefault(type));
+ if(type==='carrouselPhotos')section.slides=photos;
+ else section.photos=photos;
+ root.sections.push(section);
+ library.selected.clear();
+ selection=page;markDirty();render();
+ message(`${photos.length} photo(s) ajoutée(s) à la page ${pageNames[page]}. Clique sur « Publier les modifications ».`);
+}
+async function handleLibraryAction(btn){
+ const operation=btn.dataset.libraryAction,id=String(btn.dataset.id||'');
+ if(operation==='toggle'){
+  const photo=library.items.find(m=>String(m.id)===id);if(!photo)return;
+  if(library.selected.has(id))library.selected.delete(id);else library.selected.set(id,photo);
+  syncLibraryView();return;
+ }
+ if(operation==='copy'){
+  const photo=library.items.find(m=>String(m.id)===id);if(!photo)return;
+  try{await navigator.clipboard.writeText(new URL(photo.url,location.origin).href);message('Lien de la photographie copié')}catch{window.prompt('Copie le lien :',new URL(photo.url,location.origin).href)}return;
+ }
+ if(operation==='reload'){loadLibrary(library.page);return}
+ if(operation==='clear'){library.selected.clear();syncLibraryView();return}
+ if(operation==='prev'||operation==='next'){const next=library.page+(operation==='next'?1:-1);if(next>=1&&next<=library.totalPages)loadLibrary(next);return}
+ if(operation==='carousel'||operation==='gallery')createFromLibrary(operation==='carousel'?'carrouselPhotos':'grillePhotos');
+}
 function renderPreview(){
- if(!state)return;
+ if(!state||selection==='media')return;
  let html='';
  if(selection==='links'){
   const nav=currentRoot();html=`<div class="preview-card"><span class="tag">MENU</span><h3>Liens publiés</h3>${(nav.links||[]).filter(x=>x.enabled).map(x=>`<div class="preview-block"><b>${e(x.label)}</b><small>${e(x.url)}</small></div>`).join('')}<div class="preview-block"><b>CTA : ${e(nav.ctaLabel)}</b><small>${e(nav.ctaUrl)}</small></div></div>`;
@@ -82,10 +174,17 @@ function renderPreview(){
 }
 function render(){
  if(!state)return;renderSidebar();
- const isLinks=selection==='links';$('#editorTitle').textContent=isLinks?'Menu et liens du site':pageNames[selection];$('#crumb').textContent=isLinks?'NAVIGATION / LIENS':'PAGES DU SITE / '+pageNames[selection].toUpperCase();
- $('#editorSubtitle').textContent=isLinks?'Tous les boutons et liens principaux depuis un seul endroit.':'Textes, sections et photographies : tout est modifiable ici.';
- $('#viewLive').href={accueil:'/index.html',portfolio:'/portfolio.html',services:'/tarifs.html',histoire:'/index.html#mon-histoire',equipement:'/equipement.html',contact:'/contact.html',links:'/index.html'}[selection];
- $('#editor').innerHTML=isLinks?renderNavigation():renderPage();renderPreview();
+ const isLinks=selection==='links',isMedia=selection==='media';
+ $('#editorTitle').textContent=isMedia?'Médiathèque':isLinks?'Menu et liens du site':pageNames[selection];
+ $('#crumb').textContent=isMedia?'PHOTOGRAPHIES / BIBLIOTHÈQUE':isLinks?'NAVIGATION / LIENS':'PAGES DU SITE / '+pageNames[selection].toUpperCase();
+ $('#editorSubtitle').textContent=isMedia?'Importer, organiser et réutiliser tes photos sans quitter le Studio.':isLinks?'Tous les boutons et liens principaux depuis un seul endroit.':'Textes, sections et photographies : tout est modifiable ici.';
+ $('#viewLive').href={accueil:'/index.html',portfolio:'/portfolio.html',services:'/tarifs.html',histoire:'/index.html#mon-histoire',equipement:'/equipement.html',contact:'/contact.html',links:'/index.html'}[selection]||'/portfolio.html';
+ $('#saveBtn').hidden=isMedia&&!dirty;
+ $('.main-layout').classList.toggle('library-layout',isMedia);
+ $('.preview-pane').hidden=isMedia;
+ $('#editor').innerHTML=isMedia?renderLibrary():isLinks?renderNavigation():renderPage();
+ if(isMedia){loadLibrary(library.page);if(!dirty)setStatus('Photographies enregistrées automatiquement');return}
+ renderPreview();
 }
 function setNested(root,path,value){
  const bits=String(path).split('.');let node=root;
@@ -94,8 +193,18 @@ function setNested(root,path,value){
 }
 function getNested(root,path){return String(path).split('.').reduce((o,key)=>o?.[key],root)}
 function move(arr,from,to){if(!Array.isArray(arr)||to<0||to>=arr.length)return false;const [item]=arr.splice(from,1);arr.splice(to,0,item);return true}
-function openPicker(callback){picker=callback;$('#mediaModal').showModal();$('#mediaSearch').value='';showMedia()}
-function showMedia(){const query=$('#mediaSearch').value.trim().toLowerCase();const filtered=media.filter(m=>(m.alt+' '+m.filename).toLowerCase().includes(query));$('#mediaGrid').innerHTML=filtered.length?filtered.map((m,i)=>`<button type="button" data-photo="${i}"><img loading="lazy" src="${e(validSrc(m.url))}" alt=""><small>${e(m.alt||m.filename)}</small></button>`).join(''):'<p>Aucune image. Importez une photo dans la médiathèque Payload puis actualisez.</p>';window._currentMedia=filtered}
+function openPicker(callback){picker=callback;pickerPage=1;$('#mediaModal').showModal();$('#mediaSearch').value='';showMedia(1)}
+async function showMedia(page=1){
+ const grid=$('#mediaGrid');grid.innerHTML='<p>Chargement des photographies…</p>';
+ try{
+  const query=new URLSearchParams({view:'media',page:String(page),search:$('#mediaSearch').value.trim()});
+  const response=await fetch(`/studio-api?${query}`,{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)throw Error(`HTTP ${response.status}`);
+  const result=await response.json();window._currentMedia=result.media||[];pickerPage=Number(result.page)||page;pickerPages=Math.max(1,Number(result.totalPages)||1);
+  grid.innerHTML=window._currentMedia.length?window._currentMedia.map((m,i)=>`<button type="button" data-photo="${i}"><img loading="lazy" src="${e(validSrc(m.url))}" alt="${e(m.alt||m.filename)}"><small>${e(m.alt||m.filename)}</small></button>`).join(''):'<p>Aucune photographie trouvée.</p>';
+  $('#mediaPager').innerHTML=`<span>Page ${pickerPage} / ${pickerPages}</span><div><button type="button" data-picker-page="${pickerPage-1}" ${pickerPage<=1?'disabled':''}>←</button><button type="button" data-picker-page="${pickerPage+1}" ${pickerPage>=pickerPages?'disabled':''}>→</button></div>`;
+ }catch(err){grid.innerHTML=`<p class="danger-message">Impossible de charger la médiathèque : ${e(err.message)}</p>`}
+}
 function closePicker(){$('#mediaModal').close();picker=null}
 function applyUploaded(photos,target){
  if(!photos.length||!state)return;
@@ -118,7 +227,9 @@ async function importPhotos(files){
  const photos=[];let failures=[];
  uploading=true;$('#uploadProgress').hidden=false;$('#directUploadInput').disabled=true;
  for(let i=0;i<files.length;i++){
-  const file=files[i];$('#uploadProgress').textContent=`Importation ${i+1}/${files.length} : ${file.name}`;
+  const file=files[i];const progress=`Importation ${i+1}/${files.length} : ${file.name}`;
+  $('#uploadProgress').textContent=progress;
+  const libraryProgress=$('#libraryUploadProgress');if(libraryProgress){libraryProgress.hidden=false;libraryProgress.textContent=progress;}
   if(!validTypes.has(file.type)){failures.push(`${file.name} : format non accepté`);continue}
   // Serverless functions on Vercel have request body limits; keep each upload below 4MB.
   if(file.size>3.5*1024*1024){failures.push(`${file.name} : fichier trop lourd (3,5 Mo maximum dans le Studio)`);continue}
@@ -136,13 +247,15 @@ async function importPhotos(files){
  }
  uploading=false;$('#directUploadInput').disabled=false;$('#directUploadInput').value='';
  $('#uploadProgress').hidden=true;
- showMedia();
- if(photos.length)applyUploaded(photos,target);
+ const libraryProgress=$('#libraryUploadProgress');if(libraryProgress)libraryProgress.hidden=true;
+ if($('#mediaModal').open)showMedia(pickerPage);
+ if(photos.length&&(target||picker))applyUploaded(photos,target);
+ if(selection==='media')loadLibrary(1);
  if(failures.length)message(`${photos.length} importée(s). ${failures.length} échec(s) : ${failures.slice(0,2).join(' / ')}`,true);
- else message(`${photos.length} photo(s) importée(s) dans Payload${target?' et ajoutée(s) à la page':''}. Clique sur Publier pour les afficher sur le site.`);
+ else message(target?`${photos.length} photo(s) importée(s) et ajoutée(s) à ta page. Clique sur Publier.`:`${photos.length} photo(s) enregistrée(s) dans la médiathèque Payload et Vercel Blob.`);
 }
 
-async function refreshMedia(){try{const r=await fetch('/studio-api',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();media=data.media||[];projects=data.projects||[];showMedia();message(`${media.length} photos disponibles`)}catch(err){message('Impossible d’actualiser la médiathèque.',true)}}
+async function refreshMedia(){if($('#mediaModal').open)await showMedia(pickerPage);if(selection==='media')await loadLibrary(library.page);message('Médiathèque actualisée')}
 async function initialLoad(){try{const r=await fetch('/studio-api',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;$('#saveBtn').disabled=false;setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render()}catch(error){console.error(error);setStatus('Connexion impossible',true);$('#editor').innerHTML='<div class="danger-message">Impossible de charger le Studio. Vérifiez votre connexion Payload et la variable BLOB_READ_WRITE_TOKEN dans Vercel.</div>';message('Chargement impossible',true)}}
 async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
 function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset.index),i=Number(btn.dataset.item),dir=Number(btn.dataset.dir);
@@ -161,15 +274,34 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='move-nav'){if(move(root.links,index,index+dir)){markDirty();render()}return}
  if(command==='toggle-project'){const b=sections[index];const sl=btn.dataset.slug;const set=new Set(b.chosenSlugs||[]);btn.checked?set.add(sl):set.delete(sl);b.chosenSlugs=[...set];markDirty();return}
 }
-document.addEventListener('click',event=>{const nav=event.target.closest('[data-nav]');if(nav){selection=nav.dataset.nav;render();return}const actionBtn=event.target.closest('[data-action]');if(actionBtn){onAction(actionBtn);return}});
-$('#editor').addEventListener('input',event=>{const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty()});
-$('#editor').addEventListener('change',event=>{const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty();if(input.dataset.field.endsWith('selection'))render()});
+document.addEventListener('click',event=>{
+ const mediaAction=event.target.closest('[data-library-action]');if(mediaAction){handleLibraryAction(mediaAction);return}
+ if(event.target.closest('#libraryDropzone')){uploadTarget=null;$('#directUploadInput').click();return}
+ const nav=event.target.closest('[data-nav]');if(nav){selection=nav.dataset.nav;render();return}
+ const actionBtn=event.target.closest('[data-action]');if(actionBtn){onAction(actionBtn);return}
+});
+$('#editor').addEventListener('input',event=>{
+ if(event.target.id==='librarySearch'){
+  library.search=event.target.value;clearTimeout(librarySearchTimer);
+  librarySearchTimer=setTimeout(()=>loadLibrary(1),300);return;
+ }
+ const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty()});
+$('#editor').addEventListener('change',event=>{
+ if(event.target.id==='libraryDestination'){libraryDestination=event.target.value;return}
+ const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty();if(input.dataset.field.endsWith('selection'))render()});
 $('#saveBtn').addEventListener('click',save);
 $('#closeMedia').addEventListener('click',closePicker);
-$('#mediaModal').addEventListener('click',event=>{if(event.target===$('#mediaModal'))closePicker();const btn=event.target.closest('[data-photo]');if(btn){const photo=window._currentMedia[Number(btn.dataset.photo)];if(photo&&picker){const callback=picker;closePicker();callback(photo)}}});
-$('#mediaSearch').addEventListener('input',showMedia);
+$('#mediaModal').addEventListener('click',event=>{
+ if(event.target===$('#mediaModal')){closePicker();return}
+ const pageBtn=event.target.closest('[data-picker-page]');if(pageBtn){showMedia(Number(pageBtn.dataset.pickerPage));return}
+ const btn=event.target.closest('[data-photo]');if(btn){const photo=window._currentMedia[Number(btn.dataset.photo)];if(photo&&picker){const callback=picker;closePicker();callback(photo)}}});
+$('#mediaSearch').addEventListener('input',()=>{clearTimeout(pickerSearchTimer);pickerSearchTimer=setTimeout(()=>showMedia(1),300)});
 $('#refreshMedia').addEventListener('click',refreshMedia);
 $('#studioUploadBtn').addEventListener('click',()=>{uploadTarget=null;$('#directUploadInput').click()});
 $('#directUploadInput').addEventListener('change',event=>{const files=Array.from(event.target.files||[]);importPhotos(files)});
+$('#editor').addEventListener('keydown',event=>{if(event.target.id==='libraryDropzone'&&(event.key==='Enter'||event.key===' ')){event.preventDefault();uploadTarget=null;$('#directUploadInput').click()}});
+$('#editor').addEventListener('dragover',event=>{const zone=event.target.closest('#libraryDropzone');if(zone){event.preventDefault();zone.classList.add('dragging')}});
+$('#editor').addEventListener('dragleave',event=>{const zone=event.target.closest('#libraryDropzone');if(zone)zone.classList.remove('dragging')});
+$('#editor').addEventListener('drop',event=>{const zone=event.target.closest('#libraryDropzone');if(!zone)return;event.preventDefault();zone.classList.remove('dragging');uploadTarget=null;importPhotos([...event.dataTransfer.files])});
 initialLoad();
 })();
