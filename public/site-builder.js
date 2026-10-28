@@ -108,6 +108,7 @@
       updateButton('.hero-actions .btn.outline', data.secondButtonLabel, data.secondButtonUrl);
       const urls = (data.heroImages || []).map(item => safeImage(item?.url)).filter(Boolean);
       if (urls.length && typeof window.yruzSetHeroImages === 'function') window.yruzSetHeroImages(urls);
+      if (typeof window.yruzSetCarouselCards === 'function') window.yruzSetCarouselCards(data.featuredCards || {});
     }
     if (key === 'services') {
       (data.serviceCards || []).forEach((item, index) => {
@@ -130,9 +131,31 @@
       });
     }
     const html = (data.sections || []).map(section => renderSection(section, projects)).join('');
-    if (!html) return;
-    const wrapper = mount(key);
+    const wrapper = html ? mount(key) : null;
     if (wrapper) { wrapper.innerHTML = html; wrapper.querySelectorAll('[data-cms-carousel]').forEach(initCarousel); wrapper.querySelectorAll('.cms-projects-block').forEach(initProjectCarousel); }
+    if (key === 'portfolio') {
+      const grid = document.getElementById('catalogGrid');
+      if (grid && data.universeSections) {
+        ['photo','video','graphisme'].forEach(kind => {
+          let zone = document.querySelector(`[data-cms-portfolio-kind="${kind}"]`);
+          if (!zone) {
+            zone = document.createElement('div');zone.className='cms-sections cms-portfolio-kind';
+            zone.dataset.cmsPortfolioKind=kind;
+            grid.insertAdjacentElement('afterend', zone);
+          }
+          zone.innerHTML = (data.universeSections[kind] || []).map(block=>renderSection(block,projects)).join('');
+          zone.querySelectorAll('[data-cms-carousel]').forEach(initCarousel);
+          zone.querySelectorAll('.cms-projects-block').forEach(initProjectCarousel);
+        });
+        const sync = () => {
+          const kind = new URLSearchParams(location.search).get('type') || 'photo';
+          document.querySelectorAll('[data-cms-portfolio-kind]').forEach(el => {el.hidden = el.dataset.cmsPortfolioKind !== kind;});
+        };
+        document.querySelectorAll('[data-filter]').forEach(btn => btn.addEventListener('click',()=>setTimeout(sync,0)));
+        window.addEventListener('popstate',sync);
+        sync();
+      }
+    }
   };
   const initCarousel = root => {
     const thumbs = [...root.querySelectorAll('[data-cms-slide]')];

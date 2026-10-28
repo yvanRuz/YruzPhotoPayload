@@ -7,9 +7,18 @@ const mediaValue=(m:any,fallbackValue='')=>mediaUrl(m)||fallbackValue
 export async function getCatalog(){
  try{
   const payload=await getPayload({config})
-  const result=await payload.find({collection:'projects',where:{published:{equals:true}},limit:300,depth:1,sort:'order',overrideAccess:true})
+  const result=await payload.find({collection:'projects',limit:300,depth:1,sort:'order',overrideAccess:true})
   if(!result.docs.length)return fallback
-  return result.docs.map((p:any)=>({id:p.slug,mode:p.mode,title:p.title,category:p.category||'',cover:mediaValue(p.cover,p.legacyCover||''),gallery:(p.gallery||[]).map((g:any)=>mediaValue(g.photo,g.legacyUrl||'')).filter(Boolean),video:p.video||''}))
+  // A new CMS project must not make the existing Le Mans / legacy reports disappear.
+  // CMS records override fallback entries by slug; unpublished CMS records stay hidden.
+  const managed=new Set(result.docs.map((p:any)=>p.slug))
+  const fromDb=result.docs.filter((p:any)=>p.published!==false).map((p:any)=>({
+   id:p.slug,mode:p.mode,title:p.title,category:p.category||'',cover:mediaValue(p.cover,p.legacyCover||''),
+   gallery:(p.gallery||[]).map((g:any)=>mediaValue(g.photo,g.legacyUrl||'')).filter(Boolean),
+   video:p.video||'',order:p.order??10
+  }))
+  const retained=fallback.filter((p:any)=>!managed.has(p.id))
+  return [...fromDb,...retained].sort((a:any,b:any)=>(Number(a.order)||10)-(Number(b.order)||10))
  }catch(error){console.error('Payload catalogue indisponible',error);return fallback}
 }
 export async function getSite(){

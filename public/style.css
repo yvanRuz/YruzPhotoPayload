@@ -847,3 +847,6 @@ body:not(.subpage).yruz-motion-ready .yruz-text-reveal.yruz-text-visible::after{
  .portfolio-v42 .scroll-label{letter-spacing:1px;font-size:8px}
 }
 @media(prefers-reduced-motion:reduce){.portfolio-v42 .floating-card{transition:none!important}}
+
+/* V44 — vidéos intégrées dans les fiches portfolio */
+.project-video-embed{display:block;width:100%;max-width:1250px;aspect-ratio:16/9;border:0;border-radius:13px;margin:18px auto 38px;background:#061524}

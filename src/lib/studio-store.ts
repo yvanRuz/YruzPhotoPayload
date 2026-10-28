@@ -38,6 +38,8 @@ const defaults = (): StudioRecord => ({
     bottomButtonUrl: '', published: true, sections: [], heroImages: [null, null],
     serviceCards: Array.from({length: 3}, () => ({image:null,caption:'',buttonLabel:'',buttonUrl:''})),
     storyCards: Array.from({length: 3}, () => ({image:null,title:'',body:''})),
+    ...(k === 'accueil' ? { featuredCards: {photo:null, video:null, graphisme:null} } : {}),
+    ...(k === 'portfolio' ? { universeSections: {photo:[],video:[],graphisme:[]} } : {}),
   }])),
 })
 
@@ -140,6 +142,15 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
       heroImages: (Array.isArray(p.heroImages) ? p.heroImages : []).slice(0,2).map(image),
       serviceCards: (Array.isArray(p.serviceCards) ? p.serviceCards : []).slice(0,3).map((row:any) => ({image:image(row.image),caption:str(row.caption,150),buttonLabel:str(row.buttonLabel,140),buttonUrl:url(row.buttonUrl)})),
       storyCards: (Array.isArray(p.storyCards) ? p.storyCards : []).slice(0,3).map((row:any) => ({image:image(row.image),title:str(row.title,200),body:str(row.body,4000)})),
+      ...(key === 'accueil' ? { featuredCards: Object.fromEntries(['photo','video','graphisme'].map(mode => {
+        const original = p.featuredCards?.[mode]
+        return [mode, Array.isArray(original) ? original.slice(0,30).map((r:any)=>({
+          title:str(r.title,180), category:str(r.category,140), cover:image(r.cover), link:url(r.link), enabled:bool(r.enabled)
+        })) : null]
+      })) } : {}),
+      ...(key === 'portfolio' ? { universeSections: Object.fromEntries(['photo','video','graphisme'].map(mode => [
+        mode, (Array.isArray(p.universeSections?.[mode]) ? p.universeSections[mode] : []).slice(0,80).map(cleanSection).filter(Boolean)
+      ])) } : {}),
       sections: (Array.isArray(p.sections) ? p.sections : []).slice(0, 80).map(cleanSection).filter(Boolean),
     }
   }

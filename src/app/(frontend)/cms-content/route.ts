@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const content = await getStudioContent()
     const page: any = content.pages?.[key] || null
     const publishedPage = page?.published !== false ? page : null
-    const needsProjects = publishedPage?.sections?.some((block:any) => block.type === 'carrouselProjets')
+    const needsProjects = publishedPage?.sections?.some((block:any) => block.type === 'carrouselProjets') || ['photo','video','graphisme'].some(mode => publishedPage?.universeSections?.[mode]?.some((block:any) => block.type === 'carrouselProjets'))
     const projects = needsProjects ? await getCatalog() : []
     return Response.json({ page: publishedPage, navigation: content.navigation, projects }, { headers })
   } catch (error) {

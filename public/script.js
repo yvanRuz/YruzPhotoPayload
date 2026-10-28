@@ -3,6 +3,12 @@
 // Pas de nouvelle colonne PostgreSQL : publication directe depuis Payload.
 const isGraphicProject = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
 const projectsForMode = selected => (window.YRUZ_PROJECTS || []).filter(p => selected === 'graphisme' ? isGraphicProject(p) : selected === 'photo' ? p.mode === 'photo' && !isGraphicProject(p) : p.mode === 'video');
+// V44: optional Studio-authored featured cards. Null = original Payload projects.
+const featuredCards = {photo:null,video:null,graphisme:null};
+const carouselItems = kind => Array.isArray(featuredCards[kind]) ? featuredCards[kind].filter(c=>c.enabled!==false && c.cover && c.title).map((c,i)=>({
+  id:'studio-'+kind+'-'+i,mode:kind,category:c.category||kind.toUpperCase(),title:c.title,cover:c.cover,
+  gallery:[],url:c.link||'',isStudioCard:true
+})) : projectsForMode(kind);
 let photos = projectsForMode('photo');
 const mansProject = (window.YRUZ_PROJECTS || []).find(p => p.id === 'mans-nuit');
 const heroImages=(window.YRUZ_SITE_CONFIG?.homeImages?.length ? window.YRUZ_SITE_CONFIG.homeImages : [photos[0]?.gallery?.[1]||photos[0]?.cover,photos[0]?.gallery?.[2]||photos[0]?.cover]).filter(Boolean);
@@ -29,7 +35,7 @@ document.getElementById('prevHero')?.addEventListener('click',()=>changeHero(-1)
 drawHero();
 
 let mode='photo';
-let projects=projectsForMode(mode);
+let projects=carouselItems(mode);
 let current=0;
 let activeValue=0;
 let cards=[];
@@ -214,7 +220,7 @@ function mountCards(){
     card.addEventListener('click',()=>{
       if(stage?.dataset.justDragged)return;
       const closeToSelected=Math.round(activeValue)===i && Math.abs(activeValue-i)<.18;
-      if(closeToSelected) location.href=window.yruzProjectUrl(p);
+      if(closeToSelected) location.href=p.isStudioCard ? (p.url || `portfolio.html?type=${mode}`) : window.yruzProjectUrl(p);
       else animateTo(i);
     });
     stage.appendChild(card);
@@ -226,7 +232,7 @@ function mountCards(){
 }
 function applyMode(newMode){
   mode=newMode;
-  projects=projectsForMode(mode);
+  projects=carouselItems(mode);
   document.querySelectorAll('[data-home-mode]').forEach(btn=>{
     const on=btn.dataset.homeMode===mode;
     btn.classList.toggle('active',on);
@@ -237,6 +243,16 @@ function applyMode(newMode){
 }
 mountCards();
 updateLinks();
+// Site Builder loads asynchronously and calls this when published content arrives.
+window.yruzSetCarouselCards = function (config) {
+  for (const kind of ['photo','video','graphisme']) {
+    featuredCards[kind] = Array.isArray(config?.[kind]) ? config[kind].map(c=>({
+      title:String(c.title||''),category:String(c.category||''),cover:String(c.cover?.url||''),
+      link:String(c.link||''),enabled:c.enabled!==false
+    })) : null;
+  }
+  applyMode(mode);
+};
 
 document.querySelectorAll('[data-home-mode]').forEach(btn=>btn.addEventListener('click',()=>applyMode(btn.dataset.homeMode)));
 prevBtn?.addEventListener('click',()=>animateTo(current-1));
