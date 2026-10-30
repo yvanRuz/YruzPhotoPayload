@@ -2,7 +2,7 @@ import { getStudioContent } from '@/lib/studio-store'
 import { getCatalog } from '@/lib/catalog'
 
 export const dynamic = 'force-dynamic'
-const validPageKeys = new Set(['accueil','portfolio','services','histoire','contact','equipement'])
+const validPageKeys = new Set(['accueil','portfolio','services','histoire','contact','equipement','pokedex'])
 const headers = { 'Cache-Control': 'no-store, max-age=0' }
 export async function GET(request: Request) {
   const key = new URL(request.url).searchParams.get('page') || ''

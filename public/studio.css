@@ -34,3 +34,16 @@
 .portfolio-card-editor{border-color:#5b87aa;background:linear-gradient(150deg,#102c43,#091b2b)}
 .portfolio-card-editor .project-list{margin-top:20px}
 .project-editor input[readonly]{opacity:.78;cursor:not-allowed;background:#092033}
+
+/* V47 — dedicated Pokédex editor, same visual language as Studio */
+.pokedex-editor{margin:18px 0 26px;padding:20px;border:1px solid #2d4d64;border-left:3px solid #3dd1a3;border-radius:12px;background:linear-gradient(125deg,#0c2235,#0b1c2d)}
+.pokedex-editor.rarity-rare{border-left-color:#ec559b}.pokedex-editor.rarity-legendaire{border-left-color:#e9bd65}
+.pokedex-editor h3{font-size:14px;letter-spacing:.035em;margin:20px 0 13px}
+.pokedex-album-photos{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.pokedex-album-photo{border:1px solid #28455c;border-radius:9px;padding:12px;min-width:0}
+.pokedex-album-photo .media-choice{flex-wrap:wrap}.pokedex-album-photo .item-actions{margin-top:10px;display:flex;gap:7px}
+.pokedex-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}
+.pokedex-preview-card{border:1px solid #39b48b;background:#061c27;min-height:125px;display:flex;flex-direction:column;overflow:hidden;border-radius:6px}
+.pokedex-preview-card.rarity-rare{border-color:#ed559e}.pokedex-preview-card.rarity-legendaire{border-color:#dfba71}
+.pokedex-preview-card img{width:100%;height:100px;object-fit:cover}.pokedex-preview-card span{height:100px;display:grid;place-items:center;color:#7fa5b8;font-size:28px}
+.pokedex-preview-card small{font-size:10px;padding:7px;text-transform:uppercase}

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#061725">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="description" content="Une collection de portraits et de rencontres photographiées par YRUZPHOTO.">
+<title>Le Pokédex — YRUZPHOTO</title>
+<link rel="stylesheet" href="/pokedex.css">
+<script defer src="/pokedex.js"></script>
+</head>
+<body>
+<div class="pd-lines" aria-hidden="true"></div>
+<header class="pd-nav"><a class="pd-logo" href="/index.html" aria-label="Retour à YRUZPHOTO">YRUZPHOTO</a><span class="pd-nav-center">ÉDITION PERSONNELLE / COLLECTION</span><a class="pd-back" href="/index.html">RETOUR AU SITE <span aria-hidden="true">↗</span></a></header>
+<main class="pd-main">
+  <section class="pd-intro" aria-labelledby="pd-heading"><div><span class="pd-kicker">COLLECTION SECRÈTE · MES RENCONTRES</span><h1 id="pd-heading">LE POKÉDEX</h1><div class="pd-rule"></div></div><p id="pd-intro">Mes rencontres, mes photos, ma collection.</p></section>
+  <section class="pd-toolbar" aria-label="Explorer la collection">
+    <div id="pd-filters" class="pd-filters" role="group" aria-label="Filtrer par rareté"><button class="is-active" data-filter="all">TOUTES</button><button data-filter="legendaire"><span class="pd-filter-dot legendary"></span> LÉGENDAIRE</button><button data-filter="rare"><span class="pd-filter-dot rare"></span> RARE</button><button data-filter="commun"><span class="pd-filter-dot common"></span> COMMUN</button></div>
+    <label class="pd-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="pd-query" type="search" autocomplete="off" placeholder="Rechercher une personnalité, un événement…" aria-label="Rechercher dans les cartes"></label>
+  </section>
+  <div class="pd-workspace">
+    <section class="pd-album" aria-label="Classeur de cartes à collectionner">
+      <div class="pd-book" id="pd-book" aria-live="polite"><div class="pd-loader">OUVERTURE DE LA COLLECTION…</div></div>
+      <div class="pd-page-controls"><button id="pd-prev" aria-label="Tourner la page précédente">←</button><span id="pd-pagination">01 / 01</span><button id="pd-next" aria-label="Tourner la page suivante">→</button></div>
+      <p class="pd-book-caption"><span>↗</span> SÉLECTIONNE UNE CARTE POUR DÉCOUVRIR SON HISTOIRE <span class="pd-desktop-hint">· UTILISE LES FLÈCHES POUR TOURNER LES PAGES</span></p>
+    </section>
+    <aside class="pd-detail" id="pd-detail" aria-label="Détails de la carte sélectionnée"><div class="pd-detail-placeholder"><span class="pd-detail-symbol">◇</span><strong>UNE RENCONTRE,<br>UNE HISTOIRE.</strong><p>Choisis une carte de l'album pour afficher son portrait et les photos de cette rencontre.</p></div></aside>
+  </div>
+  <footer class="pd-footer"><span>YRUZPHOTO © 2026</span><span>IMAGES D'AUJOURD'HUI, MÉMOIRES DE DEMAIN.</span><a href="/index.html">RETOUR À L'ACCUEIL ↗</a></footer>
+</main>
+</body>
+</html>

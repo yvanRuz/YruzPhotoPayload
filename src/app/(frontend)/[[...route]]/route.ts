@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NextResponse } from 'next/server'
 export const dynamic='force-dynamic'
-const allowed=new Set(['','index.html','portfolio.html','projet.html','tarifs.html','equipement.html','contact.html'])
+const allowed=new Set(['','index.html','portfolio.html','projet.html','tarifs.html','equipement.html','contact.html','pokedex.html'])
 export async function GET(_request:Request,{params}:any){
  const result=await params
  const name=Array.isArray(result?.route)?result.route.join('/'):''

@@ -1,8 +1,8 @@
 /* YRUZPHOTO STUDIO — No external dependencies. Auth and writes stay server-side. */
 (() => {
 'use strict';
-const pageNames = {accueil:'Accueil',portfolio:'Portfolio',services:'Services',histoire:'Mon histoire',equipement:'Équipement',contact:'Contact'};
-const pageIcons = {accueil:'⌂',portfolio:'▧',services:'◇',histoire:'◌',equipement:'▤',contact:'✉'};
+const pageNames = {accueil:'Accueil',portfolio:'Portfolio',services:'Services',histoire:'Mon histoire',equipement:'Équipement',contact:'Contact',pokedex:'Le Pokédex'};
+const pageIcons = {accueil:'⌂',portfolio:'▧',services:'◇',histoire:'◌',equipement:'▤',contact:'✉',pokedex:'◉'};
 const sectionNames = {texte:'Titre, texte et bouton',photoTexte:'Photo + texte',carrouselPhotos:'Carrousel de photographies',grillePhotos:'Grille de photos',carrouselProjets:'Carrousel de reportages',boutons:'Boutons et liens'};
 const $ = s => document.querySelector(s);
 const e = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -134,6 +134,35 @@ function portfolioCardEditorShortcut(){
  <div class="add-row"><button type="button" class="mini-btn" data-portfolio-new="${portfolioUniverse}">+ Créer un projet ${universeNames[portfolioUniverse]}</button></div>
  </section>`;
 }
+function renderPokedex(){
+ const p=currentRoot();if(!p.cards)p.cards=[];
+ const rarityLabels={commun:'● Commun — vert',rare:'◆ Rare — rose',legendaire:'★ Légendaire — or'};
+ return `<section class="form-panel"><div class="panel-eyebrow">EASTER EGG / COLLECTION PRIVÉE</div>
+  <h2>Le Pokédex — Album à collectionner</h2>
+  <p>Cette page n'apparaît dans aucun menu public. Elle s'ouvre seulement grâce au petit symbole placé en bas à gauche de l'accueil. Les cartes sont indépendantes du portfolio.</p>
+  ${field('Titre de la page','heading',p.heading)}${field('Sous-titre','intro',p.intro,'textarea')}
+  ${field('Activer le Pokédex et son accès secret','published',p.published,'checkbox')}
+  <div class="add-row"><a class="mini-btn" href="/pokedex.html" target="_blank" rel="noopener">Voir le Pokédex ↗</a></div>
+ </section>
+ <section class="form-panel"><div class="panel-eyebrow">ALBUM / COLLECTION</div><h2>Cartes de tes rencontres (${p.cards.length})</h2>
+ <p>Change le nom, la couverture, la rareté, la description et les autres photos de chaque personne. Les flèches modifient l'ordre dans le classeur. Clique sur « Publier les modifications » pour mettre en ligne.</p>
+ ${p.cards.map((c,i)=>`<article class="pokedex-editor rarity-${e(c.rarity||'commun')}">
+  <div class="block-top"><span class="block-num">CARTE ${String(i+1).padStart(3,'0')} · ${e(rarityLabels[c.rarity]||'Commun')}</span><div class="mini-actions">
+  ${action('pokedex-move','↑',`data-index="${i}" data-dir="-1"`)}${action('pokedex-move','↓',`data-index="${i}" data-dir="1"`)}${action('pokedex-delete','✕',`data-index="${i}"`,true)}</div></div>
+  ${mediaField(`cards.${i}.cover`,c.cover,'Portrait principal de la carte')}
+  <div class="field-row">${field('Nom de la personnalité',`cards.${i}.title`,c.title)}${field('Rareté de la carte',`cards.${i}.rarity`,c.rarity,'select',Object.entries(rarityLabels).map(([k,v])=>[k,v]))}</div>
+  <div class="field-row">${field('Métier / rôle',`cards.${i}.subtitle`,c.subtitle)}${field('Catégorie',`cards.${i}.category`,c.category)}</div>
+  <div class="field-row">${field('Événement / lieu',`cards.${i}.event`,c.event)}${field('Date / édition',`cards.${i}.date`,c.date)}</div>
+  ${field('Description / souvenir de la rencontre',`cards.${i}.description`,c.description,'textarea')}
+  <h3>Photographies supplémentaires (${(c.gallery||[]).length})</h3>
+  <div class="pokedex-album-photos">${(c.gallery||[]).map((photo,j)=>`<div class="pokedex-album-photo">${mediaField(`cards.${i}.gallery.${j}`,photo,`Photo ${j+1}`)}
+     <div class="item-actions">${action('pokedex-photo-move','←',`data-index="${i}" data-item="${j}" data-dir="-1"`)}${action('pokedex-photo-move','→',`data-index="${i}" data-item="${j}" data-dir="1"`)}${action('pokedex-photo-remove','✕',`data-index="${i}" data-item="${j}"`,true)}</div></div>`).join('')}</div>
+  <div class="add-row">${action('pokedex-photo-add','+ Ajouter une photo',`data-index="${i}"`)}${action('pokedex-photo-upload','↑ Importer plusieurs photos',`data-index="${i}"`)}</div>
+  ${field('Afficher cette carte dans le Pokédex',`cards.${i}.published`,c.published,'checkbox')}
+ </article>`).join('')||'<div class="empty-state">Ton album est vide. Ajoute ta première personnalité et choisis sa photographie.</div>'}
+ <div class="add-row">${action('pokedex-add','+ Nouvelle carte de collection')}</div>
+ </section>`;
+}
 function renderPage(){
  const p=currentRoot();const blocks=sectionList();
  const ctas=selection==='accueil'?`<div class="field-row">${field('Bouton principal (texte)','mainButtonLabel',p.mainButtonLabel)}${field('Lien du bouton principal','mainButtonUrl',p.mainButtonUrl)}</div><div class="field-row">${field('Second bouton (texte)','secondButtonLabel',p.secondButtonLabel)}${field('Lien du second bouton','secondButtonUrl',p.secondButtonUrl)}</div>`:(['portfolio','services','equipement'].includes(selection)?`<div class="field-row">${field('Bouton bas de page (texte)','bottomButtonLabel',p.bottomButtonLabel)}${field('Lien du bouton','bottomButtonUrl',p.bottomButtonUrl)}</div>`:'');
@@ -239,7 +268,9 @@ async function handleLibraryAction(btn){
 function renderPreview(){
  if(!state||selection==='media'||selection==='projects')return;
  let html='';
- if(selection==='links'){
+ if(selection==='pokedex'){
+  const p=currentRoot();html=`<div class="preview-card"><span class="tag">ALBUM SECRET</span><h3>${e(p.heading||'LE POKÉDEX')}</h3><p>${e(p.intro||'Mes rencontres, mes photos, ma collection.')}</p><div class="pokedex-preview-grid">${(p.cards||[]).filter(c=>c.published!==false).slice(0,8).map(c=>`<div class="pokedex-preview-card rarity-${e(c.rarity)}">${c.cover?.url?`<img src="${e(validSrc(c.cover.url))}" alt="">`:'<span>◉</span>'}<small>${e(c.title||'Nouvelle rencontre')}</small></div>`).join('')}</div><small>${(p.cards||[]).length} carte(s) enregistrée(s)</small></div>`;
+ } else if(selection==='links'){
   const nav=currentRoot();html=`<div class="preview-card"><span class="tag">MENU</span><h3>Liens publiés</h3>${(nav.links||[]).filter(x=>x.enabled).map(x=>`<div class="preview-block"><b>${e(x.label)}</b><small>${e(x.url)}</small></div>`).join('')}<div class="preview-block"><b>CTA : ${e(nav.ctaLabel)}</b><small>${e(nav.ctaUrl)}</small></div></div>`;
  } else {
   const p=currentRoot();const blocks=sectionList();
@@ -253,11 +284,11 @@ function render(){
  $('#editorTitle').textContent=isMedia?'Médiathèque':isProjects?'Projets Photo / Vidéo / Graphisme':isLinks?'Menu et liens du site':pageNames[selection];
  $('#crumb').textContent=isProjects?'PORTFOLIO / PROJETS':isMedia?'PHOTOGRAPHIES / BIBLIOTHÈQUE':isLinks?'NAVIGATION / LIENS':'PAGES DU SITE / '+pageNames[selection].toUpperCase();
  $('#editorSubtitle').textContent=isProjects?'Crée et modifie chaque réalisation par univers.':isMedia?'Importer, organiser et réutiliser tes photos sans quitter le Studio.':isLinks?'Tous les boutons et liens principaux depuis un seul endroit.':'Textes, sections et photographies : tout est modifiable ici.';
- $('#viewLive').href={accueil:'/index.html',portfolio:'/portfolio.html',services:'/tarifs.html',histoire:'/index.html#mon-histoire',equipement:'/equipement.html',contact:'/contact.html',links:'/index.html'}[selection]||'/portfolio.html';
+ $('#viewLive').href={accueil:'/index.html',portfolio:'/portfolio.html',services:'/tarifs.html',histoire:'/index.html#mon-histoire',equipement:'/equipement.html',contact:'/contact.html',pokedex:'/pokedex.html',links:'/index.html'}[selection]||'/portfolio.html';
  $('#saveBtn').hidden=(isMedia||isProjects)&&!dirty;
  $('.main-layout').classList.toggle('library-layout',isMedia||isProjects);
  $('.preview-pane').hidden=isMedia||isProjects;
- $('#editor').innerHTML=isProjects?renderProjects():isMedia?renderLibrary():isLinks?renderNavigation():renderPage();
+ $('#editor').innerHTML=isProjects?renderProjects():isMedia?renderLibrary():isLinks?renderNavigation():selection==='pokedex'?renderPokedex():renderPage();
  if(isMedia){loadLibrary(library.page);if(!dirty)setStatus('Photographies enregistrées automatiquement');return}
  if(isProjects){if(!dirty)setStatus('Projets enregistrés dans Payload');return}
  renderPreview();
@@ -284,6 +315,11 @@ async function showMedia(page=1){
 function closePicker(){$('#mediaModal').close();picker=null}
 function applyUploaded(photos,target){
  if(!photos.length||!state)return;
+ if(target?.kind==='pokedex-gallery'){
+   const card=state?.content?.pages?.pokedex?.cards?.[target.index];if(!card){message('Carte introuvable',true);return}
+   if(!Array.isArray(card.gallery))card.gallery=[];
+   photos.forEach(photo=>card.gallery.push({url:photo.url,alt:photo.alt}));markDirty();render();return;
+ }
  if(target?.kind==='project-cover'&&projectDraft){const photo=photos[0];projectDraft.cover={id:photo.id,url:photo.url,alt:photo.alt};render();return}
  if(target?.kind==='project-gallery'&&projectDraft){photos.forEach(photo=>projectDraft.gallery.push({photo:{id:photo.id,url:photo.url,alt:photo.alt},legacyUrl:''}));render();return}
  const root=currentRoot();
@@ -338,6 +374,17 @@ async function initialLoad(){try{const r=await fetch('/studio-api',{cache:'no-st
 async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
 function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset.index),i=Number(btn.dataset.item),dir=Number(btn.dataset.dir);
  const root=currentRoot(),sections=sectionList();
+ if(selection==='pokedex' && command.startsWith('pokedex-')){
+  const cards=root.cards||(root.cards=[]),card=cards[index];
+  if(command==='pokedex-add'){cards.push({id:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`new-${Date.now()}`,title:'Nouvelle rencontre',subtitle:'',category:'',event:'',date:'',description:'',rarity:'commun',cover:null,gallery:[],published:true});markDirty();render();return}
+  if(command==='pokedex-move'){if(move(cards,index,index+dir)){markDirty();render()}return}
+  if(command==='pokedex-delete'){if(confirm('Supprimer cette carte du Pokédex ?')){cards.splice(index,1);markDirty();render()}return}
+  if(!card)return;
+  if(command==='pokedex-photo-add'){openPicker(photo=>{card.gallery.push({url:photo.url,alt:photo.alt});markDirty();render()});return}
+  if(command==='pokedex-photo-upload'){uploadTarget={kind:'pokedex-gallery',index};$('#directUploadInput').click();return}
+  if(command==='pokedex-photo-remove'){card.gallery.splice(i,1);markDirty();render();return}
+  if(command==='pokedex-photo-move'){if(move(card.gallery,i,i+dir)){markDirty();render()}return}
+ }
  if(command==='featured-enable'){root.featuredCards[featuredUniverse]=[];markDirty();render();return}
  if(command==='featured-auto'){if(confirm('Revenir aux projets automatiques pour cet univers ?')){root.featuredCards[featuredUniverse]=null;markDirty();render()}return}
  if(command==='featured-add'){root.featuredCards[featuredUniverse].push({title:'Nouvelle carte',category:featuredUniverse.toUpperCase(),cover:null,link:'portfolio.html?type='+featuredUniverse,enabled:true});markDirty();render();return}
@@ -394,7 +441,7 @@ $('#editor').addEventListener('change',event=>{
  if(event.target.id==='libraryDestination'){libraryDestination=event.target.value;return}
  if(event.target.id==='libraryUniverse'){libraryUniverse=event.target.value;return}
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;return}
- const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty();if(input.dataset.field.endsWith('selection'))render()});
+ const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity'))render()});
 $('#saveBtn').addEventListener('click',save);
 $('#closeMedia').addEventListener('click',closePicker);
 $('#mediaModal').addEventListener('click',event=>{
