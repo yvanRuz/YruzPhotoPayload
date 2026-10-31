@@ -7,7 +7,9 @@ const safeImage=v=>{const src=typeof v==='string'?v:v?.url;return /^(https?:\/\/
 const rarities={commun:{label:'COMMUN',symbol:'●'},rare:{label:'RARE',symbol:'◆'},legendaire:{label:'LÉGENDAIRE',symbol:'★'}};
 let cards=[],filter='all',term='',page=0,selected=null,chosenPhoto=0,turning=false;
 const mobile=()=>matchMedia('(max-width:760px)').matches;
-const perSpread=()=>mobile()?2:8;
+// Each desktop leaf is a 3 x 3 collector page (9 cards). Mobile uses 2 x 3.
+const slotsPerLeaf=()=>mobile()?6:9;
+const perSpread=()=>mobile()?slotsPerLeaf():2*slotsPerLeaf();
 const getFiltered=()=>cards.filter(c=>(filter==='all'||c.rarity===filter)&&(!term||[c.title,c.subtitle,c.category,c.event,c.date,c.description].some(v=>String(v||'').toLocaleLowerCase('fr').includes(term))));
 const pad=i=>String(i).padStart(3,'0');
 function numberOf(card){return pad(cards.indexOf(card)+1)}
@@ -24,9 +26,9 @@ function renderBook(){
  const slice=matches.slice(page*per,(page+1)*per),book=$('#pd-book');book.classList.toggle('empty',!matches.length);
  if(!matches.length&&cards.length&&term){book.innerHTML='<div class="pd-no-match">Aucune carte ne correspond à cette recherche.</div>'}
  else{
-  const blank=Array.from({length:mobile()?2:8},(_,i)=>slice[i]||null);
+  const blank=Array.from({length:per},(_,i)=>slice[i]||null);
   if(mobile())book.innerHTML=leafHTML(blank,'right');
-  else book.innerHTML=leafHTML(blank.slice(0,4),'left')+'<div class="pd-spine" aria-hidden="true">'+Array.from({length:4},()=>'<span class="pd-ring"></span>').join('')+'</div>'+leafHTML(blank.slice(4,8),'right');
+  else book.innerHTML=leafHTML(blank.slice(0,slotsPerLeaf()),'left')+'<div class="pd-spine" aria-hidden="true">'+Array.from({length:4},()=>'<span class="pd-ring"></span>').join('')+'</div>'+leafHTML(blank.slice(slotsPerLeaf()),'right');
  }
  $('#pd-pagination').textContent=`${String(page+1).padStart(2,'0')} / ${String(max).padStart(2,'0')}`;
  $('#pd-prev').disabled=page===0;$('#pd-next').disabled=page>=max-1;

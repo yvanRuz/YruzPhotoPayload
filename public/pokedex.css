@@ -23,3 +23,33 @@
 @media(max-width:760px){.pd-nav{padding:19px 17px}.pd-nav-center{display:none}.pd-logo{font-size:23px}.pd-back{font-size:9px}.pd-main{padding:0 14px}.pd-intro{padding:33px 3px 20px;display:block}.pd-intro h1{font-size:clamp(59px,15vw,97px)}.pd-intro p{margin:16px 0 0}.pd-toolbar{flex-direction:column;align-items:stretch}.pd-filters{width:100%;justify-content:center;gap:1px;padding:4px}.pd-filters button{font-size:9px;padding:11px 8px;flex:1}.pd-search{min-width:0;max-width:none;width:100%}.pd-book{grid-template-columns:minmax(0,1fr);min-height:455px;padding:11px;max-width:440px;margin:auto;width:100%;border-radius:15px}.pd-leaf-left,.pd-spine{display:none}.pd-leaf-right{border-radius:8px;padding:14px;background:linear-gradient(110deg,#102a3d,#071421)}.pd-slot-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);gap:12px}.pd-card,.pd-slot-empty{min-height:350px}.pd-card-meta strong{font-size:23px}.pd-turn-layer{width:calc(100% - 22px);left:11px!important;right:11px!important;top:11px;bottom:11px;transform-origin:left center!important}.pd-detail{grid-template-columns:minmax(0,1fr);padding:17px;display:flex}.pd-detail-card{grid-row:auto;height:265px;width:202px}.pd-detail-tagline{grid-column:auto}.pd-detail-body{grid-row:auto}.pd-detail-body h2{font-size:32px}.pd-book-caption{font-size:8px}.pd-desktop-hint{display:none}}
 @media(max-width:490px){.pd-intro h1{font-size:69px}.pd-kicker{font-size:9px;letter-spacing:.21em}.pd-book{min-height:350px;padding:8px}.pd-leaf-right{padding:9px}.pd-card,.pd-slot-empty{min-height:248px}.pd-card-meta{left:9px;right:8px;bottom:9px}.pd-card-meta strong{font-size:19px}.pd-card-index{top:10px;left:9px}.pd-card-rank{top:10px;right:9px}.pd-card-meta small{font-size:7px}.pd-slot-grid{gap:8px}.pd-turn-layer{top:8px;bottom:8px;width:calc(100% - 16px);left:8px!important;right:8px!important}.pd-filters button{font-size:8px;letter-spacing:.04em;padding:10px 6px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+
+/* V48: 3 x 3 portrait collector cards on EACH desktop leaf.
+   These are scoped to the Pokédex only; the YRUZPHOTO site is unchanged. */
+@media (min-width:761px){
+  .pd-book{aspect-ratio:1.42 / 1;min-height:0;height:auto}
+  .pd-slot-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:clamp(5px,.55vw,10px);min-height:0}
+  .pd-slot-grid>.pd-card,.pd-slot-grid>.pd-slot-empty{min-height:0;min-width:0;aspect-ratio:auto}
+  .pd-book.empty .pd-leaf{min-height:0}
+  .pd-slot-grid .pd-card-index{top:10px;left:10px;font-size:9px}
+  .pd-slot-grid .pd-card-rank{top:9px;right:10px;font-size:10px}
+  .pd-slot-grid .pd-card-meta{left:9px;bottom:9px;right:8px;max-width:calc(100% - 17px)}
+  .pd-slot-grid .pd-card-meta strong{font-size:clamp(12px,1.03vw,17px);line-height:1.03}
+  .pd-slot-grid .pd-card-meta small{font-size:7px;letter-spacing:.07em}
+}
+/* A single collector sleeve on mobile: two portrait cards per row,
+   three rows per leaf. Navigation still works by swiping or arrows. */
+@media (max-width:760px){
+  .pd-book{aspect-ratio:auto;min-height:0;height:auto}
+  .pd-leaf-right{height:auto}
+  .pd-slot-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,auto);gap:10px;height:auto}
+  .pd-slot-grid>.pd-card,.pd-slot-grid>.pd-slot-empty{min-height:0;height:auto;aspect-ratio:2 / 3}
+  .pd-book.empty .pd-leaf{min-height:0}
+  .pd-slot-grid .pd-card-meta strong{font-size:clamp(16px,4vw,22px)}
+  .pd-turn-layer .pd-leaf{height:100%}
+}
+@media (max-width:490px){
+  .pd-slot-grid{gap:8px}
+  .pd-slot-grid .pd-card-meta strong{font-size:clamp(14px,4.2vw,19px)}
+}
