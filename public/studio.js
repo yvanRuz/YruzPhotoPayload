@@ -66,7 +66,7 @@ function renderSection(block,index){
    const arrKey=block.type==='carrouselPhotos'?'slides':'photos';const rows=Array.isArray(block[arrKey])?block[arrKey]:[];
    f=field('Titre',`${base}.title`,block.title)+(block.type==='carrouselPhotos'?field('Description',`${base}.description`,block.description,'textarea'):field('Colonnes',`${base}.columns`,block.columns,'select',[['2','2 colonnes'],['3','3 colonnes'],['4','4 colonnes']]))+
    `<p class="small-counter">${rows.length} photographie${rows.length>1?'s':''} — glisse les visuels pour choisir leur ordre</p><div class="collection-items">`+
-   rows.map((row,j)=>`<div class="collection-item v50-sortable" draggable="true" data-sort-kind="section-image" data-section="${index}" data-item="${j}" title="Glisser pour changer l’ordre">${row.image?.url?`<img src="${e(validSrc(row.image.url))}" alt="">`:''}<div class="item-fields">${field('Légende',`${base}.${arrKey}.${j}.caption`,row.caption)}${block.type==='carrouselPhotos'?field('Lien au clic (optionnel)',`${base}.${arrKey}.${j}.link`,row.link):''}</div><div class="item-actions">${cropButton(row.image)}${action('swap-image','Changer',`data-path="${base}.${arrKey}.${j}.image"`)}${action('move-item','↑',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="-1"`)}${action('move-item','↓',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="1"`)}${action('remove-item','✕',`data-index="${index}" data-key="${arrKey}" data-item="${j}"`,true)}</div></div>`).join('')+
+   rows.map((row,j)=>`<div class="collection-item v50-sortable v56-sortable" data-sort-kind="section-image" data-section="${index}" data-item="${j}" title="Maintiens la poignée pour déplacer cette photo"><button type="button" class="v56-drag-handle" aria-label="Déplacer cette photo : maintenir et glisser, ou utiliser les flèches du clavier" title="Maintenir puis glisser · ↑↓ au clavier"><span aria-hidden="true">⠿</span><span>Déplacer</span></button>${row.image?.url?`<img src="${e(validSrc(row.image.url))}" alt="">`:''}<div class="item-fields">${field('Légende',`${base}.${arrKey}.${j}.caption`,row.caption)}${block.type==='carrouselPhotos'?field('Lien au clic (optionnel)',`${base}.${arrKey}.${j}.link`,row.link):''}</div><div class="item-actions">${cropButton(row.image)}${action('swap-image','Changer',`data-path="${base}.${arrKey}.${j}.image"`)}${action('move-item','↑',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="-1"`)}${action('move-item','↓',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="1"`)}${action('remove-item','✕',`data-index="${index}" data-key="${arrKey}" data-item="${j}"`,true)}</div></div>`).join('')+
    `</div><div class="add-row">${action('add-image','+ Choisir plusieurs photographies',`data-index="${index}" data-key="${arrKey}"`)}${action('upload-gallery','↑ Importer plusieurs photos',`data-index="${index}" data-key="${arrKey}"`)}</div>`;
  }
  if(block.type==='carrouselProjets'){
@@ -118,8 +118,8 @@ function renderProjects(){
      ${field('Ordre dans le Portfolio','project.order',d.order)}
      <h3>Couverture</h3><p>Voici le rendu de ton image dans les deux cartes du site, avant publication. Tu peux la déplacer, la zoomer et comparer les cadrages sans modifier le fichier original.</p>${projectCoverPreview(d)}<div class="add-row">${action('project-cover-choose','▧ Choisir la couverture')}${action('project-cover-upload','↑ Importer une couverture')}${validSrc(d.cover?.url||d.legacyCover)?action('project-cover-crop','▣ Ajuster le cadrage / prévisualiser'):''}</div>
      ${projectUniverse==='video'?field('Lien vidéo (YouTube, Vimeo ou MP4 hébergé)','project.video',d.video):''}
-     <h3>Galerie (${gallery.length} visuel${gallery.length>1?'s':''})</h3><p>Glisse une photo pour changer sa place, ou utilise les flèches.</p>
-     <div class="project-gallery-items">${gallery.map((g,i)=>`<div class="collection-item v50-sortable" draggable="true" data-sort-kind="project-gallery" data-item="${i}" title="Glisser pour changer l’ordre">${projectMedia(g.photo||{url:g.legacyUrl,alt:''})}<div class="item-fields">${e(g.photo?.alt||g.legacyUrl||'Photographie')}</div><div class="item-actions">${cropButton(g.photo||{url:g.legacyUrl})}${action('project-gallery-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-gallery-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-gallery-remove','✕',`data-index="${i}"`,true)}</div></div>`).join('')}</div>
+     <h3>Galerie (${gallery.length} visuel${gallery.length>1?'s':''})</h3><p>Maintiens « Déplacer » et fais glisser la photo directement à sa nouvelle place. La page défile automatiquement, même pour les longues galeries.</p>
+     <div class="project-gallery-items">${gallery.map((g,i)=>`<div class="collection-item v50-sortable v56-sortable" data-sort-kind="project-gallery" data-item="${i}" title="Maintiens la poignée pour déplacer cette photo"><button type="button" class="v56-drag-handle" aria-label="Déplacer cette photo : maintenir et glisser, ou utiliser les flèches du clavier" title="Maintenir puis glisser · ↑↓ au clavier"><span aria-hidden="true">⠿</span><span>Déplacer</span></button>${projectMedia(g.photo||{url:g.legacyUrl,alt:''})}<div class="item-fields">${e(g.photo?.alt||g.legacyUrl||'Photographie')}</div><div class="item-actions">${cropButton(g.photo||{url:g.legacyUrl})}${action('project-gallery-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-gallery-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-gallery-remove','✕',`data-index="${i}"`,true)}</div></div>`).join('')}</div>
      <div class="add-row">${action('project-gallery-choose','+ Sélectionner plusieurs photos')}${action('project-gallery-upload','↑ Importer plusieurs photos')}</div>
      ${field('Afficher dans le Portfolio','project.published',d.published,'checkbox')}
      <button type="button" class="primary-btn" data-action="project-save" ${savingProject?'disabled':''}>${savingProject?'Enregistrement…':'Enregistrer le projet ↗'}</button></section>`;
@@ -170,7 +170,7 @@ function renderPokedex(){
   <div class="field-row">${field('Événement / lieu',`cards.${i}.event`,c.event)}${field('Date / édition',`cards.${i}.date`,c.date)}</div>
   ${field('Description / souvenir de la rencontre',`cards.${i}.description`,c.description,'textarea')}
   <h3>Photographies supplémentaires (${(c.gallery||[]).length})</h3>
-  <div class="pokedex-album-photos">${(c.gallery||[]).map((photo,j)=>`<div class="pokedex-album-photo v50-sortable" draggable="true" data-sort-kind="pokedex-gallery" data-section="${i}" data-item="${j}" title="Glisser pour changer l’ordre">${mediaField(`cards.${i}.gallery.${j}`,photo,`Photo ${j+1}`)}
+  <div class="pokedex-album-photos">${(c.gallery||[]).map((photo,j)=>`<div class="pokedex-album-photo v50-sortable v56-sortable" data-sort-kind="pokedex-gallery" data-section="${i}" data-item="${j}" title="Maintiens la poignée pour déplacer cette photo"><button type="button" class="v56-drag-handle" aria-label="Déplacer cette photo : maintenir et glisser, ou utiliser les flèches du clavier" title="Maintenir puis glisser · ↑↓ au clavier"><span aria-hidden="true">⠿</span><span>Déplacer</span></button>${mediaField(`cards.${i}.gallery.${j}`,photo,`Photo ${j+1}`)}
      <div class="item-actions">${action('pokedex-photo-move','←',`data-index="${i}" data-item="${j}" data-dir="-1"`)}${action('pokedex-photo-move','→',`data-index="${i}" data-item="${j}" data-dir="1"`)}${action('pokedex-photo-remove','✕',`data-index="${i}" data-item="${j}"`,true)}</div></div>`).join('')}</div>
   <div class="add-row">${action('pokedex-photo-add','+ Choisir plusieurs photos',`data-index="${i}"`)}${action('pokedex-photo-upload','↑ Importer plusieurs photos',`data-index="${i}"`)}</div>
   ${field('Afficher cette carte dans le Pokédex',`cards.${i}.published`,c.published,'checkbox')}
@@ -677,31 +677,155 @@ $('#editor').addEventListener('keydown',event=>{if(event.target.matches('[data-l
 $('#editor').addEventListener('dragstart',event=>{
   const photo=event.target.closest('[data-library-drag]');
   if(photo){libraryDragId=photo.dataset.libraryDrag;libraryDragIds=library.selected.has(libraryDragId)?[...library.selected.keys()]:[libraryDragId];event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain','library:'+libraryDragId);return}
-  const sortable=event.target.closest('[data-sort-kind]');
-  if(sortable){editorDrag={kind:sortable.dataset.sortKind,section:Number(sortable.dataset.section),index:Number(sortable.dataset.item)};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain','sort:'+editorDrag.kind);sortable.classList.add('dragging')}
 });
-$('#editor').addEventListener('dragend',()=>{libraryDragId=null;libraryDragIds=[];editorDrag=null;document.querySelectorAll('.v50-sortable.dragging').forEach(x=>x.classList.remove('dragging'))});
+$('#editor').addEventListener('dragend',()=>{libraryDragId=null;libraryDragIds=[]});
 $('#editor').addEventListener('dragover',event=>{
- const zone=event.target.closest('#libraryDropzone'),folder=event.target.closest('[data-library-action="folder"]'),row=event.target.closest('[data-sort-kind]');
- if(zone||folder&&(libraryDragId||event.dataTransfer.types.includes('Files'))||row&&editorDrag){event.preventDefault();event.dataTransfer.dropEffect='move';if(zone)zone.classList.add('dragging')}
+ const zone=event.target.closest('#libraryDropzone'),folder=event.target.closest('[data-library-action="folder"]');
+ if(zone||folder&&(libraryDragId||event.dataTransfer.types.includes('Files'))){event.preventDefault();event.dataTransfer.dropEffect='move';if(zone)zone.classList.add('dragging')}
 });
 $('#editor').addEventListener('dragleave',event=>{const zone=event.target.closest('#libraryDropzone');if(zone)zone.classList.remove('dragging')});
 $('#editor').addEventListener('drop',event=>{
  const folder=event.target.closest('[data-library-action="folder"]');
  if(folder && !libraryDragId && event.dataTransfer.files.length){event.preventDefault();const dest=folder.dataset.folder;if(dest!=='all'){library.folder=dest}uploadTarget=null;importPhotos([...event.dataTransfer.files]);return}
  if(folder&&libraryDragId){event.preventDefault();const dest=folder.dataset.folder;if(dest==='all')return;const f=folders();if(dest==='__unassigned__')libraryDragIds.forEach(id=>delete f.assignments[id]);else libraryDragIds.forEach(id=>f.assignments[id]=dest);const count=libraryDragIds.length;libraryDragId=null;libraryDragIds=[];markDirty();render();message(`${count} photo(s) déplacée(s). Clique sur Publier.`);return}
- const row=event.target.closest('[data-sort-kind]');
- if(row&&editorDrag){event.preventDefault();const to=Number(row.dataset.item),from=editorDrag.index;let list=null,doPublish=true;
-   if(row.dataset.sortKind===editorDrag.kind){
-     if(editorDrag.kind==='section-image'&&Number(row.dataset.section)===editorDrag.section){const sec=sectionList()[editorDrag.section];list=sec?.[sec.type==='carrouselPhotos'?'slides':'photos']}
-     if(editorDrag.kind==='project-gallery'){list=projectDraft?.gallery;doPublish=false}
-     if(editorDrag.kind==='pokedex-gallery'&&Number(row.dataset.section)===editorDrag.section)list=currentRoot()?.cards?.[editorDrag.section]?.gallery;
-     if(list&&move(list,from,to)){if(doPublish)markDirty();render();message(doPublish?'Ordre changé · Clique sur Publier':'Ordre changé · Enregistre le projet')}
-   }editorDrag=null;return;
- }
  const zone=event.target.closest('#libraryDropzone');if(!zone)return;
  event.preventDefault();zone.classList.remove('dragging');uploadTarget=null;
  const files=[...event.dataTransfer.files];if(files.length)importPhotos(files);
 });
+
+// V56 — fluid sortable albums. Grab the visible handle, scroll while holding,
+// and release on the intended position. Works with mouse, pen and touch.
+// Only the affected gallery array is reordered; cover images and media files are untouched.
+let galleryGesture=null;
+function sortableContext(row){
+  if(!row)return null;
+  const kind=row.dataset.sortKind,section=Number(row.dataset.section),from=Number(row.dataset.item);
+  let items=null,publish=true;
+  if(kind==='project-gallery'&&projectDraft){items=projectDraft.gallery;publish=false}
+  else if(kind==='section-image'){
+    const part=sectionList()[section];
+    if(part&&(part.type==='carrouselPhotos'||part.type==='grillePhotos'))items=part[part.type==='carrouselPhotos'?'slides':'photos'];
+  }else if(kind==='pokedex-gallery')items=currentRoot()?.cards?.[section]?.gallery;
+  return Array.isArray(items)&&Number.isInteger(from)&&from>=0&&from<items.length?{items,kind,section,from,publish}:null;
+}
+function getGalleryScroller(element){
+  for(let el=element.parentElement;el&&el!==document.body;el=el.parentElement){
+    const st=getComputedStyle(el);
+    if(/(auto|scroll)/.test(st.overflowY)&&el.scrollHeight>el.clientHeight+10)return el;
+  }
+  return window;
+}
+function galleryFindPosition(drag,x,y){
+  const siblings=[...drag.list.children].filter(el=>el!==drag.place&&el.matches('[data-sort-kind]'));
+  if(!siblings.length){drag.list.append(drag.place);return}
+  // First honor the actual card underneath the pointer (grid and list layouts).
+  const hit=document.elementFromPoint(x,y)?.closest('[data-sort-kind]');
+  let target=hit&&hit.parentElement===drag.list?hit:null;
+  if(!target){
+    target=siblings.reduce((best,el)=>{
+      const b=el.getBoundingClientRect(),cx=Math.max(b.left,Math.min(x,b.right)),cy=Math.max(b.top,Math.min(y,b.bottom));
+      const dist=(cx-x)**2+(cy-y)**2;
+      return dist<best.distance?{el,distance:dist}:best;
+    },{el:null,distance:Infinity}).el;
+  }
+  if(!target)return;
+  const box=target.getBoundingClientRect();
+  const isGrid=getComputedStyle(drag.list).gridTemplateColumns.split(' ').filter(Boolean).length>1;
+  const after=isGrid? x>box.left+box.width/2 : y>box.top+box.height/2;
+  const next=after?target.nextSibling:target;
+  if(next!==drag.place)drag.list.insertBefore(drag.place,next);
+}
+function galleryAutoScroll(drag){
+  const parent=drag.scroller,edge=95;
+  let top,bottom,scroll;
+  if(parent===window){top=0;bottom=window.innerHeight;scroll=dy=>window.scrollBy(0,dy)}
+  else{const rect=parent.getBoundingClientRect();top=rect.top;bottom=rect.bottom;scroll=dy=>{parent.scrollTop+=dy}}
+  let speed=0;
+  if(drag.y<top+edge)speed=-Math.min(23,Math.max(0,(top+edge-drag.y)/edge)*23);
+  else if(drag.y>bottom-edge)speed=Math.min(23,Math.max(0,(drag.y-(bottom-edge))/edge)*23);
+  if(speed){scroll(speed);galleryFindPosition(drag,drag.x,drag.y)}
+  drag.raf=requestAnimationFrame(()=>galleryAutoScroll(drag));
+}
+function galleryRestore(drag){
+  if(!drag)return;
+  if(drag.raf)cancelAnimationFrame(drag.raf);
+  if(drag.ghost)drag.ghost.remove();
+  if(drag.place?.parentNode){drag.place.before(drag.row);drag.place.remove()}
+  drag.row.style.display='';
+  document.body.classList.remove('v56-is-sorting');
+  drag.handle.classList.remove('v56-holding');
+}
+function galleryFinish(commit){
+  const drag=galleryGesture;if(!drag)return;
+  galleryGesture=null;
+  window.removeEventListener('pointermove',galleryPointerMove);
+  window.removeEventListener('pointerup',galleryPointerEnd);
+  window.removeEventListener('pointercancel',galleryPointerCancel);
+  if(!drag.active){galleryRestore(drag);return}
+  const newIndex=[...drag.list.children].filter(n=>n===drag.place||n.matches('[data-sort-kind]')).indexOf(drag.place);
+  galleryRestore(drag);
+  if(commit&&newIndex>=0&&newIndex!==drag.context.from&&move(drag.context.items,drag.context.from,newIndex)){
+    if(drag.context.publish)markDirty();
+    render();
+    message(drag.context.publish?'Nouvel ordre prêt · Clique sur Publier':'Nouvel ordre prêt · Clique sur Enregistrer le projet');
+  }
+}
+function galleryPointerMove(event){
+  const drag=galleryGesture;if(!drag||event.pointerId!==drag.pointerId)return;
+  drag.x=event.clientX;drag.y=event.clientY;
+  if(!drag.active){
+    if(Math.hypot(drag.x-drag.startX,drag.y-drag.startY)<6)return;
+    drag.active=true;
+    const box=drag.row.getBoundingClientRect();
+    drag.offsetX=drag.startX-box.left;drag.offsetY=drag.startY-box.top;
+    const place=document.createElement('div');place.className='v56-drop-placeholder';place.style.height=`${Math.ceil(box.height)}px`;
+    drag.row.before(place);drag.place=place;
+    const ghost=drag.row.cloneNode(true);
+    ghost.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+    ghost.querySelectorAll('button,input,select,textarea').forEach(el=>el.disabled=true);
+    ghost.classList.add('v56-drag-ghost');ghost.style.width=`${box.width}px`;
+    document.body.append(ghost);drag.ghost=ghost;
+    drag.row.style.display='none';
+    drag.handle.classList.add('v56-holding');
+    document.body.classList.add('v56-is-sorting');
+    galleryAutoScroll(drag);
+  }
+  drag.ghost.style.left=`${drag.x-drag.offsetX}px`;
+  drag.ghost.style.top=`${drag.y-drag.offsetY}px`;
+  galleryFindPosition(drag,drag.x,drag.y);
+  event.preventDefault();
+}
+function galleryPointerEnd(event){if(galleryGesture?.pointerId===event.pointerId)galleryFinish(true)}
+function galleryPointerCancel(event){if(galleryGesture?.pointerId===event.pointerId)galleryFinish(false)}
+$('#editor').addEventListener('pointerdown',event=>{
+  const handle=event.target.closest('.v56-drag-handle');
+  if(!handle||galleryGesture||!event.isPrimary||event.button!==0)return;
+  const row=handle.closest('[data-sort-kind]'),context=sortableContext(row);
+  if(!context)return;
+  galleryGesture={handle,row,list:row.parentElement,context,pointerId:event.pointerId,
+    startX:event.clientX,startY:event.clientY,x:event.clientX,y:event.clientY,
+    active:false,place:null,ghost:null,raf:0,scroller:getGalleryScroller(row)};
+  window.addEventListener('pointermove',galleryPointerMove,{passive:false});
+  window.addEventListener('pointerup',galleryPointerEnd);
+  window.addEventListener('pointercancel',galleryPointerCancel);
+  event.preventDefault();
+});
+// Arrow keys remain available on the grab handle for keyboard-only users.
+$('#editor').addEventListener('keydown',event=>{
+  const handle=event.target.closest('.v56-drag-handle');
+  if(!handle||!['ArrowUp','ArrowDown'].includes(event.key))return;
+  const context=sortableContext(handle.closest('[data-sort-kind]'));
+  if(!context)return;
+  const dest=context.from+(event.key==='ArrowUp'?-1:1);
+  event.preventDefault();
+  if(move(context.items,context.from,dest)){
+    if(context.publish)markDirty();
+    render();
+    const rows=[...$('#editor').querySelectorAll(`[data-sort-kind="${context.kind}"]`)].filter(el=>context.kind!=='section-image'&&context.kind!=='pokedex-gallery'||Number(el.dataset.section)===context.section);
+    rows[dest]?.querySelector('.v56-drag-handle')?.focus();
+    message(context.publish?'Ordre modifié · Clique sur Publier':'Ordre modifié · Enregistre le projet');
+  }
+});
+
 initialLoad();
 })();

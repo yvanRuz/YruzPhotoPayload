@@ -149,3 +149,18 @@
 .equip-preview-item span{display:grid;place-items:center;height:86px;font-size:37px;background:#132a3c;border-radius:7px;overflow:hidden}
 .equip-preview-item img{max-width:100%;max-height:100%;object-fit:contain}.equip-preview-item strong{font-size:11px;overflow-wrap:anywhere}.equip-preview-item small{font-size:10px;color:#9ebdd5}
 @media(max-width:750px){.equip-studio-cover{grid-template-columns:1fr}.equip-studio-card{padding:13px}.equip-studio-card .block-top{align-items:start;flex-wrap:wrap}}
+
+
+/* V56 — Reordering by holding a handle, with ghost, landing zone and auto-scroll. */
+.v56-sortable{cursor:default;padding-left:10px;min-width:0}
+.v56-sortable:before{display:none}
+.v56-drag-handle{flex:0 0 66px;align-self:stretch;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#bfe1fa;background:#16364d;border:1px solid #4e7591;border-radius:9px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:10px;font-weight:700;letter-spacing:.01em;line-height:1.1}
+.v56-drag-handle span:first-child{font-size:28px;line-height:1}
+.v56-drag-handle:hover,.v56-drag-handle:focus-visible{background:#245674;border-color:#9bd2ff;outline:2px solid #71bbe6;outline-offset:1px}
+.v56-drag-handle:active,.v56-drag-handle.v56-holding{cursor:grabbing;background:#346f98}
+.v56-drop-placeholder{box-sizing:border-box;border:2px dashed #9bd3fa;border-radius:10px;background:linear-gradient(105deg,#1c4564aa,#0d3048bb);box-shadow:inset 0 0 0 1px #e0f4ff44;position:relative;min-width:0}
+.v56-drop-placeholder:after{content:'Déposer ici';position:absolute;inset:0;display:grid;place-items:center;color:#e0f4ff;font-size:12px;font-weight:700;letter-spacing:.08em;pointer-events:none}
+.v56-drag-ghost{position:fixed!important;z-index:9999;pointer-events:none!important;opacity:.94;box-shadow:0 16px 40px #0009,0 0 0 2px #9bd3fa;border-radius:10px;transform:rotate(-1deg);box-sizing:border-box;max-height:85vh;overflow:hidden;cursor:grabbing}
+.v56-drag-ghost *{pointer-events:none!important}
+body.v56-is-sorting,body.v56-is-sorting *{cursor:grabbing!important}
+@media(max-width:750px){.v56-sortable{gap:9px}.v56-drag-handle{flex-basis:54px;min-height:58px}.v56-drag-handle span:first-child{font-size:24px}.v56-drag-handle span:last-child{font-size:9px}}
