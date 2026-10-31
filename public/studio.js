@@ -11,6 +11,8 @@ const clone = x => JSON.parse(JSON.stringify(x));
 let state=null, media=[], projects=[], selection='accueil', dirty=false, loading=false, picker=null, uploadTarget=null, uploading=false;
 let portfolioUniverse='photo', projectUniverse='photo', projectDocs=[], projectDraft=null, savingProject=false;
 const universeNames={photo:'Photo',video:'Vidéo',graphisme:'Graphisme'};
+const pokedexPriority={legendaire:0,rare:1,peu_commune:2,commun:3};
+const sortPokedexCards=page=>{if(page?.sortMode!=='manual'&&Array.isArray(page?.cards))page.cards.sort((a,b)=>(pokedexPriority[a.rarity]??3)-(pokedexPriority[b.rarity]??3))};
 const kindOf=p=>p?.universe||(/graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p?.category||''))?'graphisme':p?.mode==='video'?'video':'photo');
 const sectionList=()=>{
  const page=state?.content?.pages?.[selection];if(!page)return [];
@@ -21,7 +23,7 @@ const sectionList=()=>{
 const sectionPrefix=()=>selection==='portfolio'&&portfolioUniverse!=='general'?`universeSections.${portfolioUniverse}`:'sections';
 
 // Client-side view state only. Media files remain in Payload/Blob, not this page JSON.
-const library={page:1,totalPages:1,totalDocs:0,items:[],search:'',selected:new Map(),loading:false,requestId:0};
+const library={page:1,totalPages:1,totalDocs:0,items:[],search:'',selected:new Map(),loading:false,requestId:0,renamingId:null,savingName:false};
 let libraryDestination='portfolio', libraryUniverse='photo', pickerPage=1, pickerPages=1, librarySearchTimer, pickerSearchTimer;
 let toastTimer;
 function message(txt,error=false){const el=$('#toast');el.textContent=txt;el.classList.toggle('error',error);el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),4500)}
@@ -135,8 +137,8 @@ function portfolioCardEditorShortcut(){
  </section>`;
 }
 function renderPokedex(){
- const p=currentRoot();if(!p.cards)p.cards=[];
- const rarityLabels={commun:'● Commun — vert',rare:'◆ Rare — rose',legendaire:'★ Légendaire — or'};
+ const p=currentRoot();if(!p.cards)p.cards=[];sortPokedexCards(p);
+ const rarityLabels={legendaire:'★ Légendaire — or',rare:'◆ Rare — rose',peu_commune:'◇ Peu commune — bleu',commun:'● Commune — vert'};
  return `<section class="form-panel"><div class="panel-eyebrow">EASTER EGG / COLLECTION PRIVÉE</div>
   <h2>Le Pokédex — Album à collectionner</h2>
   <p>Cette page n'apparaît dans aucun menu public. Elle s'ouvre seulement grâce au petit symbole placé en bas à gauche de l'accueil. Les cartes sont indépendantes du portfolio.</p>
@@ -145,10 +147,11 @@ function renderPokedex(){
   <div class="add-row"><a class="mini-btn" href="/pokedex.html" target="_blank" rel="noopener">Voir le Pokédex ↗</a></div>
  </section>
  <section class="form-panel"><div class="panel-eyebrow">ALBUM / COLLECTION</div><h2>Cartes de tes rencontres (${p.cards.length})</h2>
- <p>Change le nom, la couverture, la rareté, la description et les autres photos de chaque personne. Les flèches modifient l'ordre dans le classeur. Clique sur « Publier les modifications » pour mettre en ligne.</p>
+ <p>Change le nom, les photos et la rareté. En tri automatique, une carte Légendaire remonte immédiatement en tête, puis Rare, Peu commune et Commune. En ordre manuel, utilise les flèches. Publie ensuite tes modifications.</p>
+ <div class="pokedex-sort-row">${field('Ordre du classeur','sortMode',p.sortMode||'rarity','select',[['rarity','Automatique : légendaire → rare → peu commune → commune'],['manual','Manuel : utiliser les flèches']])}<div class="pokedex-sort-legend"><span class="pd-rank-gold">★ Légendaire</span><span class="pd-rank-pink">◆ Rare</span><span class="pd-rank-blue">◇ Peu commune</span><span class="pd-rank-green">● Commune</span></div></div>
  ${p.cards.map((c,i)=>`<article class="pokedex-editor rarity-${e(c.rarity||'commun')}">
   <div class="block-top"><span class="block-num">CARTE ${String(i+1).padStart(3,'0')} · ${e(rarityLabels[c.rarity]||'Commun')}</span><div class="mini-actions">
-  ${action('pokedex-move','↑',`data-index="${i}" data-dir="-1"`)}${action('pokedex-move','↓',`data-index="${i}" data-dir="1"`)}${action('pokedex-delete','✕',`data-index="${i}"`,true)}</div></div>
+  ${p.sortMode==='manual'?action('pokedex-move','↑',`data-index="${i}" data-dir="-1"`)+action('pokedex-move','↓',`data-index="${i}" data-dir="1"`):''}${action('pokedex-delete','✕',`data-index="${i}"`,true)}</div></div>
   ${mediaField(`cards.${i}.cover`,c.cover,'Portrait principal de la carte')}
   <div class="field-row">${field('Nom de la personnalité',`cards.${i}.title`,c.title)}${field('Rareté de la carte',`cards.${i}.rarity`,c.rarity,'select',Object.entries(rarityLabels).map(([k,v])=>[k,v]))}</div>
   <div class="field-row">${field('Métier / rôle',`cards.${i}.subtitle`,c.subtitle)}${field('Catégorie',`cards.${i}.category`,c.category)}</div>
@@ -178,7 +181,7 @@ function renderLibrary(){
  return `<section class="form-panel library-intro">
    <div class="panel-eyebrow">MÉDIATHÈQUE / PHOTOGRAPHIES</div>
    <h2>Toutes tes photographies au même endroit</h2>
-   <p>Importe tes fichiers dans Payload + Vercel Blob, puis sélectionne les images pour alimenter la page de ton choix.</p>
+   <p>Importe tes fichiers dans Payload + Vercel Blob, puis sélectionne les images pour alimenter la page de ton choix. <strong>Renomme leur titre directement ici</strong> sans changer les fichiers ni les liens déjà utilisés.</p>
    <div id="libraryDropzone" class="library-dropzone" tabindex="0" role="button" aria-label="Importer des photographies">
      <div class="library-drop-icon">↑</div>
      <strong>Dépose tes images ici</strong>
@@ -206,7 +209,7 @@ function syncLibraryView(){
  const selected=library.selected;
  grid.innerHTML=library.items.length?library.items.map(m=>{
   const key=String(m.id),src=validSrc(m.url),checked=selected.has(key);
-  return `<article class="library-photo ${checked?'selected':''}"><button type="button" class="library-select" data-library-action="toggle" data-id="${e(key)}" aria-pressed="${checked?'true':'false'}" aria-label="${checked?'Désélectionner':'Sélectionner'} ${e(m.alt||m.filename)}"><img loading="lazy" src="${e(src)}" alt="${e(m.alt||m.filename)}"><span class="library-tick">${checked?'✓':'+'}</span></button><div class="library-photo-info"><strong title="${e(m.alt||m.filename)}">${e(m.alt||m.filename||'Sans titre')}</strong><div class="library-photo-actions"><a href="${e(src)}" target="_blank" rel="noopener">Voir ↗</a><button type="button" data-library-action="copy" data-id="${e(key)}">Copier le lien</button></div></div></article>`
+  return `<article class="library-photo ${checked?'selected':''}"><button type="button" class="library-select" data-library-action="toggle" data-id="${e(key)}" aria-pressed="${checked?'true':'false'}" aria-label="${checked?'Désélectionner':'Sélectionner'} ${e(m.alt||m.filename)}"><img loading="lazy" src="${e(src)}" alt="${e(m.alt||m.filename)}"><span class="library-tick">${checked?'✓':'+'}</span></button><div class="library-photo-info"><strong title="${e(m.alt||m.filename)}">${e(m.alt||m.filename||'Sans titre')}</strong>${library.renamingId===key?`<div class="library-rename"><input data-library-name="${e(key)}" type="text" maxlength="160" aria-label="Nouveau nom de la photo" value="${e(m.alt||m.filename||'')}" ${library.savingName?'disabled':''}><div><button type="button" data-library-action="rename-save" data-id="${e(key)}" ${library.savingName?'disabled':''}>${library.savingName?'Enregistrement…':'Enregistrer'}</button><button type="button" data-library-action="rename-cancel" data-id="${e(key)}" ${library.savingName?'disabled':''}>Annuler</button></div></div>`:`<div class="library-photo-actions"><a href="${e(src)}" target="_blank" rel="noopener">Voir ↗</a><button type="button" data-library-action="rename" data-id="${e(key)}">✎ Renommer</button><button type="button" data-library-action="copy" data-id="${e(key)}">Lien</button></div>`}</div></article>`
  }).join(''):'<div class="empty-state">Aucune photographie trouvée. Importe tes premières photos ci-dessus.</div>';
  const c=$('#libraryCount');if(c)c.textContent=`(${library.totalDocs})`;
  const pager=$('#libraryPager');if(pager)pager.innerHTML=`<span>Page ${library.page} sur ${library.totalPages}</span><div><button type="button" data-library-action="prev" ${library.page<=1?'disabled':''}>← Précédente</button><button type="button" data-library-action="next" ${library.page>=library.totalPages?'disabled':''}>Suivante →</button></div>`;
@@ -249,8 +252,37 @@ function createFromLibrary(type){
  if(page==='portfolio')portfolioUniverse=libraryUniverse;selection=page;markDirty();render();
  message(`${photos.length} photo(s) ajoutée(s) à la page ${pageNames[page]}. Clique sur « Publier les modifications ».`);
 }
+async function renameLibraryItem(id, name){
+ if(library.savingName)return;
+ const trimmed=String(name||'').trim();
+ if(!trimmed||trimmed.length>160){message('Indique un nom entre 1 et 160 caractères.',true);return}
+ library.savingName=true;syncLibraryView();
+ try{
+  const res=await fetch('/studio-api',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'rename-media',id,name:trimmed})});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok)throw Error(data.error||`Erreur HTTP ${res.status}`);
+  const update=arr=>arr?.forEach(m=>{if(String(m.id)===String(id))m.alt=data.alt||trimmed});
+  update(library.items);update(media);update(window._currentMedia);
+  const selected=library.selected.get(String(id));if(selected)selected.alt=data.alt||trimmed;
+  library.renamingId=null;
+  message('Nom mis à jour dans la médiathèque et dans Payload.');
+ }catch(err){message(err.message||'Impossible de renommer',true)}
+ finally{library.savingName=false;syncLibraryView()}
+}
 async function handleLibraryAction(btn){
  const operation=btn.dataset.libraryAction,id=String(btn.dataset.id||'');
+ if(operation==='rename'){
+  if(library.savingName)return;
+  library.renamingId=id;syncLibraryView();
+  const input=document.querySelector('[data-library-name="'+CSS.escape(id)+'"]');if(input){input.focus();input.select()}
+  return;
+ }
+ if(operation==='rename-cancel'){if(library.savingName)return;library.renamingId=null;syncLibraryView();return}
+ if(operation==='rename-save'){
+  const input=document.querySelector('[data-library-name="'+CSS.escape(id)+'"]');
+  if(input)renameLibraryItem(id,input.value);
+  return;
+ }
  if(operation==='toggle'){
   const photo=library.items.find(m=>String(m.id)===id);if(!photo)return;
   if(library.selected.has(id))library.selected.delete(id);else library.selected.set(id,photo);
@@ -376,7 +408,7 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  const root=currentRoot(),sections=sectionList();
  if(selection==='pokedex' && command.startsWith('pokedex-')){
   const cards=root.cards||(root.cards=[]),card=cards[index];
-  if(command==='pokedex-add'){cards.push({id:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`new-${Date.now()}`,title:'Nouvelle rencontre',subtitle:'',category:'',event:'',date:'',description:'',rarity:'commun',cover:null,gallery:[],published:true});markDirty();render();return}
+  if(command==='pokedex-add'){cards.push({id:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`new-${Date.now()}`,title:'Nouvelle rencontre',subtitle:'',category:'',event:'',date:'',description:'',rarity:'commun',cover:null,gallery:[],published:true});sortPokedexCards(root);markDirty();render();return}
   if(command==='pokedex-move'){if(move(cards,index,index+dir)){markDirty();render()}return}
   if(command==='pokedex-delete'){if(confirm('Supprimer cette carte du Pokédex ?')){cards.splice(index,1);markDirty();render()}return}
   if(!card)return;
@@ -441,7 +473,7 @@ $('#editor').addEventListener('change',event=>{
  if(event.target.id==='libraryDestination'){libraryDestination=event.target.value;return}
  if(event.target.id==='libraryUniverse'){libraryUniverse=event.target.value;return}
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;return}
- const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity'))render()});
+ const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='pokedex'&&(input.dataset.field==='sortMode'||/^cards\.\d+\.rarity$/.test(input.dataset.field)))sortPokedexCards(currentRoot());markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity')||input.dataset.field==='sortMode')render()});
 $('#saveBtn').addEventListener('click',save);
 $('#closeMedia').addEventListener('click',closePicker);
 $('#mediaModal').addEventListener('click',event=>{
@@ -452,7 +484,7 @@ $('#mediaSearch').addEventListener('input',()=>{clearTimeout(pickerSearchTimer);
 $('#refreshMedia').addEventListener('click',refreshMedia);
 $('#studioUploadBtn').addEventListener('click',()=>{uploadTarget=null;$('#directUploadInput').click()});
 $('#directUploadInput').addEventListener('change',event=>{const files=Array.from(event.target.files||[]);importPhotos(files)});
-$('#editor').addEventListener('keydown',event=>{if(event.target.id==='libraryDropzone'&&(event.key==='Enter'||event.key===' ')){event.preventDefault();uploadTarget=null;$('#directUploadInput').click()}});
+$('#editor').addEventListener('keydown',event=>{if(event.target.matches('[data-library-name]')&&event.key==='Enter'){event.preventDefault();const id=event.target.dataset.libraryName;renameLibraryItem(id,event.target.value);return}if(event.target.matches('[data-library-name]')&&event.key==='Escape'){library.renamingId=null;syncLibraryView();return}if(event.target.id==='libraryDropzone'&&(event.key==='Enter'||event.key===' ')){event.preventDefault();uploadTarget=null;$('#directUploadInput').click()}});
 $('#editor').addEventListener('dragover',event=>{const zone=event.target.closest('#libraryDropzone');if(zone){event.preventDefault();zone.classList.add('dragging')}});
 $('#editor').addEventListener('dragleave',event=>{const zone=event.target.closest('#libraryDropzone');if(zone)zone.classList.remove('dragging')});
 $('#editor').addEventListener('drop',event=>{const zone=event.target.closest('#libraryDropzone');if(!zone)return;event.preventDefault();zone.classList.remove('dragging');uploadTarget=null;importPhotos([...event.dataTransfer.files])});

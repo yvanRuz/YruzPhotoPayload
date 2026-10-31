@@ -53,3 +53,12 @@
   .pd-slot-grid{gap:8px}
   .pd-slot-grid .pd-card-meta strong{font-size:clamp(14px,4.2vw,19px)}
 }
+
+/* V49 — Blue uncommon collector tier; original YRUZPHOTO palette retained. */
+:root{--uncommon:#68b9f5}
+.pd-filter-dot.uncommon{background:var(--uncommon)}
+.pd-card.rarity-peu_commune{--rarity:var(--uncommon);--rarity-glow:#62b7f442}
+.pd-detail-card.rarity-peu_commune{--rarity:var(--uncommon);--rarity-glow:#62b7f442}
+.pd-chip.peu_commune{color:var(--uncommon)}
+@media(max-width:760px){.pd-filters{justify-content:flex-start;flex-wrap:wrap;gap:3px}.pd-filters button{flex:0 1 auto;padding:9px 10px}}
+@media(max-width:490px){.pd-filters button{font-size:8px;padding:9px 7px}}

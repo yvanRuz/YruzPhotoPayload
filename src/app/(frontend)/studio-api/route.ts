@@ -64,3 +64,28 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Enregistrement impossible, vérifiez Vercel Blob.' }, { status: 503, headers })
   }
 }
+
+// Rename only the editable media title (alt); the original filename and Blob URL
+// remain unchanged, so existing galleries and Pokédex cards do not break.
+export async function PATCH(request: Request) {
+  try {
+    const origin = request.headers.get('origin')
+    if (!origin || new URL(origin).host !== new URL(request.url).host)
+      return Response.json({ error: 'Origine de la requête invalide' }, { status: 403, headers })
+    if (!request.headers.get('content-type')?.includes('application/json'))
+      return Response.json({ error: 'Format JSON attendu' }, { status: 415, headers })
+    const { payload, user } = await authenticated(request)
+    if (!user) return Response.json({ error: 'Connexion requise' }, { status: 401, headers })
+    const body = await request.json()
+    if (body?.action !== 'rename-media') return Response.json({ error: 'Opération inconnue' }, { status: 400, headers })
+    const id = String(body?.id ?? '')
+    const name = typeof body?.name === 'string' ? body.name.trim() : ''
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id) || !name || name.length > 160 || /[<>\x00-\x1f]/.test(name))
+      return Response.json({ error: 'Identifiant ou nom invalide (160 caractères max.)' }, { status: 400, headers })
+    const updated = await payload.update({ collection: 'media', id: /^\d+$/.test(id) ? Number(id) : id, data: { alt: name }, overrideAccess: true })
+    return Response.json({ id: updated.id, alt: updated.alt, filename: updated.filename || '', url: updated.url || '' }, { headers })
+  } catch (error) {
+    console.error('Studio media rename error:', error)
+    return Response.json({ error: 'Impossible de renommer cette photographie.' }, { status: 500, headers })
+  }
+}

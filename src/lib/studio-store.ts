@@ -40,7 +40,7 @@ const defaults = (): StudioRecord => ({
     storyCards: Array.from({length: 3}, () => ({image:null,title:'',body:''})),
     ...(k === 'accueil' ? { featuredCards: {photo:null, video:null, graphisme:null} } : {}),
     ...(k === 'portfolio' ? { universeSections: {photo:[],video:[],graphisme:[]} } : {}),
-    ...(k === 'pokedex' ? { heading: 'LE POKÉDEX', intro: 'Mes rencontres, mes photos, ma collection.', cards: [] } : {}),
+    ...(k === 'pokedex' ? { heading: 'LE POKÉDEX', intro: 'Mes rencontres, mes photos, ma collection.', sortMode: 'rarity', cards: [] } : {}),
   }])),
 })
 
@@ -91,6 +91,9 @@ export async function getStudioContent(): Promise<StudioRecord> {
 
 const str = (value: unknown, max = 2000): string => typeof value === 'string' ? value.trim().slice(0, max) : ''
 const bool = (value: unknown) => value !== false
+// Priority from top of the collector album to bottom. Stable sort preserves
+// the user's chosen order inside each rarity tier.
+const pokedexPriority: Record<string, number> = { legendaire: 0, rare: 1, peu_commune: 2, commun: 3 }
 const url = (v: unknown): string => {
   const s = str(v, 1000)
   if (!s || /[<>'"`\\\s]/.test(s)) return ''
@@ -149,15 +152,15 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
           title:str(r.title,180), category:str(r.category,140), cover:image(r.cover), link:url(r.link), enabled:bool(r.enabled)
         })) : null]
       })) } : {}),
-      ...(key === 'pokedex' ? { cards: (Array.isArray(p.cards) ? p.cards : []).slice(0,200).map((raw:any, index:number) => ({
+      ...(key === 'pokedex' ? { sortMode: p.sortMode === 'manual' ? 'manual' : 'rarity', cards: (Array.isArray(p.cards) ? p.cards : []).slice(0,200).map((raw:any, index:number) => ({
         id: str(raw.id, 80) || `carte-${index+1}`,
         title: str(raw.title, 160), subtitle: str(raw.subtitle, 180),
-        rarity: ['commun','rare','legendaire'].includes(String(raw.rarity)) ? raw.rarity : 'commun',
+        rarity: ['commun','peu_commune','rare','legendaire'].includes(String(raw.rarity)) ? raw.rarity : 'commun',
         category: str(raw.category, 140), event: str(raw.event, 180),
         date: str(raw.date, 100), description: str(raw.description, 3000),
         cover: image(raw.cover), gallery: (Array.isArray(raw.gallery) ? raw.gallery : []).slice(0,40).map(image).filter(Boolean),
         published: bool(raw.published),
-      })) } : {}),
+      })).sort((a:any,b:any) => p.sortMode === 'manual' ? 0 : (pokedexPriority[a.rarity] ?? 3) - (pokedexPriority[b.rarity] ?? 3)) } : {}),
       ...(key === 'portfolio' ? { universeSections: Object.fromEntries(['photo','video','graphisme'].map(mode => [
         mode, (Array.isArray(p.universeSections?.[mode]) ? p.universeSections[mode] : []).slice(0,80).map(cleanSection).filter(Boolean)
       ])) } : {}),

@@ -4,7 +4,8 @@
 const $=s=>document.querySelector(s);
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeImage=v=>{const src=typeof v==='string'?v:v?.url;return /^(https?:\/\/[^\s<>"'`]+|\/api\/media\/[^\s<>"'`]+|\/?assets\/[^\s<>"'`]+)$/i.test(String(src||''))?src:''};
-const rarities={commun:{label:'COMMUN',symbol:'●'},rare:{label:'RARE',symbol:'◆'},legendaire:{label:'LÉGENDAIRE',symbol:'★'}};
+const rarities={commun:{label:'COMMUN',symbol:'●'},peu_commune:{label:'PEU COMMUNE',symbol:'◇'},rare:{label:'RARE',symbol:'◆'},legendaire:{label:'LÉGENDAIRE',symbol:'★'}};
+const rarityPriority={legendaire:0,rare:1,peu_commune:2,commun:3};
 let cards=[],filter='all',term='',page=0,selected=null,chosenPhoto=0,turning=false;
 const mobile=()=>matchMedia('(max-width:760px)').matches;
 // Each desktop leaf is a 3 x 3 collector page (9 cards). Mobile uses 2 x 3.
@@ -51,7 +52,7 @@ function renderDetails(){
  </div>`;
 }
 function refreshFilters(){
- const counts={all:cards.length,legendaire:0,rare:0,commun:0};cards.forEach(c=>counts[c.rarity]=(counts[c.rarity]||0)+1);
+ const counts={all:cards.length,legendaire:0,rare:0,peu_commune:0,commun:0};cards.forEach(c=>counts[c.rarity]=(counts[c.rarity]||0)+1);
  $('#pd-filters').querySelectorAll('button').forEach(btn=>{btn.classList.toggle('is-active',btn.dataset.filter===filter);btn.setAttribute('aria-pressed',String(btn.dataset.filter===filter));btn.title=`${counts[btn.dataset.filter]||0} carte(s)`});
 }
 function rerender(keepSelection=true){
@@ -75,6 +76,7 @@ async function init(){
   if(content){
    $('#pd-heading').textContent=content.heading||'LE POKÉDEX';$('#pd-intro').textContent=content.intro||'Mes rencontres, mes photos, ma collection.';
    cards=(Array.isArray(content.cards)?content.cards:[]).filter(c=>c&&c.published!==false).map((c,i)=>({...c,id:c.id||`carte-${i}`,rarity:rarities[c.rarity]?c.rarity:'commun'}));
+   if(content.sortMode!=='manual')cards.sort((a,b)=>(rarityPriority[a.rarity]??3)-(rarityPriority[b.rarity]??3));
   }
   rerender(false);
  }catch(error){console.warn('Pokédex : impossible de lire les contenus',error);$('#pd-book').innerHTML='<div class="pd-loader">COLLECTION MOMENTANÉMENT INDISPONIBLE.</div>';$('#pd-detail').innerHTML='<div class="pd-detail-placeholder"><strong>À BIENTÔT.</strong><p>La collection ne peut pas être chargée pour le moment.</p></div>'}

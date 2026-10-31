@@ -47,3 +47,18 @@
 .pokedex-preview-card.rarity-rare{border-color:#ed559e}.pokedex-preview-card.rarity-legendaire{border-color:#dfba71}
 .pokedex-preview-card img{width:100%;height:100px;object-fit:cover}.pokedex-preview-card span{height:100px;display:grid;place-items:center;color:#7fa5b8;font-size:28px}
 .pokedex-preview-card small{font-size:10px;padding:7px;text-transform:uppercase}
+
+/* V49 — edit media names and display new collector rarity. */
+.library-rename{display:grid;gap:8px;margin-top:10px}
+.library-rename input{min-width:0;width:100%;border:1px solid #77b3dd;background:#061626;color:#f1f8ff;border-radius:7px;padding:9px;font-size:12px}
+.library-rename input:focus{outline:2px solid #a1cdeb;outline-offset:1px}
+.library-rename>div{display:flex;gap:8px;flex-wrap:wrap}
+.library-rename button{font-size:11px;border:1px solid #466b87;background:#14324a;border-radius:6px;padding:7px 8px;color:#e7f3ff}
+.library-rename button:first-child{background:#cce7f9;color:#082337;border-color:#cce7f9;font-weight:700}
+.library-rename button:disabled{opacity:.5;cursor:wait}
+.pokedex-editor.rarity-peu_commune{border-left-color:#65b9f1}
+.pokedex-preview-card.rarity-peu_commune{border-color:#65b9f1}
+.pokedex-sort-row{padding:10px 14px;margin:13px 0 23px;border:1px solid #355b73;border-radius:10px;background:#071c2e}
+.pokedex-sort-row .field{margin:7px 0 12px}
+.pokedex-sort-legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;letter-spacing:.03em}
+.pd-rank-gold{color:#e9bd65}.pd-rank-pink{color:#ec559b}.pd-rank-blue{color:#68b9f5}.pd-rank-green{color:#3dd1a3}
