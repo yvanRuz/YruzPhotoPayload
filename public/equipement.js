@@ -1,5 +1,25 @@
-(()=>{
-const items=window.YRUZ_GEAR||[];
+(async()=>{
+// Retain the original equipment page if Studio content is unavailable or unpublished.
+let items=Array.isArray(window.YRUZ_GEAR)?window.YRUZ_GEAR:[];
+try {
+ const response=await fetch('/cms-content?page=equipement',{cache:'no-store',signal:AbortSignal.timeout(5000)});
+ if(response.ok){
+  const data=await response.json();const page=data?.page;
+  if(page?.equipmentCustomized===true&&Array.isArray(page.equipmentItems)){
+   const safeImage=url=>/^(https?:\/\/[^\s<>"'`]+|\/api\/media\/[^\s<>"'`]+|\/?assets\/[^\s<>"'`]+)$/i.test(String(url||''))?url:'';
+   items=page.equipmentItems.map((row,i)=>({
+    id:String(row.id||`gear-${i}`),slot:['camera','lens','audio','light'].includes(row.slot)?row.slot:'camera',
+    name:String(row.name||''),category:String(row.category||''),glyph:String(row.glyph||'◇'),
+    description:String(row.description||''),specs:Array.isArray(row.specs)?row.specs:[],
+    image:safeImage(row.image?.url||'')
+   })).filter(row=>row.name);
+   document.querySelector('.demo')?.remove();
+   const badge=document.querySelector('.equip-level > span');if(badge)badge.textContent='MON MATÉRIEL';
+   const disclaimer=document.querySelector('.equip-bottom > span');if(disclaimer)disclaimer.textContent='MON MATÉRIEL POUR TES PROJETS PHOTO ET VIDÉO.';
+   const footer=document.querySelector('.footer > span');if(footer)footer.textContent='© 2026 • YRUZPHOTO';
+  }
+ }
+} catch(error) { console.info('Inventaire Studio indisponible : matériel par défaut conservé.'); }
 const slots=[{id:'camera',name:'CAMÉRA',icon:'📷'},{id:'lens',name:'OPTIQUE',icon:'◎'},{id:'audio',name:'AUDIO',icon:'♫'},{id:'light',name:'LUMIÈRE',icon:'✦'}];
 const filters=[{id:'all',name:'TOUT VOIR'},...slots.map(x=>({id:x.id,name:x.name}))];
 const byId=Object.fromEntries(items.map(x=>[x.id,x]));

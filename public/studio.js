@@ -178,11 +178,44 @@ function renderPokedex(){
  <div class="add-row">${action('pokedex-add','+ Nouvelle carte de collection')}</div>
  </section>`;
 }
+
+// V53 — Editor for the original equipment inventory. Same four backpack categories
+// and same public DOM/CSS; only the content is managed from Studio.
+const equipmentSeed=[
+ {id:'cam-a',slot:'camera',name:'Boîtier principal',category:'CAMÉRA',glyph:'📷',description:'Boîtier polyvalent pour la photographie et la captation vidéo.',specs:['Capteur : à renseigner','Monture : à renseigner','Résolution : à renseigner'],image:null},
+ {id:'cam-b',slot:'camera',name:'Boîtier secondaire',category:'CAMÉRA',glyph:'📸',description:'Second boîtier pour varier les prises de vue.',specs:['Modèle : à renseigner','Usage : photo / vidéo','Accessoires : à renseigner'],image:null},
+ {id:'lens-a',slot:'lens',name:'Objectif polyvalent',category:'OPTIQUE',glyph:'🔭',description:'Optique adaptée aux reportages et scènes variées.',specs:['Focale : à renseigner','Ouverture : à renseigner','Stabilisation : à renseigner'],image:null},
+ {id:'lens-b',slot:'lens',name:'Téléobjectif',category:'OPTIQUE',glyph:'🔎',description:'Pour rapprocher l’action et les sujets éloignés.',specs:['Focale : à renseigner','Ouverture : à renseigner','Monture : à renseigner'],image:null},
+ {id:'mic-a',slot:'audio',name:'Micro canon',category:'AUDIO',glyph:'🎙️',description:'Capture directionnelle pour les interviews et les tournages.',specs:['Connectique : à renseigner','Alimentation : à renseigner','Directivité : à renseigner'],image:null},
+ {id:'mic-b',slot:'audio',name:'Micro cravate',category:'AUDIO',glyph:'🎤',description:'Enregistrement discret de la voix sur le terrain.',specs:['Type : sans-fil / filaire','Portée : à renseigner','Autonomie : à renseigner'],image:null},
+ {id:'light-a',slot:'light',name:'Flash cobra',category:'LUMIÈRE',glyph:'⚡',description:'Flash mobile pour des portraits et événements.',specs:['Puissance : à renseigner','TTL : à renseigner','Compatibilité : à renseigner'],image:null},
+ {id:'light-b',slot:'light',name:'Panneau LED',category:'LUMIÈRE',glyph:'💡',description:'Éclairage continu pour les vidéos et interviews.',specs:['Température : à renseigner','Puissance : à renseigner','Alimentation : à renseigner'],image:null},
+];
+const equipmentSlots={camera:'CAMÉRA',lens:'OPTIQUE',audio:'AUDIO',light:'LUMIÈRE'};
+function renderEquipmentPanel(page){
+ const items=Array.isArray(page.equipmentItems)?page.equipmentItems:(page.equipmentItems=[]);
+ return `<section class="form-panel equip-studio-panel"><div class="panel-eyebrow">INVENTAIRE INTERACTIF / MON ÉQUIPEMENT</div>
+ <h2>Modifier ton matériel (${items.length})</h2>
+ <p>Personnalise les <strong>noms, icônes, photos, catégories, caractéristiques (SPEC)</strong> et l'ordre de tes objets. Les quatre emplacements du sac (Caméra, Optique, Audio, Lumière) et les animations du site sont conservés. Clique sur « Publier les modifications » pour voir le résultat.</p>
+ <div class="equipment-studio-grid">${items.map((item,i)=>`<article class="equip-studio-card">
+ <div class="block-top"><div><span class="block-num">OBJET ${String(i+1).padStart(2,'0')} · ${e(equipmentSlots[item.slot]||'CAMÉRA')}</span><h3>${e(item.name||'Sans titre')}</h3></div>
+ <div class="mini-actions">${action('equipment-move','↑',`data-index="${i}" data-dir="-1"`)}${action('equipment-move','↓',`data-index="${i}" data-dir="1"`)}${action('equipment-delete','Supprimer',`data-index="${i}"`,true)}</div></div>
+ <div class="equip-studio-cover"><div class="equip-studio-symbol">${item.image?.url?`<img loading="lazy" src="${e(validSrc(item.image.url))}" alt="">`:e(item.glyph||'📷')}</div><div><span class="panel-eyebrow">VISUEL OU ICÔNE</span><small>Une photo remplace l'icône sur la carte et dans le sac.</small>${mediaField(`equipmentItems.${i}.image`,item.image,`Photo de ${item.name}`)}${item.image?.url?action('equipment-image-clear','Retirer la photo (afficher l’icône)',`data-index="${i}"`):''}</div></div>
+ <div class="field-row">${field('Nom de l’équipement',`equipmentItems.${i}.name`,item.name)}${field('Type d’emplacement',`equipmentItems.${i}.slot`,item.slot,'select',Object.entries(equipmentSlots))}</div>
+ <div class="field-row">${field('Catégorie affichée',`equipmentItems.${i}.category`,item.category)}${field('Icône (emoji / symbole)',`equipmentItems.${i}.glyph`,item.glyph)}</div>
+ ${field('Description de l’équipement',`equipmentItems.${i}.description`,item.description,'textarea')}
+ <div class="field"><label for="equip-specs-${i}">Caractéristiques techniques / SPEC — une par ligne</label><textarea id="equip-specs-${i}" data-equipment-specs="${i}" rows="4" placeholder="Capteur : plein format
+Monture : RF
+Résolution : 24 Mpx">${e((item.specs||[]).join('\n'))}</textarea></div>
+ </article>`).join('')||'<div class="empty-state">Aucun matériel. Ajoute un premier objet pour commencer.</div>'}</div>
+ <div class="add-row">${action('equipment-add','+ Ajouter un équipement')}${action('equipment-reset','↺ Restaurer les 8 exemples')}</div>
+ </section>`;
+}
 function renderPage(){
  const p=currentRoot();const blocks=sectionList();
  const ctas=selection==='accueil'?`<div class="field-row">${field('Bouton principal (texte)','mainButtonLabel',p.mainButtonLabel)}${field('Lien du bouton principal','mainButtonUrl',p.mainButtonUrl)}</div><div class="field-row">${field('Second bouton (texte)','secondButtonLabel',p.secondButtonLabel)}${field('Lien du second bouton','secondButtonUrl',p.secondButtonUrl)}</div>`:(['portfolio','services','equipement'].includes(selection)?`<div class="field-row">${field('Bouton bas de page (texte)','bottomButtonLabel',p.bottomButtonLabel)}${field('Lien du bouton','bottomButtonUrl',p.bottomButtonUrl)}</div>`:'');
  const imageSettings = selection==='accueil' ? `<section class="form-panel"><div class="panel-eyebrow">FONDS D’ACCUEIL</div><h2>Photographies de couverture</h2><p>Ces deux photos alimentent le fond défilant de l’accueil.</p>${[0,1].map(i=>mediaField(`heroImages.${i}`,p.heroImages?.[i],`Fond d’accueil ${i+1}`)).join('')}</section>` : selection==='services' ? `<section class="form-panel"><div class="panel-eyebrow">VISUELS / SERVICES</div><h2>Photos et boutons des prestations</h2><p>Chaque modification se reflète sur les cartes de la page Services.</p>${['PHOTO','VIDÉO','DESIGN'].map((title,i)=>`<h3>${title}</h3>${mediaField(`serviceCards.${i}.image`,p.serviceCards?.[i]?.image,`Visuel ${title}`)}${field('Légende',`serviceCards.${i}.caption`,p.serviceCards?.[i]?.caption)}<div class="field-row">${field('Texte du bouton',`serviceCards.${i}.buttonLabel`,p.serviceCards?.[i]?.buttonLabel)}${field('Lien du bouton',`serviceCards.${i}.buttonUrl`,p.serviceCards?.[i]?.buttonUrl)}</div>`).join('')}</section>` : selection==='histoire' ? `<section class="form-panel"><div class="panel-eyebrow">MON HISTOIRE</div><h2>Les trois chapitres</h2><p>Changez les photos et les textes sans modifier l’animation horizontale.</p>${[0,1,2].map(i=>`<h3>Chapitre ${i+1}</h3>${mediaField(`storyCards.${i}.image`,p.storyCards?.[i]?.image,`Chapitre ${i+1}`)}${field('Titre',`storyCards.${i}.title`,p.storyCards?.[i]?.title)}${field('Texte',`storyCards.${i}.body`,p.storyCards?.[i]?.body,'textarea')}`).join('')}</section>` : '';
- return `${selection==='portfolio'?portfolioTabs()+portfolioCardEditorShortcut():''}<section class="form-panel"><div class="panel-eyebrow">01 / CONTENUS PRINCIPAUX</div><h2>Textes et liens de la page</h2><p>Ces réglages remplacent les textes et destinations existants lorsqu’ils sont renseignés.</p>${field('Titre principal','heading',p.heading)}${field('Texte d’introduction','intro',p.intro,'textarea')}${ctas}<div style="margin-top:24px">${field('Afficher les personnalisations CMS','published',p.published,'checkbox')}</div></section>${imageSettings}${selection==='accueil'?featuredPanel(p):''}<div class="section-heading"><div><h2>Sections de la page</h2><p>Ajoutez un carrousel, des photos, des boutons et réorganisez-les librement.</p></div></div>${!blocks.length?'<div class="empty-state">Cette page ne contient encore aucune section personnalisée. Ajoutez-en une ci-dessous.</div>':blocks.map(renderSection).join('')}<div class="add-row"><select id="newBlockType">${Object.entries(sectionNames).map(([k,n])=>`<option value="${k}">${e(n)}</option>`).join('')}</select><button type="button" data-action="add-section">+ Ajouter une section</button></div>`;
+ return `${selection==='portfolio'?portfolioTabs()+portfolioCardEditorShortcut():''}<section class="form-panel"><div class="panel-eyebrow">01 / CONTENUS PRINCIPAUX</div><h2>Textes et liens de la page</h2><p>Ces réglages remplacent les textes et destinations existants lorsqu’ils sont renseignés.</p>${field('Titre principal','heading',p.heading)}${field('Texte d’introduction','intro',p.intro,'textarea')}${ctas}<div style="margin-top:24px">${field('Afficher les personnalisations CMS','published',p.published,'checkbox')}</div></section>${imageSettings}${selection==='accueil'?featuredPanel(p):''}${selection==='equipement'?renderEquipmentPanel(p):''}<div class="section-heading"><div><h2>Sections de la page</h2><p>Ajoutez un carrousel, des photos, des boutons et réorganisez-les librement.</p></div></div>${!blocks.length?'<div class="empty-state">Cette page ne contient encore aucune section personnalisée. Ajoutez-en une ci-dessous.</div>':blocks.map(renderSection).join('')}<div class="add-row"><select id="newBlockType">${Object.entries(sectionNames).map(([k,n])=>`<option value="${k}">${e(n)}</option>`).join('')}</select><button type="button" data-action="add-section">+ Ajouter une section</button></div>`;
 }
 function renderNavigation(){
  const n=currentRoot();return `<section class="form-panel"><div class="panel-eyebrow">MENU PRINCIPAL</div><h2>Liens de navigation</h2><p>Modifiez l’ordre, les titres et les destinations. Les changements s’appliquent sur toutes les pages.</p>${(n.links||[]).map((x,i)=>`<div class="nav-line"><div>${field('Titre',`links.${i}.label`,x.label)}</div><div>${field('Lien',`links.${i}.url`,x.url)}</div><div class="nav-options">${field('Visible',`links.${i}.enabled`,x.enabled,'checkbox')}${field('Nouvel onglet',`links.${i}.newTab`,x.newTab,'checkbox')}</div><div class="item-actions">${action('move-nav','↑',`data-index="${i}" data-dir="-1"`)}${action('move-nav','↓',`data-index="${i}" data-dir="1"`)}${action('remove-nav','✕',`data-index="${i}"`,true)}</div></div>`).join('')}<div class="add-row">${action('add-nav','+ Ajouter un lien')}</div></section><section class="form-panel"><div class="panel-eyebrow">BOUTONS ET RÉSEAUX</div><h2>Autres liens</h2><div class="field-row">${field('Texte du bouton contact','ctaLabel',n.ctaLabel)}${field('Destination','ctaUrl',n.ctaUrl)}</div>${field('Adresse Instagram','instagramUrl',n.instagramUrl)}<div class="field-row">${field('Footer : libellé contact','footerContactLabel',n.footerContactLabel)}${field('Footer : destination','footerContactUrl',n.footerContactUrl)}</div></section>`;
@@ -374,6 +407,9 @@ function renderPreview(){
  let html='';
  if(selection==='pokedex'){
   const p=currentRoot();html=`<div class="preview-card"><span class="tag">ALBUM SECRET</span><h3>${e(p.heading||'LE POKÉDEX')}</h3><p>${e(p.intro||'Mes rencontres, mes photos, ma collection.')}</p><div class="pokedex-preview-grid">${(p.cards||[]).filter(c=>c.published!==false).slice(0,8).map(c=>`<div class="pokedex-preview-card rarity-${e(c.rarity)}">${c.cover?.url?`<img src="${e(validSrc(c.cover.url))}" alt="">`:'<span>◉</span>'}<small>${e(c.title||'Nouvelle rencontre')}</small></div>`).join('')}</div><small>${(p.cards||[]).length} carte(s) enregistrée(s)</small></div>`;
+ } else if(selection==='equipement'){
+  const p=currentRoot(),items=p.equipmentItems||[];
+  html=`<div class="preview-card"><span class="tag">INVENTAIRE · ${items.length} OBJET(S)</span><h3>Mon équipement</h3><p>Aperçu des cartes et de leurs visuels. Prévisualise le sac complet avec « Voir la page ».</p><div class="equip-preview-grid">${items.map(item=>`<div class="equip-preview-item"><small>${e(item.category||equipmentSlots[item.slot])}</small><span>${item.image?.url?`<img src="${e(validSrc(item.image.url))}" alt="">`:e(item.glyph||'◇')}</span><strong>${e(item.name)}</strong><small>${(item.specs||[]).length} SPEC</small></div>`).join('')}</div></div>`;
  } else if(selection==='links'){
   const nav=currentRoot();html=`<div class="preview-card"><span class="tag">MENU</span><h3>Liens publiés</h3>${(nav.links||[]).filter(x=>x.enabled).map(x=>`<div class="preview-block"><b>${e(x.label)}</b><small>${e(x.url)}</small></div>`).join('')}<div class="preview-block"><b>CTA : ${e(nav.ctaLabel)}</b><small>${e(nav.ctaUrl)}</small></div></div>`;
  } else {
@@ -470,6 +506,7 @@ function applyUploaded(photos,target){
    photos.forEach(photo=>section[target.key].push({image:{url:photo.url,alt:photo.alt},caption:'',link:''}));
  }else if(target?.kind==='field'){
    setNested(root,target.path,{url:photos[0].url,alt:photos[0].alt});
+   if(selection==='equipement'&&target.path.startsWith('equipmentItems.'))root.equipmentCustomized=true;
  }else if(picker){
    if(picker.multiple){photos.forEach(photo=>picker.selected.set(mediaKey(photo),photo));syncPickerSelection();message(`${photos.length} photo(s) importée(s) et présélectionnée(s). Clique sur Ajouter la sélection.`);return}
    const callback=picker.callback;closePicker();callback(photos[0]);return;
@@ -524,6 +561,25 @@ async function initialLoad(){try{const r=await fetch('/studio-api',{cache:'no-st
 async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;$('#saveBtn').hidden=selection==='media'||selection==='projects';setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
 function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset.index),i=Number(btn.dataset.item),dir=Number(btn.dataset.dir);
  const root=currentRoot(),sections=sectionList();
+ if(selection==='equipement' && command.startsWith('equipment-')){
+  const list=root.equipmentItems||(root.equipmentItems=[]);
+  if(command==='equipment-add'){
+   if(list.length>=48){message('48 équipements maximum.',true);return}
+   list.push({id:`gear-${Date.now()}-${Math.floor(Math.random()*10000)}`,slot:'camera',name:'Nouvel équipement',category:'CAMÉRA',glyph:'📷',description:'',specs:[],image:null});
+  } else if(command==='equipment-move')move(list,index,index+dir);
+  else if(command==='equipment-delete'){
+   if(!confirm('Supprimer cet équipement de ton inventaire ?'))return;
+   list.splice(index,1);
+  } else if(command==='equipment-image-clear'){
+   if(list[index])list[index].image=null;
+  } else if(command==='equipment-reset'){
+   if(!confirm('Restaurer les huit équipements de démonstration ? Tes modifications locales seront remplacées.'))return;
+   list.splice(0,list.length,...clone(equipmentSeed));
+   root.equipmentCustomized=false;
+  } else return;
+  if(command!=='equipment-reset')root.equipmentCustomized=true;
+  markDirty();render();return;
+ }
  if(selection==='pokedex' && command.startsWith('pokedex-')){
   const cards=root.cards||(root.cards=[]),card=cards[index];
   if(command==='pokedex-add'){cards.push({id:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`new-${Date.now()}`,title:'Nouvelle rencontre',subtitle:'',category:'',event:'',date:'',description:'',rarity:'commun',cover:null,gallery:[],published:true});sortPokedexCards(root);markDirty();render();return}
@@ -559,7 +615,7 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='add-section'){const type=$('#newBlockType').value;sections.push(clone(blockDefault(type)));markDirty();render();return}
  if(command==='move-section'){if(move(sections,index,index+dir)){markDirty();render()}return}
  if(command==='remove-section'){if(confirm('Supprimer cette section de votre page ?')){sections.splice(index,1);markDirty();render()}return}
- if(command==='choose-image'||command==='swap-image'){const path=btn.dataset.path;openPicker(photo=>{setNested(root,path,{url:photo.url,alt:photo.alt});markDirty();render()});return}
+ if(command==='choose-image'||command==='swap-image'){const path=btn.dataset.path;openPicker(photo=>{setNested(root,path,{url:photo.url,alt:photo.alt});if(selection==='equipement'&&path.startsWith('equipmentItems.'))root.equipmentCustomized=true;markDirty();render()});return}
  if(command==='add-image'){const key=btn.dataset.key;openPicker(photos=>{photos.forEach(photo=>{if(!sections[index][key].some(x=>x.image?.url===photo.url))sections[index][key].push({image:{url:photo.url,alt:photo.alt},caption:'',link:''})});markDirty();render()},{multiple:true});return}
  if(command==='upload-field'){uploadTarget={kind:'field',path:btn.dataset.path};$('#directUploadInput').click();return}
  if(command==='upload-gallery'){uploadTarget={kind:'gallery',index,key:btn.dataset.key};$('#directUploadInput').click();return}
@@ -588,12 +644,13 @@ $('#editor').addEventListener('input',event=>{
   librarySearchTimer=setTimeout(()=>loadLibrary(1),300);return;
  }
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;return}
- const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);markDirty()});
+ if(selection==='equipement'&&event.target.matches('[data-equipment-specs]')){const i=Number(event.target.dataset.equipmentSpecs);const item=currentRoot().equipmentItems?.[i];if(item){item.specs=event.target.value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,20);currentRoot().equipmentCustomized=true;markDirty()}return}
+ const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;markDirty()});
 $('#editor').addEventListener('change',event=>{
  if(event.target.id==='libraryDestination'){libraryDestination=event.target.value;return}
  if(event.target.id==='libraryUniverse'){libraryUniverse=event.target.value;return}
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;return}
- const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='pokedex'&&(input.dataset.field==='sortMode'||/^cards\.\d+\.rarity$/.test(input.dataset.field)))sortPokedexCards(currentRoot());markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity')||input.dataset.field==='sortMode')render()});
+ const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;if(selection==='pokedex'&&(input.dataset.field==='sortMode'||/^cards\.\d+\.rarity$/.test(input.dataset.field)))sortPokedexCards(currentRoot());markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity')||input.dataset.field==='sortMode')render()});
 $('#saveBtn').addEventListener('click',save);
 $('#closeMedia').addEventListener('click',closePicker);
 $('#mediaModal').addEventListener('click',event=>{

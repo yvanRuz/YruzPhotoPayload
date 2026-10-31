@@ -12,6 +12,19 @@ export type StudioRecord = {
   mediaFrames: Record<string, { x: number; y: number; zoom: number; fit: string }>
 }
 
+// Original sample inventory, visible until the owner customizes the equipment page.
+// Keeping the same identifiers preserves saved backpack selections.
+const initialEquipment = [
+  {id:'cam-a',slot:'camera',name:'Boîtier principal',category:'CAMÉRA',glyph:'📷',description:'Boîtier polyvalent pour la photographie et la captation vidéo.',specs:['Capteur : à renseigner','Monture : à renseigner','Résolution : à renseigner'],image:null},
+  {id:'cam-b',slot:'camera',name:'Boîtier secondaire',category:'CAMÉRA',glyph:'📸',description:'Second boîtier pour varier les prises de vue.',specs:['Modèle : à renseigner','Usage : photo / vidéo','Accessoires : à renseigner'],image:null},
+  {id:'lens-a',slot:'lens',name:'Objectif polyvalent',category:'OPTIQUE',glyph:'🔭',description:'Optique adaptée aux reportages et scènes variées.',specs:['Focale : à renseigner','Ouverture : à renseigner','Stabilisation : à renseigner'],image:null},
+  {id:'lens-b',slot:'lens',name:'Téléobjectif',category:'OPTIQUE',glyph:'🔎',description:'Pour rapprocher l’action et les sujets éloignés.',specs:['Focale : à renseigner','Ouverture : à renseigner','Monture : à renseigner'],image:null},
+  {id:'mic-a',slot:'audio',name:'Micro canon',category:'AUDIO',glyph:'🎙️',description:'Capture directionnelle pour les interviews et les tournages.',specs:['Connectique : à renseigner','Alimentation : à renseigner','Directivité : à renseigner'],image:null},
+  {id:'mic-b',slot:'audio',name:'Micro cravate',category:'AUDIO',glyph:'🎤',description:'Enregistrement discret de la voix sur le terrain.',specs:['Type : sans-fil / filaire','Portée : à renseigner','Autonomie : à renseigner'],image:null},
+  {id:'light-a',slot:'light',name:'Flash cobra',category:'LUMIÈRE',glyph:'⚡',description:'Flash mobile pour des portraits et événements.',specs:['Puissance : à renseigner','TTL : à renseigner','Compatibilité : à renseigner'],image:null},
+  {id:'light-b',slot:'light',name:'Panneau LED',category:'LUMIÈRE',glyph:'💡',description:'Éclairage continu pour les vidéos et interviews.',specs:['Température : à renseigner','Puissance : à renseigner','Alimentation : à renseigner'],image:null},
+]
+
 const defaultNavigation = {
   links: [
     { label: 'ACCUEIL', url: 'index.html', enabled: true, newTab: false },
@@ -44,6 +57,7 @@ const defaults = (): StudioRecord => ({
     storyCards: Array.from({length: 3}, () => ({image:null,title:'',body:''})),
     ...(k === 'accueil' ? { featuredCards: {photo:null, video:null, graphisme:null} } : {}),
     ...(k === 'portfolio' ? { universeSections: {photo:[],video:[],graphisme:[]} } : {}),
+    ...(k === 'equipement' ? { equipmentCustomized: false, equipmentItems: structuredClone(initialEquipment) } : {}),
     ...(k === 'pokedex' ? { heading: 'LE POKÉDEX', intro: 'Mes rencontres, mes photos, ma collection.', sortMode: 'rarity', cards: [] } : {}),
   }])),
 })
@@ -158,6 +172,18 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
           title:str(r.title,180), category:str(r.category,140), cover:image(r.cover), link:url(r.link), enabled:bool(r.enabled)
         })) : null]
       })) } : {}),
+      ...(key === 'equipement' ? {
+        equipmentCustomized: p.equipmentCustomized === true,
+        equipmentItems: (Array.isArray(p.equipmentItems) ? p.equipmentItems : initialEquipment)
+          .slice(0, 48).map((raw:any, i:number) => ({
+            id: /^[a-zA-Z0-9_-]{1,80}$/.test(String(raw?.id||'')) ? String(raw.id) : `gear-${i+1}`,
+            slot: ['camera','lens','audio','light'].includes(String(raw?.slot)) ? raw.slot : 'camera',
+            name: str(raw?.name, 140), category: str(raw?.category, 85),
+            glyph: str(raw?.glyph, 16), description: str(raw?.description, 2400),
+            specs: (Array.isArray(raw?.specs) ? raw.specs : []).slice(0,20).map((v:any)=>str(v,250)).filter(Boolean),
+            image: image(raw?.image),
+          })).filter((item:any) => item.name)
+      } : {}),
       ...(key === 'pokedex' ? { sortMode: p.sortMode === 'manual' ? 'manual' : 'rarity', cards: (Array.isArray(p.cards) ? p.cards : []).slice(0,200).map((raw:any, index:number) => ({
         id: str(raw.id, 80) || `carte-${index+1}`,
         title: str(raw.title, 160), subtitle: str(raw.subtitle, 180),
