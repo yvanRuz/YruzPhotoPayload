@@ -164,3 +164,21 @@
 .v56-drag-ghost *{pointer-events:none!important}
 body.v56-is-sorting,body.v56-is-sorting *{cursor:grabbing!important}
 @media(max-width:750px){.v56-sortable{gap:9px}.v56-drag-handle{flex-basis:54px;min-height:58px}.v56-drag-handle span:first-child{font-size:24px}.v56-drag-handle span:last-child{font-size:9px}}
+
+/* V57 — Dedicated video editor, visually aligned with Studio. */
+.v57-youtube-editor{border:1px solid #416b86;border-radius:13px;padding:20px;background:linear-gradient(145deg,#0b2639,#081a2d);margin:22px 0}
+.v57-youtube-editor .field{margin-bottom:14px}
+.v57-youtube-editor h3{margin:7px 0 11px}
+.v57-youtube-editor p{margin:0 0 14px}
+.v57-studio-youtube{width:100%;max-width:690px;aspect-ratio:16/9;position:relative;border-radius:10px;overflow:hidden;border:1px solid #476f88;background:#061724;margin:18px 0 10px}
+.v57-studio-youtube.v57-studio-short{aspect-ratio:9/16;max-width:245px}
+.v57-video-poster{display:block;position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;cursor:pointer;background:#071a2e}
+.v57-video-poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.78)}
+.v57-video-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60px;height:60px;display:grid;place-items:center;border-radius:50%;border:1px solid #bad9ed;color:#fff;background:#071c2abf;text-indent:3px;font-size:23px}
+.v57-video-hint{position:absolute;bottom:12px;left:14px;color:#eff8ff;font-size:11px;letter-spacing:.04em;text-shadow:0 2px 9px #000b}
+.v57-video-meta{position:absolute;right:0;bottom:0;background:#081d2ccc;color:#aad0e8;font-size:9px;letter-spacing:.12em;padding:6px 8px;pointer-events:none}
+.v57-video-iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.v57-video-empty,.v57-video-invalid{max-width:690px;margin:15px 0;border:1px dashed #446b87;border-radius:10px;color:#a8c7de;padding:20px;min-height:100px;display:flex;align-items:center;gap:16px;font-size:12px}
+.v57-video-empty span{font-size:26px;color:#d7eeff;border:1px solid #85afc6;border-radius:50%;width:54px;height:54px;flex-shrink:0;display:grid;place-items:center}
+.v57-video-empty p{margin:0}.v57-video-invalid{border-color:#b17c6e;color:#f0c5be}
+.v57-video-help{display:inline-block;color:#b6ddfa;text-decoration:none;font-size:12px;border-bottom:1px solid #729cbb;padding:4px 0}

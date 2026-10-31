@@ -11,6 +11,41 @@ const clone = x => JSON.parse(JSON.stringify(x));
 let state=null, media=[], projects=[], selection='accueil', dirty=false, loading=false, picker=null, uploadTarget=null, uploading=false;
 let portfolioUniverse='photo', projectUniverse='photo', projectDocs=[], projectDraft=null, savingProject=false;
 const universeNames={photo:'Photo',video:'Vidéo',graphisme:'Graphisme'};
+
+// Read the standard YouTube, Shorts, Live and short links without loading YouTube on the editor.
+function youtubeInfo(raw){
+ const value=String(raw||'').trim();if(!/^https:\/\//i.test(value))return null;
+ try{
+  const u=new URL(value),host=u.hostname.toLowerCase().replace(/^www\./,'');
+  let id='',vertical=false;
+  if(host==='youtu.be')id=u.pathname.split('/')[1]||'';
+  else if(['youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com'].includes(host)){
+   const seg=u.pathname.split('/').filter(Boolean);
+   if(seg[0]==='watch')id=u.searchParams.get('v')||'';
+   else if(['shorts','live','embed','v'].includes(seg[0])){id=seg[1]||'';vertical=seg[0]==='shorts'}
+  }
+  return /^[a-zA-Z0-9_-]{11}$/.test(id)?{id,vertical,thumb:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}:null;
+ }catch{return null}
+}
+function youtubeStudioPreview(d){
+ const raw=String(d?.video||'').trim(),yt=youtubeInfo(raw);
+ if(!raw)return '<div class="v57-video-empty"><span aria-hidden="true">▶</span><p>Colle ton lien YouTube pour afficher ici la miniature et tester la lecture avant publication.</p></div>';
+ if(!yt){
+  if(/^https:\/\/(?:www\.)?(?:vimeo\.com|player\.vimeo\.com)\//i.test(raw)||/^https:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(raw))
+   return '<div class="v57-video-empty">Ancien lien Vimeo / vidéo hébergée conservé. Pour bénéficier de l’aperçu YouTube, remplace-le par un lien YouTube.</div>';
+  return '<div class="v57-video-invalid" role="status">Lien non reconnu. Utilise une adresse YouTube au format <code>youtube.com/watch?v=…</code>, <code>youtu.be/…</code> ou <code>youtube.com/shorts/…</code>.</div>';
+ }
+ return `<div class="v57-studio-youtube ${yt.vertical?'v57-studio-short':''}" data-youtube-studio="${yt.id}"><button type="button" data-action="youtube-studio-play" data-yt-id="${yt.id}" class="v57-video-poster" aria-label="Prévisualiser la vidéo"><img src="${e(d.cover?.url||d.legacyCover||yt.thumb)}" alt="Miniature de la vidéo" loading="lazy"><span class="v57-video-play" aria-hidden="true">▶</span><span class="v57-video-hint">Clique pour tester la lecture</span></button><div class="v57-video-meta">${yt.vertical?'VIDÉO VERTICALE / SHORT':'VIDÉO HORIZONTALE / 16:9'} · LECTURE INTÉGRÉE SUR LE SITE</div></div>`;
+}
+function updateYoutubeStudioPreview(){
+ const target=$('#v57YoutubePreview');if(!target||!projectDraft)return;
+ const next=youtubeInfo(projectDraft.video),current=target.querySelector('[data-youtube-studio]');
+ // Avoid replacing a button between pointer-down and click when the URL input blurs.
+ // The current player remains intact until its video URL actually changes.
+ if(next&&current&&current.dataset.youtubeStudio===next.id&&current.classList.contains('v57-studio-short')===next.vertical)return;
+ target.innerHTML=youtubeStudioPreview(projectDraft);
+}
+
 const pokedexPriority={legendaire:0,rare:1,peu_commune:2,commun:3};
 const sortPokedexCards=page=>{if(page?.sortMode!=='manual'&&Array.isArray(page?.cards))page.cards.sort((a,b)=>(pokedexPriority[a.rarity]??3)-(pokedexPriority[b.rarity]??3))};
 const kindOf=p=>p?.universe||(/graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p?.category||''))?'graphisme':p?.mode==='video'?'video':'photo');
@@ -99,16 +134,16 @@ let featuredUniverse='photo';
 function portfolioTabs(){return `<section class="form-panel"><div class="panel-eyebrow">PORTFOLIO / RUBRIQUES</div><h2>Choisir la rubrique à modifier</h2><p>Chaque rubrique possède ses propres carrousels et galeries. Les projets sont gérés dans « Photo / Vidéo / Graphisme ».</p><div class="universe-tabs">${['photo','video','graphisme','general'].map(kind=>`<button type="button" data-portfolio-universe="${kind}" class="${portfolioUniverse===kind?'active':''}">${universeNames[kind]||'Commun à toutes'}</button>`).join('')}</div></section>`}
 function projectMedia(photo){const src=validSrc(photo?.url);return src?`<div class="project-thumb"><img src="${e(src)}" alt="${e(photo.alt||'Image')}"></div>`:'<div class="project-thumb">Aucune image</div>'}
 function projectCoverPreview(d){
- const src=validSrc(d.cover?.url||d.legacyCover);
+ const src=validSrc(d.cover?.url||d.legacyCover||(kindOf(d)==='video'?youtubeInfo(d.video)?.thumb:''));
  if(!src)return '<div class="info-strip">Choisis une photographie pour visualiser son cadrage ici, avant publication.</div>';
  const f=photoFrames()[src]||{x:50,y:50,zoom:1,fit:'cover'};
  const style=`object-position:${Number(f.x)||0}% ${Number(f.y)||0}%;object-fit:${f.fit==='contain'?'contain':'cover'};transform:scale(${Math.max(1,Math.min(2,Number(f.zoom)||1))})`;
- return `<div class="v51-cover-preview"><div class="v51-cover-preview-item"><small>ACCUEIL / CARROUSEL PRINCIPAL</small><div class="v51-preview-card v51-preview-home"><img src="${e(src)}" alt="Prévisualisation accueil" style="${e(style)}"><div class="v51-preview-gradient"></div><div class="v51-preview-caption"><span>${e(d.category||'PHOTO')}</span><strong>${e(d.title||'NOUVEAU PROJET')}</strong></div><span class="v51-preview-arrow">↗</span></div></div><div class="v51-cover-preview-item"><small>PORTFOLIO / CARTE DE PROJET</small><div class="v51-preview-card v51-preview-portfolio"><img src="${e(src)}" alt="Prévisualisation portfolio" style="${e(style)}"><div class="v51-preview-gradient"></div><div class="v51-preview-caption"><span>◈ PHOTO · ${e(d.category||'PHOTOGRAPHIE')}</span><strong>${e(d.title||'NOUVEAU PROJET')}</strong></div><span class="v51-preview-arrow">↗</span></div></div></div>`;
+ return `<div class="v51-cover-preview"><div class="v51-cover-preview-item"><small>ACCUEIL / CARROUSEL PRINCIPAL</small><div class="v51-preview-card v51-preview-home"><img src="${e(src)}" alt="Prévisualisation accueil" style="${e(style)}"><div class="v51-preview-gradient"></div><div class="v51-preview-caption"><span>${e(d.category||'PHOTO')}</span><strong>${e(d.title||'NOUVEAU PROJET')}</strong></div><span class="v51-preview-arrow">↗</span></div></div><div class="v51-cover-preview-item"><small>PORTFOLIO / CARTE DE PROJET</small><div class="v51-preview-card v51-preview-portfolio"><img src="${e(src)}" alt="Prévisualisation portfolio" style="${e(style)}"><div class="v51-preview-gradient"></div><div class="v51-preview-caption"><span>${kindOf(d)==='video'?'▶ VIDÉO':'◈ PHOTO'} · ${e(d.category||'PHOTOGRAPHIE')}</span><strong>${e(d.title||'NOUVEAU PROJET')}</strong></div><span class="v51-preview-arrow">↗</span></div></div></div>`;
 }
 function renderProjects(){
  const list=projectDocs.filter(p=>kindOf(p)===projectUniverse);
  const tabs=`<div class="universe-tabs">${['photo','video','graphisme'].map(kind=>`<button type="button" class="${projectUniverse===kind?'active':''}" data-project-universe="${kind}">${universeNames[kind]} (${projectDocs.filter(p=>kindOf(p)===kind).length})</button>`).join('')}</div>`;
- const cards=`<div class="project-list">${list.map(p=>`<button type="button" class="project-list-item ${String(projectDraft?.id)===String(p.id)?'active':''}" data-project-open="${e(p.id)}">${projectMedia(p.cover || {url:p.legacyCover,alt:p.title})}<span><strong>${e(p.title)}</strong><small>${p.source==='starter'?'Carte actuelle du site · Prête à personnaliser':(p.published?'Publié':'Masqué')} · ${e(p.slug)}</small></span><span>Modifier ›</span></button>`).join('')||'<div class="empty-state">Aucun projet dans cette rubrique.</div>'}</div>`;
+ const cards=`<div class="project-list">${list.map(p=>`<button type="button" class="project-list-item ${String(projectDraft?.id)===String(p.id)?'active':''}" data-project-open="${e(p.id)}">${projectMedia(p.cover || {url:p.legacyCover||(kindOf(p)==='video'?youtubeInfo(p.video)?.thumb:''),alt:p.title})}<span><strong>${e(p.title)}</strong><small>${p.source==='starter'?'Carte actuelle du site · Prête à personnaliser':(p.published?'Publié':'Masqué')} · ${e(p.slug)}</small></span><span>Modifier ›</span></button>`).join('')||'<div class="empty-state">Aucun projet dans cette rubrique.</div>'}</div>`;
  let editor='';
  if(projectDraft){const d=projectDraft, gallery=d.gallery||[];
    editor=`<section class="form-panel project-editor"><div class="panel-eyebrow">${d.id?'MODIFIER LE PROJET':'NOUVEAU PROJET'} / ${universeNames[projectUniverse].toUpperCase()}</div><h2>${e(d.title||'Nouveau projet')}</h2><p>Cette fiche alimente le Portfolio et les cartes automatiques du carrousel principal.</p>
@@ -116,8 +151,8 @@ function renderProjects(){
      ${field('Titre du projet','project.title',d.title)}${d.source==='starter'?`<div class="field"><label>Identifiant URL (conservé pour remplacer la carte d’origine)</label><input value="${e(d.slug)}" readonly aria-readonly="true"></div>`:field('Identifiant URL (minuscules et tirets)','project.slug',d.slug)}
      ${projectUniverse!=='graphisme'?field('Catégorie / discipline','project.category',d.category):'<div class="info-strip">Rubrique Graphisme : la catégorie GRAPHISME sera enregistrée automatiquement.</div>'}
      ${field('Ordre dans le Portfolio','project.order',d.order)}
-     <h3>Couverture</h3><p>Voici le rendu de ton image dans les deux cartes du site, avant publication. Tu peux la déplacer, la zoomer et comparer les cadrages sans modifier le fichier original.</p>${projectCoverPreview(d)}<div class="add-row">${action('project-cover-choose','▧ Choisir la couverture')}${action('project-cover-upload','↑ Importer une couverture')}${validSrc(d.cover?.url||d.legacyCover)?action('project-cover-crop','▣ Ajuster le cadrage / prévisualiser'):''}</div>
-     ${projectUniverse==='video'?field('Lien vidéo (YouTube, Vimeo ou MP4 hébergé)','project.video',d.video):''}
+     <h3>Couverture</h3><p>${projectUniverse==='video'?'Facultatif : si tu ne sélectionnes pas de couverture, la miniature YouTube est utilisée. Choisis une photo personnelle pour personnaliser la carte du portfolio.':'Voici le rendu de ton image dans les deux cartes du site, avant publication. Tu peux la déplacer, la zoomer et comparer les cadrages sans modifier le fichier original.'}</p>${projectCoverPreview(d)}<div class="add-row">${action('project-cover-choose','▧ Choisir la couverture')}${action('project-cover-upload','↑ Importer une couverture')}${validSrc(d.cover?.url||d.legacyCover)?action('project-cover-crop','▣ Ajuster le cadrage / prévisualiser'):''}</div>
+     ${projectUniverse==='video'?`<div class="v57-youtube-editor"><div class="panel-eyebrow">LECTEUR VIDÉO / YOUTUBE</div><h3>Ta vidéo directement sur YRUZPHOTO</h3><p>Publie ta vidéo sur YouTube (en mode Public ou Non répertoriée), puis colle son lien ci-dessous. Le lecteur ne se chargera qu'au clic du visiteur. La couverture reste modifiable dans la médiathèque, sinon la miniature YouTube est utilisée.</p>${field('Lien YouTube','project.video',d.video)}<div id="v57YoutubePreview">${youtubeStudioPreview(d)}</div><a class="v57-video-help" href="https://studio.youtube.com/" target="_blank" rel="noopener noreferrer">Ouvrir YouTube Studio ↗</a></div>`:''}
      <h3>Galerie (${gallery.length} visuel${gallery.length>1?'s':''})</h3><p>Maintiens « Déplacer » et fais glisser la photo directement à sa nouvelle place. La page défile automatiquement, même pour les longues galeries.</p>
      <div class="project-gallery-items">${gallery.map((g,i)=>`<div class="collection-item v50-sortable v56-sortable" data-sort-kind="project-gallery" data-item="${i}" title="Maintiens la poignée pour déplacer cette photo"><button type="button" class="v56-drag-handle" aria-label="Déplacer cette photo : maintenir et glisser, ou utiliser les flèches du clavier" title="Maintenir puis glisser · ↑↓ au clavier"><span aria-hidden="true">⠿</span><span>Déplacer</span></button>${projectMedia(g.photo||{url:g.legacyUrl,alt:''})}<div class="item-fields">${e(g.photo?.alt||g.legacyUrl||'Photographie')}</div><div class="item-actions">${cropButton(g.photo||{url:g.legacyUrl})}${action('project-gallery-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-gallery-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-gallery-remove','✕',`data-index="${i}"`,true)}</div></div>`).join('')}</div>
      <div class="add-row">${action('project-gallery-choose','+ Sélectionner plusieurs photos')}${action('project-gallery-upload','↑ Importer plusieurs photos')}</div>
@@ -132,6 +167,13 @@ async function loadProjectDocs(){
 }
 async function saveProject(){
  if(!projectDraft||savingProject)return;
+ const legacyVideoLink=/^https:\/\/(?:www\.)?(?:vimeo\.com|player\.vimeo\.com)\//i.test(projectDraft.video||'')||/^https:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(projectDraft.video||'');
+ if(projectUniverse==='video'&&projectDraft.video?.trim()&&!youtubeInfo(projectDraft.video)&&!legacyVideoLink){
+  message('Colle un lien YouTube valide (youtube.com, youtu.be ou Shorts).',true);return;
+ }
+ if(projectUniverse==='video'&&projectDraft.published&&!youtubeInfo(projectDraft.video)&&!legacyVideoLink){
+  message('Ajoute une vidéo YouTube avant de publier ce projet.',true);return;
+ }
  savingProject=true;render();
  try{const payload={...projectDraft,universe:projectUniverse};const r=await fetch('/studio-projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Enregistrement impossible');
    projectDraft=data.project;projects=projects.filter(p=>p.slug!==data.project.slug);projects.push({id:data.project.id,slug:data.project.slug,title:data.project.title,mode:data.project.mode,category:data.project.category});
@@ -636,20 +678,31 @@ document.addEventListener('click',event=>{
  const shortcutNew=event.target.closest('[data-portfolio-new]');if(shortcutNew){selection='projects';projectUniverse=shortcutNew.dataset.portfolioNew;projectDraft=newProject();render();return}
  const projectItem=event.target.closest('[data-project-open]');if(projectItem){projectDraft=clone(projectDocs.find(p=>String(p.id)===projectItem.dataset.projectOpen));render();return}
  const nav=event.target.closest('[data-nav]');if(nav){selection=nav.dataset.nav;render();if(selection==='projects')loadProjectDocs();return}
- const actionBtn=event.target.closest('[data-action]');if(actionBtn){onAction(actionBtn);return}
+ const actionBtn=event.target.closest('[data-action]');
+ if(actionBtn?.dataset.action==='youtube-studio-play'){
+  const id=actionBtn.dataset.ytId;
+  if(!/^[a-zA-Z0-9_-]{11}$/.test(id||''))return;
+  const frame=document.createElement('iframe');
+  frame.src=`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
+  frame.title='Prévisualisation de la vidéo';frame.className='v57-video-iframe';
+  frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
+  frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';
+  actionBtn.replaceWith(frame);return;
+ }
+ if(actionBtn){onAction(actionBtn);return}
 });
 $('#editor').addEventListener('input',event=>{
  if(event.target.id==='librarySearch'){
   library.search=event.target.value;clearTimeout(librarySearchTimer);
   librarySearchTimer=setTimeout(()=>loadLibrary(1),300);return;
  }
- const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;return}
+ const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;if(projectInput.dataset.projectField==='video')updateYoutubeStudioPreview();return}
  if(selection==='equipement'&&event.target.matches('[data-equipment-specs]')){const i=Number(event.target.dataset.equipmentSpecs);const item=currentRoot().equipmentItems?.[i];if(item){item.specs=event.target.value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,20);currentRoot().equipmentCustomized=true;markDirty()}return}
  const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;markDirty()});
 $('#editor').addEventListener('change',event=>{
  if(event.target.id==='libraryDestination'){libraryDestination=event.target.value;return}
  if(event.target.id==='libraryUniverse'){libraryUniverse=event.target.value;return}
- const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;return}
+ const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;if(projectInput.dataset.projectField==='video')updateYoutubeStudioPreview();return}
  const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;if(selection==='pokedex'&&(input.dataset.field==='sortMode'||/^cards\.\d+\.rarity$/.test(input.dataset.field)))sortPokedexCards(currentRoot());markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity')||input.dataset.field==='sortMode')render()});
 $('#saveBtn').addEventListener('click',save);
 $('#closeMedia').addEventListener('click',closePicker);

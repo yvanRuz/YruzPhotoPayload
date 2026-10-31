@@ -1,0 +1,19 @@
+/* YRUZPHOTO V57 — YouTube video presentation. Only video projects are affected. */
+.yruz-video-card .yruz-video-card-play{position:absolute;top:50%;left:50%;z-index:2;transform:translate(-50%,-50%);display:grid;place-items:center;width:68px;height:68px;border-radius:50%;border:1px solid #d8eff6a3;background:#071b2bba;box-shadow:0 9px 38px #0007;color:#f3f9ff;font-size:22px;text-indent:4px;transition:transform .25s,background .25s}
+.yruz-video-card:hover .yruz-video-card-play,.yruz-video-card:focus-visible .yruz-video-card-play{transform:translate(-50%,-50%) scale(1.09);background:#e8f6ff;color:#06192a}
+.yruz-video-missing-cover{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,#15374c,#061422 75%);color:#a8cee6;letter-spacing:.3em;font-size:11px}
+.yruz-youtube-player{position:relative;width:100%;max-width:1250px;margin:20px auto 40px;aspect-ratio:16/9;background:#03121e;border:1px solid #9bc1d447;border-radius:15px;overflow:hidden;isolation:isolate;box-shadow:0 22px 70px #0005}
+.yruz-youtube-player.yruz-youtube-vertical{aspect-ratio:9/16;max-width:min(410px,100%)}
+.yruz-youtube-poster{position:absolute;inset:0;border:0;width:100%;height:100%;display:block;padding:0;background:transparent;color:white;cursor:pointer;font:inherit;text-align:left}
+.yruz-youtube-poster>img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;transition:transform .6s ease,filter .5s}
+.yruz-youtube-poster:hover>img,.yruz-youtube-poster:focus-visible>img{transform:scale(1.035);filter:brightness(1.08)}
+.yruz-youtube-shade{position:absolute;inset:0;background:linear-gradient(180deg,#06172427 0%,transparent 34%,#02121ea6 100%);pointer-events:none}
+.yruz-youtube-play-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;display:grid;place-items:center;text-indent:4px;background:#071927cc;color:#edf8ff;border:1px solid #b9ddf4aa;border-radius:50%;font-size:26px;box-shadow:0 10px 40px #0007;transition:background .25s,color .25s,transform .25s}
+.yruz-youtube-poster:hover .yruz-youtube-play-icon,.yruz-youtube-poster:focus-visible .yruz-youtube-play-icon{background:#e9f4ff;color:#091d2d;transform:translate(-50%,-50%) scale(1.09)}
+.yruz-youtube-caption{position:absolute;bottom:25px;left:30px;display:grid;gap:8px;text-shadow:0 3px 12px #000b}
+.yruz-youtube-caption small{color:#b9d2e2;letter-spacing:.2em;font-size:10px}
+.yruz-youtube-caption strong{font:800 clamp(24px,3vw,44px)/1 'Barlow Condensed',Impact,sans-serif;letter-spacing:.025em}
+.yruz-youtube-frame{position:absolute;inset:0;width:100%;height:100%;display:block;border:0;background:#020b13}
+.yruz-video-error{border:1px dashed #67859f;padding:26px;border-radius:12px;color:#a3c7df;font-size:13px}
+@media(max-width:767px){.yruz-video-card .yruz-video-card-play{width:54px;height:54px;font-size:18px}.yruz-youtube-player{border-radius:10px;margin:15px auto 28px}.yruz-youtube-play-icon{width:58px;height:58px;font-size:20px}.yruz-youtube-caption{left:15px;bottom:15px}.yruz-youtube-caption strong{font-size:24px}}
+@media(prefers-reduced-motion:reduce){.yruz-youtube-play-icon,.yruz-youtube-poster>img,.yruz-video-card .yruz-video-card-play{transition:none}}
