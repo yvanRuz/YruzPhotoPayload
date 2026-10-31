@@ -23,12 +23,16 @@ const sectionList=()=>{
 const sectionPrefix=()=>selection==='portfolio'&&portfolioUniverse!=='general'?`universeSections.${portfolioUniverse}`:'sections';
 
 // Client-side view state only. Media files remain in Payload/Blob, not this page JSON.
-const library={page:1,totalPages:1,totalDocs:0,items:[],search:'',selected:new Map(),loading:false,requestId:0,renamingId:null,savingName:false};
+const library={page:1,totalPages:1,totalDocs:0,items:[],search:'',selected:new Map(),loading:false,requestId:0,renamingId:null,savingName:false,folder:'all',deletingId:null};
 let libraryDestination='portfolio', libraryUniverse='photo', pickerPage=1, pickerPages=1, librarySearchTimer, pickerSearchTimer;
-let toastTimer;
+let toastTimer, libraryDragId=null, libraryDragIds=[], editorDrag=null, cropUrl='';
+const folders=()=>{if(!state.content.libraryFolders)state.content.libraryFolders={names:[],assignments:{}};return state.content.libraryFolders};
+const photoFrames=()=>{if(!state.content.mediaFrames)state.content.mediaFrames={};return state.content.mediaFrames};
+const safeFolder=f=>String(f||'').trim().slice(0,55);
+
 function message(txt,error=false){const el=$('#toast');el.textContent=txt;el.classList.toggle('error',error);el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),4500)}
 function setStatus(txt,warning=false){const el=$('#saveStatus');el.textContent=txt;el.classList.toggle('unsaved',warning)}
-function markDirty(){dirty=true;setStatus('Modifications non publiées',true);$('#saveBtn').disabled=false;renderPreview()}
+function markDirty(){dirty=true;setStatus('Modifications non publiées',true);$('#saveBtn').disabled=false;$('#saveBtn').hidden=false;renderPreview()}
 window.addEventListener('beforeunload', event => {if(dirty){event.preventDefault();event.returnValue=''}});
 const currentRoot=()=>selection==='links'?state?.content?.navigation:state?.content?.pages?.[selection];
 function field(label,path,value,kind='text',options=[]){
@@ -39,9 +43,10 @@ function field(label,path,value,kind='text',options=[]){
   if(kind==='textarea')return `<div class="field"><label for="${id}">${e(label)}</label><textarea id="${id}" ${attr}>${e(value)}</textarea></div>`;
   return `<div class="field"><label for="${id}">${e(label)}</label><input id="${id}" type="text" ${attr} value="${e(value)}" autocomplete="off"></div>`;
 }
+function cropButton(image){const url=validSrc(image?.url);return url?`<button type="button" class="outline-btn" data-action="crop-image" data-url="${e(url)}">▣ Prévisualiser / cadrer</button>`:''}
 function mediaField(indexPath,image,label='Photo choisie'){
   const src=validSrc(image?.url);
-  return `<div class="media-choice">${src?`<img src="${e(src)}" alt="${e(image?.alt||label)}">`:'<div style="width:104px;height:82px;display:grid;place-items:center;background:#1a3447">▧</div>'}<div><strong>${src?e(image.alt||label):'Aucune photographie sélectionnée'}</strong><button type="button" class="outline-btn" data-action="choose-image" data-path="${e(indexPath)}">${src?'Changer':'Choisir dans la médiathèque'} ↗</button><button type="button" class="outline-btn" data-action="upload-field" data-path="${e(indexPath)}">↑ Importer ici</button></div></div>`;
+  return `<div class="media-choice">${src?`<img src="${e(src)}" alt="${e(image?.alt||label)}">`:'<div style="width:104px;height:82px;display:grid;place-items:center;background:#1a3447">▧</div>'}<div><strong>${src?e(image.alt||label):'Aucune photographie sélectionnée'}</strong><button type="button" class="outline-btn" data-action="choose-image" data-path="${e(indexPath)}">${src?'Changer':'Choisir dans la médiathèque'} ↗</button><button type="button" class="outline-btn" data-action="upload-field" data-path="${e(indexPath)}">↑ Importer ici</button>${cropButton(image)}</div></div>`;
 }
 function action(action,label,attrs='',danger=false){return `<button type="button" class="mini-btn ${danger?'delete':''}" data-action="${e(action)}" ${attrs}>${e(label)}</button>`}
 const blockDefault = type => ({
@@ -60,8 +65,8 @@ function renderSection(block,index){
  if(block.type==='carrouselPhotos'||block.type==='grillePhotos'){
    const arrKey=block.type==='carrouselPhotos'?'slides':'photos';const rows=Array.isArray(block[arrKey])?block[arrKey]:[];
    f=field('Titre',`${base}.title`,block.title)+(block.type==='carrouselPhotos'?field('Description',`${base}.description`,block.description,'textarea'):field('Colonnes',`${base}.columns`,block.columns,'select',[['2','2 colonnes'],['3','3 colonnes'],['4','4 colonnes']]))+
-   `<p class="small-counter">${rows.length} photographie${rows.length>1?'s':''} — ordre modifiable</p><div class="collection-items">`+
-   rows.map((row,j)=>`<div class="collection-item">${row.image?.url?`<img src="${e(validSrc(row.image.url))}" alt="">`:''}<div class="item-fields">${field('Légende',`${base}.${arrKey}.${j}.caption`,row.caption)}${block.type==='carrouselPhotos'?field('Lien au clic (optionnel)',`${base}.${arrKey}.${j}.link`,row.link):''}</div><div class="item-actions">${action('swap-image','Changer',`data-path="${base}.${arrKey}.${j}.image"`)}${action('move-item','↑',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="-1"`)}${action('move-item','↓',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="1"`)}${action('remove-item','✕',`data-index="${index}" data-key="${arrKey}" data-item="${j}"`,true)}</div></div>`).join('')+
+   `<p class="small-counter">${rows.length} photographie${rows.length>1?'s':''} — glisse les visuels pour choisir leur ordre</p><div class="collection-items">`+
+   rows.map((row,j)=>`<div class="collection-item v50-sortable" draggable="true" data-sort-kind="section-image" data-section="${index}" data-item="${j}" title="Glisser pour changer l’ordre">${row.image?.url?`<img src="${e(validSrc(row.image.url))}" alt="">`:''}<div class="item-fields">${field('Légende',`${base}.${arrKey}.${j}.caption`,row.caption)}${block.type==='carrouselPhotos'?field('Lien au clic (optionnel)',`${base}.${arrKey}.${j}.link`,row.link):''}</div><div class="item-actions">${cropButton(row.image)}${action('swap-image','Changer',`data-path="${base}.${arrKey}.${j}.image"`)}${action('move-item','↑',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="-1"`)}${action('move-item','↓',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="1"`)}${action('remove-item','✕',`data-index="${index}" data-key="${arrKey}" data-item="${j}"`,true)}</div></div>`).join('')+
    `</div><div class="add-row">${action('add-image','+ Choisir une photographie',`data-index="${index}" data-key="${arrKey}"`)}${action('upload-gallery','↑ Importer plusieurs photos',`data-index="${index}" data-key="${arrKey}"`)}</div>`;
  }
  if(block.type==='carrouselProjets'){
@@ -104,10 +109,10 @@ function renderProjects(){
      ${field('Titre du projet','project.title',d.title)}${d.source==='starter'?`<div class="field"><label>Identifiant URL (conservé pour remplacer la carte d’origine)</label><input value="${e(d.slug)}" readonly aria-readonly="true"></div>`:field('Identifiant URL (minuscules et tirets)','project.slug',d.slug)}
      ${projectUniverse!=='graphisme'?field('Catégorie / discipline','project.category',d.category):'<div class="info-strip">Rubrique Graphisme : la catégorie GRAPHISME sera enregistrée automatiquement.</div>'}
      ${field('Ordre dans le Portfolio','project.order',d.order)}
-     <h3>Couverture</h3>${projectMedia(d.cover||{url:d.legacyCover,alt:d.title})}<div class="add-row">${action('project-cover-choose','Choisir une photo')}${action('project-cover-upload','↑ Importer une couverture')}</div>
+     <h3>Couverture</h3>${projectMedia(d.cover||{url:d.legacyCover,alt:d.title})}<div class="add-row">${cropButton(d.cover||{url:d.legacyCover})}${action('project-cover-choose','Choisir une photo')}${action('project-cover-upload','↑ Importer une couverture')}</div>
      ${projectUniverse==='video'?field('Lien vidéo (YouTube, Vimeo ou MP4 hébergé)','project.video',d.video):''}
-     <h3>Galerie (${gallery.length} visuel${gallery.length>1?'s':''})</h3>
-     <div class="project-gallery-items">${gallery.map((g,i)=>`<div class="collection-item">${projectMedia(g.photo||{url:g.legacyUrl,alt:''})}<div class="item-fields">${e(g.photo?.alt||g.legacyUrl||'Photographie')}</div><div class="item-actions">${action('project-gallery-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-gallery-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-gallery-remove','✕',`data-index="${i}"`,true)}</div></div>`).join('')}</div>
+     <h3>Galerie (${gallery.length} visuel${gallery.length>1?'s':''})</h3><p>Glisse une photo pour changer sa place, ou utilise les flèches.</p>
+     <div class="project-gallery-items">${gallery.map((g,i)=>`<div class="collection-item v50-sortable" draggable="true" data-sort-kind="project-gallery" data-item="${i}" title="Glisser pour changer l’ordre">${projectMedia(g.photo||{url:g.legacyUrl,alt:''})}<div class="item-fields">${e(g.photo?.alt||g.legacyUrl||'Photographie')}</div><div class="item-actions">${cropButton(g.photo||{url:g.legacyUrl})}${action('project-gallery-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-gallery-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-gallery-remove','✕',`data-index="${i}"`,true)}</div></div>`).join('')}</div>
      <div class="add-row">${action('project-gallery-choose','+ Sélectionner une photo')}${action('project-gallery-upload','↑ Importer plusieurs photos')}</div>
      ${field('Afficher dans le Portfolio','project.published',d.published,'checkbox')}
      <button type="button" class="primary-btn" data-action="project-save" ${savingProject?'disabled':''}>${savingProject?'Enregistrement…':'Enregistrer le projet ↗'}</button></section>`;
@@ -158,7 +163,7 @@ function renderPokedex(){
   <div class="field-row">${field('Événement / lieu',`cards.${i}.event`,c.event)}${field('Date / édition',`cards.${i}.date`,c.date)}</div>
   ${field('Description / souvenir de la rencontre',`cards.${i}.description`,c.description,'textarea')}
   <h3>Photographies supplémentaires (${(c.gallery||[]).length})</h3>
-  <div class="pokedex-album-photos">${(c.gallery||[]).map((photo,j)=>`<div class="pokedex-album-photo">${mediaField(`cards.${i}.gallery.${j}`,photo,`Photo ${j+1}`)}
+  <div class="pokedex-album-photos">${(c.gallery||[]).map((photo,j)=>`<div class="pokedex-album-photo v50-sortable" draggable="true" data-sort-kind="pokedex-gallery" data-section="${i}" data-item="${j}" title="Glisser pour changer l’ordre">${mediaField(`cards.${i}.gallery.${j}`,photo,`Photo ${j+1}`)}
      <div class="item-actions">${action('pokedex-photo-move','←',`data-index="${i}" data-item="${j}" data-dir="-1"`)}${action('pokedex-photo-move','→',`data-index="${i}" data-item="${j}" data-dir="1"`)}${action('pokedex-photo-remove','✕',`data-index="${i}" data-item="${j}"`,true)}</div></div>`).join('')}</div>
   <div class="add-row">${action('pokedex-photo-add','+ Ajouter une photo',`data-index="${i}"`)}${action('pokedex-photo-upload','↑ Importer plusieurs photos',`data-index="${i}"`)}</div>
   ${field('Afficher cette carte dans le Pokédex',`cards.${i}.published`,c.published,'checkbox')}
@@ -182,17 +187,22 @@ function renderLibrary(){
    <div class="panel-eyebrow">MÉDIATHÈQUE / PHOTOGRAPHIES</div>
    <h2>Toutes tes photographies au même endroit</h2>
    <p>Importe tes fichiers dans Payload + Vercel Blob, puis sélectionne les images pour alimenter la page de ton choix. <strong>Renomme leur titre directement ici</strong> sans changer les fichiers ni les liens déjà utilisés.</p>
-   <div id="libraryDropzone" class="library-dropzone" tabindex="0" role="button" aria-label="Importer des photographies">
+   <div class="library-folder-toolbar"><div class="panel-eyebrow">DOSSIERS DE PHOTOGRAPHIES</div>
+    <div class="library-folder-chips" id="libraryFolders">${[{name:'Toutes',key:'all'}, {name:'Sans dossier',key:'__unassigned__'},...folders().names.map(n=>({name:n,key:n}))].map(x=>`<button type="button" class="library-folder-chip ${library.folder===x.key?'active':''}" data-library-action="folder" data-folder="${e(x.key)}" title="Afficher ce dossier · déposer des photos pour y déplacer">▤ ${e(x.name)}${x.key!=='all'&&x.key!=='__unassigned__'&&library.folder===x.key?' ●':''}</button>`).join('')}</div>
+    <div class="add-row"><button type="button" class="outline-btn" data-library-action="new-folder">+ Nouveau dossier</button><button type="button" class="outline-btn" data-library-action="upload-folder">↑ Importer un dossier entier</button></div>
+    <small>Choisis un dossier puis dépose plusieurs images ci-dessous. Tu peux aussi glisser une photo déjà importée sur un dossier. Les changements de dossiers doivent être publiés.</small>
+  </div>
+  <div id="libraryDropzone" class="library-dropzone" tabindex="0" role="button" aria-label="Importer des photographies">
      <div class="library-drop-icon">↑</div>
      <strong>Dépose tes images ici</strong>
-     <span>ou clique pour sélectionner plusieurs photographies</span>
+     <span>ou clique pour sélectionner plusieurs photographies dans ${library.folder==='all'?'la médiathèque':'« '+e(library.folder==='__unassigned__'?'Sans dossier':library.folder)+' »'}</span>
      <small>JPG, PNG, WebP, GIF, AVIF — 3,5 Mo par fichier pour cet import direct</small>
    </div>
    <p id="libraryUploadProgress" class="library-progress" role="status" hidden></p>
  </section>
  <section class="form-panel library-panel">
   <div class="library-heading"><div><div class="panel-eyebrow">BIBLIOTHÈQUE</div><h2>Photographies disponibles <span id="libraryCount" class="library-total"></span></h2></div><button class="outline-btn" data-library-action="reload">Actualiser ↻</button></div>
-  <div class="library-tools"><input id="librarySearch" type="search" placeholder="Rechercher une photo par son nom…" value="${e(library.search)}" aria-label="Rechercher une photographie"><button class="outline-btn" data-library-action="clear">Effacer la sélection</button></div>
+  <div class="library-tools"><select id="libraryMoveFolder" aria-label="Déplacer les photos sélectionnées dans un dossier"><option value="">Déplacer la sélection dans…</option><option value="__unassigned__">Sans dossier</option>${folders().names.map(n=>`<option value="${e(n)}">${e(n)}</option>`).join('')}</select><button type="button" class="outline-btn" data-library-action="move-selected">Déplacer</button><input id="librarySearch" type="search" placeholder="Rechercher une photo par son nom…" value="${e(library.search)}" aria-label="Rechercher une photographie"><button class="outline-btn" data-library-action="clear">Effacer la sélection</button></div>
   <div id="libraryGrid" class="library-grid" aria-live="polite"><p class="library-hint">Chargement des photographies…</p></div>
   <div id="libraryPager" class="library-pager"></div>
  </section>
@@ -209,7 +219,7 @@ function syncLibraryView(){
  const selected=library.selected;
  grid.innerHTML=library.items.length?library.items.map(m=>{
   const key=String(m.id),src=validSrc(m.url),checked=selected.has(key);
-  return `<article class="library-photo ${checked?'selected':''}"><button type="button" class="library-select" data-library-action="toggle" data-id="${e(key)}" aria-pressed="${checked?'true':'false'}" aria-label="${checked?'Désélectionner':'Sélectionner'} ${e(m.alt||m.filename)}"><img loading="lazy" src="${e(src)}" alt="${e(m.alt||m.filename)}"><span class="library-tick">${checked?'✓':'+'}</span></button><div class="library-photo-info"><strong title="${e(m.alt||m.filename)}">${e(m.alt||m.filename||'Sans titre')}</strong>${library.renamingId===key?`<div class="library-rename"><input data-library-name="${e(key)}" type="text" maxlength="160" aria-label="Nouveau nom de la photo" value="${e(m.alt||m.filename||'')}" ${library.savingName?'disabled':''}><div><button type="button" data-library-action="rename-save" data-id="${e(key)}" ${library.savingName?'disabled':''}>${library.savingName?'Enregistrement…':'Enregistrer'}</button><button type="button" data-library-action="rename-cancel" data-id="${e(key)}" ${library.savingName?'disabled':''}>Annuler</button></div></div>`:`<div class="library-photo-actions"><a href="${e(src)}" target="_blank" rel="noopener">Voir ↗</a><button type="button" data-library-action="rename" data-id="${e(key)}">✎ Renommer</button><button type="button" data-library-action="copy" data-id="${e(key)}">Lien</button></div>`}</div></article>`
+  return `<article class="library-photo ${checked?'selected':''}" draggable="true" data-library-drag="${e(key)}" title="Glisse cette photo vers un dossier"><button type="button" class="library-select" data-library-action="toggle" data-id="${e(key)}" aria-pressed="${checked?'true':'false'}" aria-label="${checked?'Désélectionner':'Sélectionner'} ${e(m.alt||m.filename)}"><img loading="lazy" src="${e(src)}" alt="${e(m.alt||m.filename)}"><span class="library-tick">${checked?'✓':'+'}</span></button><div class="library-photo-info"><strong title="${e(m.alt||m.filename)}">${e(m.alt||m.filename||'Sans titre')}</strong>${library.renamingId===key?`<div class="library-rename"><input data-library-name="${e(key)}" type="text" maxlength="160" aria-label="Nouveau nom de la photo" value="${e(m.alt||m.filename||'')}" ${library.savingName?'disabled':''}><div><button type="button" data-library-action="rename-save" data-id="${e(key)}" ${library.savingName?'disabled':''}>${library.savingName?'Enregistrement…':'Enregistrer'}</button><button type="button" data-library-action="rename-cancel" data-id="${e(key)}" ${library.savingName?'disabled':''}>Annuler</button></div></div>`:`<div class="library-photo-actions"><a href="${e(src)}" target="_blank" rel="noopener">Voir ↗</a><button type="button" data-library-action="rename" data-id="${e(key)}">✎ Renommer</button><button type="button" data-library-action="crop" data-id="${e(key)}">▣ Cadrer</button><button type="button" class="library-danger" data-library-action="delete" data-id="${e(key)}">✕ Supprimer</button><button type="button" data-library-action="copy" data-id="${e(key)}">Lien</button></div>`}</div></article>`
  }).join(''):'<div class="empty-state">Aucune photographie trouvée. Importe tes premières photos ci-dessus.</div>';
  const c=$('#libraryCount');if(c)c.textContent=`(${library.totalDocs})`;
  const pager=$('#libraryPager');if(pager)pager.innerHTML=`<span>Page ${library.page} sur ${library.totalPages}</span><div><button type="button" data-library-action="prev" ${library.page<=1?'disabled':''}>← Précédente</button><button type="button" data-library-action="next" ${library.page>=library.totalPages?'disabled':''}>Suivante →</button></div>`;
@@ -220,7 +230,7 @@ async function loadLibrary(page=1){
  const requestId=++library.requestId;library.loading=true;
  const grid=$('#libraryGrid');if(grid)grid.innerHTML='<p class="library-hint">Chargement de la médiathèque…</p>';
  try{
-  const query=new URLSearchParams({view:'media',page:String(page),search:library.search});
+  const query=new URLSearchParams({view:'media',page:String(page),search:library.search,folder:library.folder});
   const response=await fetch(`/studio-api?${query}`,{cache:'no-store',credentials:'same-origin'});
   const result=await response.json().catch(()=>({}));
   if(!response.ok)throw Error(result.error||`Erreur HTTP ${response.status}`);
@@ -271,6 +281,37 @@ async function renameLibraryItem(id, name){
 }
 async function handleLibraryAction(btn){
  const operation=btn.dataset.libraryAction,id=String(btn.dataset.id||'');
+ if(operation==='folder'){library.folder=btn.dataset.folder||'all';render();return}
+ if(operation==='new-folder'){
+   const name=safeFolder(prompt('Nom du nouveau dossier :',''));
+   if(!name)return;
+   if(/[<>\x00-\x1f]/.test(name)){message('Caractères interdits dans le nom du dossier.',true);return}
+   if(folders().names.some(n=>n.toLowerCase()===name.toLowerCase())){message('Ce dossier existe déjà.',true);return}
+   folders().names.push(name);library.folder=name;markDirty();render();message('Dossier créé. Publie les modifications pour le conserver.');return;
+ }
+ if(operation==='upload-folder'){$('#directoryUploadInput').click();return}
+ if(operation==='move-selected'){
+   const dest=$('#libraryMoveFolder')?.value;
+   if(!dest){message('Choisis un dossier de destination.',true);return}
+   if(!library.selected.size){message('Sélectionne une ou plusieurs photos.',true);return}
+   const assign=folders().assignments;
+   [...library.selected.keys()].forEach(id=>{if(dest==='__unassigned__')delete assign[id];else assign[id]=dest});
+   library.selected.clear();markDirty();render();message('Photos déplacées. Clique sur Publier pour enregistrer les dossiers.');return;
+ }
+ if(operation==='crop'){
+   const image=library.items.find(m=>String(m.id)===id);if(image)openCrop(image.url);return;
+ }
+ if(operation==='delete'){
+   const photo=library.items.find(m=>String(m.id)===id);if(!photo)return;
+   if(!confirm(`Supprimer définitivement « ${photo.alt||photo.filename} » de Payload et Vercel Blob ?\n\nCette action est irréversible. Les photos utilisées sur le site sont protégées.`))return;
+   try{
+     const response=await fetch('/studio-api?id='+encodeURIComponent(id),{method:'DELETE',credentials:'same-origin'});
+     const data=await response.json().catch(()=>({}));
+     if(!response.ok)throw Error(data.error||'Suppression impossible');
+     library.selected.delete(id);delete folders().assignments[id];delete photoFrames()[photo.url];
+     media=media.filter(m=>String(m.id)!==id);markDirty();loadLibrary(library.page);message('Photo supprimée. Publie pour mettre à jour tes dossiers.');
+   }catch(err){message(err.message||'Suppression impossible',true)}return;
+ }
  if(operation==='rename'){
   if(library.savingName)return;
   library.renamingId=id;syncLibraryView();
@@ -296,6 +337,25 @@ async function handleLibraryAction(btn){
  if(operation==='clear'){library.selected.clear();syncLibraryView();return}
  if(operation==='prev'||operation==='next'){const next=library.page+(operation==='next'?1:-1);if(next>=1&&next<=library.totalPages)loadLibrary(next);return}
  if(operation==='carousel'||operation==='gallery')createFromLibrary(operation==='carousel'?'carrouselPhotos':'grillePhotos');
+}
+function openCrop(url){
+ cropUrl=validSrc(url);if(!cropUrl)return;
+ const f=photoFrames()[cropUrl]||{x:50,y:50,zoom:1,fit:'cover'};
+ const dlg=$('#cropModal');
+ dlg.querySelector('#cropSource').src=cropUrl;
+ for(const key of ['x','y','zoom','fit'])dlg.querySelector('#crop'+key.charAt(0).toUpperCase()+key.slice(1)).value=f[key];
+ updateCropPreview();dlg.showModal();
+}
+function updateCropPreview(){
+ const dlg=$('#cropModal');if(!cropUrl)return;
+ const x=Number(dlg.querySelector('#cropX').value),y=Number(dlg.querySelector('#cropY').value),zoom=Number(dlg.querySelector('#cropZoom').value),fit=dlg.querySelector('#cropFit').value;
+ dlg.querySelector('#cropValues').textContent=`Horizontal ${x}% · Vertical ${y}% · Zoom ×${zoom.toFixed(2)}`;
+ dlg.querySelectorAll('.crop-frame img').forEach(img=>{img.src=cropUrl;img.style.objectPosition=`${x}% ${y}%`;img.style.objectFit=fit;img.style.transform=`scale(${zoom})`});
+}
+function saveCrop(){
+ if(!cropUrl)return;
+ const dlg=$('#cropModal');photoFrames()[cropUrl]={x:Number(dlg.querySelector('#cropX').value),y:Number(dlg.querySelector('#cropY').value),zoom:Number(dlg.querySelector('#cropZoom').value),fit:dlg.querySelector('#cropFit').value};
+ markDirty();dlg.close();message('Cadrage mis à jour. Clique sur Publier pour le voir sur ton site.');
 }
 function renderPreview(){
  if(!state||selection==='media'||selection==='projects')return;
@@ -356,7 +416,7 @@ function applyUploaded(photos,target){
  if(target?.kind==='project-gallery'&&projectDraft){photos.forEach(photo=>projectDraft.gallery.push({photo:{id:photo.id,url:photo.url,alt:photo.alt},legacyUrl:''}));render();return}
  const root=currentRoot();
  if(target?.kind==='gallery'){
-   const section=root?.sections?.[target.index];
+   const section=sectionList()[target.index];
    if(!section||!Array.isArray(section[target.key])){message('La galerie a changé : choisissez à nouveau la section',true);return}
    photos.forEach(photo=>section[target.key].push({image:{url:photo.url,alt:photo.alt},caption:'',link:''}));
  }else if(target?.kind==='field'){
@@ -391,7 +451,15 @@ async function importPhotos(files){
    media.unshift(photo);photos.push(photo);
   }catch(err){failures.push(`${file.name} : ${err.message||'échec'}`)}
  }
+  if(photos.length && !target && !picker && selection==='media' && library.folder!=='all' && library.folder!=='__unassigned__'){
+    const hadEdits = dirty;
+    photos.forEach(photo=>{folders().assignments[String(photo.id)]=library.folder});markDirty();
+    // Auto-save a clean Studio session, so imported photos appear in their folder immediately.
+    // Avoid silently publishing unrelated changes if the user already has a draft.
+    if(!hadEdits) await save();
+  }
  uploading=false;$('#directUploadInput').disabled=false;$('#directUploadInput').value='';
+  $('#directoryUploadInput').value='';
  $('#uploadProgress').hidden=true;
  const libraryProgress=$('#libraryUploadProgress');if(libraryProgress)libraryProgress.hidden=true;
  if($('#mediaModal').open)showMedia(pickerPage);
@@ -403,7 +471,7 @@ async function importPhotos(files){
 
 async function refreshMedia(){if($('#mediaModal').open)await showMedia(pickerPage);if(selection==='media')await loadLibrary(library.page);message('Médiathèque actualisée')}
 async function initialLoad(){try{const r=await fetch('/studio-api',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;$('#saveBtn').disabled=false;setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render();loadProjectDocs()}catch(error){console.error(error);setStatus('Connexion impossible',true);$('#editor').innerHTML='<div class="danger-message">Impossible de charger le Studio. Vérifiez votre connexion Payload et la variable BLOB_READ_WRITE_TOKEN dans Vercel.</div>';message('Chargement impossible',true)}}
-async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
+async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;$('#saveBtn').hidden=selection==='media'||selection==='projects';setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
 function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset.index),i=Number(btn.dataset.item),dir=Number(btn.dataset.dir);
  const root=currentRoot(),sections=sectionList();
  if(selection==='pokedex' && command.startsWith('pokedex-')){
@@ -428,6 +496,7 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  }
  if(command==='featured-delete'){root.featuredCards[featuredUniverse].splice(index,1);markDirty();render();return}
  if(command==='featured-move'){if(move(root.featuredCards[featuredUniverse],index,index+dir)){markDirty();render()}return}
+ if(command==='crop-image'){openCrop(btn.dataset.url);return}
  if(command==='project-new'){projectDraft=newProject();render();return}
  if(command==='project-cover-choose'){openPicker(photo=>{projectDraft.cover={id:photo.id,url:photo.url,alt:photo.alt};render()});return}
  if(command==='project-cover-upload'){uploadTarget={kind:'project-cover'};$('#directUploadInput').click();return}
@@ -484,9 +553,39 @@ $('#mediaSearch').addEventListener('input',()=>{clearTimeout(pickerSearchTimer);
 $('#refreshMedia').addEventListener('click',refreshMedia);
 $('#studioUploadBtn').addEventListener('click',()=>{uploadTarget=null;$('#directUploadInput').click()});
 $('#directUploadInput').addEventListener('change',event=>{const files=Array.from(event.target.files||[]);importPhotos(files)});
+$('#directoryUploadInput').addEventListener('change',event=>importPhotos(Array.from(event.target.files||[])));
+$('#cropModal').querySelectorAll('input,select').forEach(el=>el.addEventListener('input',updateCropPreview));
+$('#cropSave').addEventListener('click',saveCrop);
+$('#cropCancel').addEventListener('click',()=>$('#cropModal').close());
 $('#editor').addEventListener('keydown',event=>{if(event.target.matches('[data-library-name]')&&event.key==='Enter'){event.preventDefault();const id=event.target.dataset.libraryName;renameLibraryItem(id,event.target.value);return}if(event.target.matches('[data-library-name]')&&event.key==='Escape'){library.renamingId=null;syncLibraryView();return}if(event.target.id==='libraryDropzone'&&(event.key==='Enter'||event.key===' ')){event.preventDefault();uploadTarget=null;$('#directUploadInput').click()}});
-$('#editor').addEventListener('dragover',event=>{const zone=event.target.closest('#libraryDropzone');if(zone){event.preventDefault();zone.classList.add('dragging')}});
+$('#editor').addEventListener('dragstart',event=>{
+  const photo=event.target.closest('[data-library-drag]');
+  if(photo){libraryDragId=photo.dataset.libraryDrag;libraryDragIds=library.selected.has(libraryDragId)?[...library.selected.keys()]:[libraryDragId];event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain','library:'+libraryDragId);return}
+  const sortable=event.target.closest('[data-sort-kind]');
+  if(sortable){editorDrag={kind:sortable.dataset.sortKind,section:Number(sortable.dataset.section),index:Number(sortable.dataset.item)};event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain','sort:'+editorDrag.kind);sortable.classList.add('dragging')}
+});
+$('#editor').addEventListener('dragend',()=>{libraryDragId=null;libraryDragIds=[];editorDrag=null;document.querySelectorAll('.v50-sortable.dragging').forEach(x=>x.classList.remove('dragging'))});
+$('#editor').addEventListener('dragover',event=>{
+ const zone=event.target.closest('#libraryDropzone'),folder=event.target.closest('[data-library-action="folder"]'),row=event.target.closest('[data-sort-kind]');
+ if(zone||folder&&(libraryDragId||event.dataTransfer.types.includes('Files'))||row&&editorDrag){event.preventDefault();event.dataTransfer.dropEffect='move';if(zone)zone.classList.add('dragging')}
+});
 $('#editor').addEventListener('dragleave',event=>{const zone=event.target.closest('#libraryDropzone');if(zone)zone.classList.remove('dragging')});
-$('#editor').addEventListener('drop',event=>{const zone=event.target.closest('#libraryDropzone');if(!zone)return;event.preventDefault();zone.classList.remove('dragging');uploadTarget=null;importPhotos([...event.dataTransfer.files])});
+$('#editor').addEventListener('drop',event=>{
+ const folder=event.target.closest('[data-library-action="folder"]');
+ if(folder && !libraryDragId && event.dataTransfer.files.length){event.preventDefault();const dest=folder.dataset.folder;if(dest!=='all'){library.folder=dest}uploadTarget=null;importPhotos([...event.dataTransfer.files]);return}
+ if(folder&&libraryDragId){event.preventDefault();const dest=folder.dataset.folder;if(dest==='all')return;const f=folders();if(dest==='__unassigned__')libraryDragIds.forEach(id=>delete f.assignments[id]);else libraryDragIds.forEach(id=>f.assignments[id]=dest);const count=libraryDragIds.length;libraryDragId=null;libraryDragIds=[];markDirty();render();message(`${count} photo(s) déplacée(s). Clique sur Publier.`);return}
+ const row=event.target.closest('[data-sort-kind]');
+ if(row&&editorDrag){event.preventDefault();const to=Number(row.dataset.item),from=editorDrag.index;let list=null,doPublish=true;
+   if(row.dataset.sortKind===editorDrag.kind){
+     if(editorDrag.kind==='section-image'&&Number(row.dataset.section)===editorDrag.section){const sec=sectionList()[editorDrag.section];list=sec?.[sec.type==='carrouselPhotos'?'slides':'photos']}
+     if(editorDrag.kind==='project-gallery'){list=projectDraft?.gallery;doPublish=false}
+     if(editorDrag.kind==='pokedex-gallery'&&Number(row.dataset.section)===editorDrag.section)list=currentRoot()?.cards?.[editorDrag.section]?.gallery;
+     if(list&&move(list,from,to)){if(doPublish)markDirty();render();message(doPublish?'Ordre changé · Clique sur Publier':'Ordre changé · Enregistre le projet')}
+   }editorDrag=null;return;
+ }
+ const zone=event.target.closest('#libraryDropzone');if(!zone)return;
+ event.preventDefault();zone.classList.remove('dragging');uploadTarget=null;
+ const files=[...event.dataTransfer.files];if(files.length)importPhotos(files);
+});
 initialLoad();
 })();

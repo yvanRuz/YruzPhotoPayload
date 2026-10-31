@@ -8,6 +8,8 @@ export type StudioRecord = {
   savedAt: string
   navigation: Record<string, unknown>
   pages: Record<string, unknown>
+  libraryFolders: { names: string[]; assignments: Record<string, string> }
+  mediaFrames: Record<string, { x: number; y: number; zoom: number; fit: string }>
 }
 
 const defaultNavigation = {
@@ -32,6 +34,8 @@ const defaults = (): StudioRecord => ({
   revision: 'initial',
   savedAt: '',
   navigation: structuredClone(defaultNavigation),
+  libraryFolders: { names: [], assignments: {} },
+  mediaFrames: {},
   pages: Object.fromEntries(Object.entries(pageNames).map(([k, title]) => [k, {
     title, heading: '', intro: '', mainButtonLabel: '', mainButtonUrl: '',
     secondButtonLabel: '', secondButtonUrl: '', bottomButtonLabel: '',
@@ -81,6 +85,8 @@ export async function getStudioContent(): Promise<StudioRecord> {
     revision: String(stored.revision || 'initial'),
     savedAt: String(stored.savedAt || ''),
     navigation: { ...initial.navigation, ...(stored.navigation || {}) },
+    libraryFolders: { names: Array.isArray(stored.libraryFolders?.names) ? stored.libraryFolders.names : [], assignments: stored.libraryFolders?.assignments && typeof stored.libraryFolders.assignments === 'object' ? stored.libraryFolders.assignments : {} },
+    mediaFrames: stored.mediaFrames && typeof stored.mediaFrames === 'object' ? stored.mediaFrames : initial.mediaFrames,
     pages: Object.fromEntries(Object.entries(initial.pages).map(([key, value]) => [
       key, { ...(value as Record<string, unknown>), ...((stored.pages || {})[key] as Record<string, unknown> || {}) },
     ])),
@@ -167,7 +173,23 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
       sections: (Array.isArray(p.sections) ? p.sections : []).slice(0, 80).map(cleanSection).filter(Boolean),
     }
   }
-  return { revision: 'initial', savedAt: '', navigation, pages }
+  // Virtual media folders and non-destructive per-image framing are stored in
+  // the published Studio JSON. Payload media records and Blob URLs remain intact.
+  const rawFolders = input.libraryFolders && typeof input.libraryFolders === 'object' ? input.libraryFolders : {}
+  const names = [...new Set((Array.isArray(rawFolders.names) ? rawFolders.names : []).slice(0, 150).map((n:any)=>str(n,55)).filter((n:string)=>n && !/[<>\x00-\x1f]/.test(n)))];
+  const assignments: Record<string,string> = {}
+  for (const [id, name] of Object.entries(rawFolders.assignments && typeof rawFolders.assignments === 'object' ? rawFolders.assignments : {}).slice(0,20000)) {
+    if (/^[a-zA-Z0-9_-]{1,80}$/.test(id) && names.includes(String(name))) assignments[id] = String(name)
+  }
+  const mediaFrames: Record<string,{x:number;y:number;zoom:number;fit:string}> = {}
+  const inputFrames = input.mediaFrames && typeof input.mediaFrames === 'object' ? input.mediaFrames : {}
+  const limit = (v:any,min:number,max:number,d:number) => Number.isFinite(Number(v))? Math.max(min,Math.min(max,Number(v))):d
+  for (const [source, frame] of Object.entries(inputFrames).slice(0,20000)) {
+    if (!image({url:source}) || !frame || typeof frame !== 'object') continue
+    const f = frame as any
+    mediaFrames[source] = { x:limit(f.x,0,100,50),y:limit(f.y,0,100,50),zoom:limit(f.zoom,1,2,1),fit:f.fit==='contain'?'contain':'cover' }
+  }
+  return { revision: 'initial', savedAt: '', navigation, pages, libraryFolders:{names,assignments}, mediaFrames }
 }
 
 export async function saveStudioContent(input: unknown, expectedRevision: unknown): Promise<StudioRecord> {
