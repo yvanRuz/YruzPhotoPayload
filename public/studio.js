@@ -24,7 +24,7 @@ const sectionPrefix=()=>selection==='portfolio'&&portfolioUniverse!=='general'?`
 
 // Client-side view state only. Media files remain in Payload/Blob, not this page JSON.
 const library={page:1,totalPages:1,totalDocs:0,items:[],search:'',selected:new Map(),loading:false,requestId:0,renamingId:null,savingName:false,folder:'all',deletingId:null};
-let libraryDestination='portfolio', libraryUniverse='photo', pickerPage=1, pickerPages=1, librarySearchTimer, pickerSearchTimer;
+let libraryDestination='portfolio', libraryUniverse='photo', pickerPage=1, pickerPages=1, pickerRequest=0, librarySearchTimer, pickerSearchTimer;
 let toastTimer, libraryDragId=null, libraryDragIds=[], editorDrag=null, cropUrl='';
 const folders=()=>{if(!state.content.libraryFolders)state.content.libraryFolders={names:[],assignments:{}};return state.content.libraryFolders};
 const photoFrames=()=>{if(!state.content.mediaFrames)state.content.mediaFrames={};return state.content.mediaFrames};
@@ -67,7 +67,7 @@ function renderSection(block,index){
    f=field('Titre',`${base}.title`,block.title)+(block.type==='carrouselPhotos'?field('Description',`${base}.description`,block.description,'textarea'):field('Colonnes',`${base}.columns`,block.columns,'select',[['2','2 colonnes'],['3','3 colonnes'],['4','4 colonnes']]))+
    `<p class="small-counter">${rows.length} photographie${rows.length>1?'s':''} — glisse les visuels pour choisir leur ordre</p><div class="collection-items">`+
    rows.map((row,j)=>`<div class="collection-item v50-sortable" draggable="true" data-sort-kind="section-image" data-section="${index}" data-item="${j}" title="Glisser pour changer l’ordre">${row.image?.url?`<img src="${e(validSrc(row.image.url))}" alt="">`:''}<div class="item-fields">${field('Légende',`${base}.${arrKey}.${j}.caption`,row.caption)}${block.type==='carrouselPhotos'?field('Lien au clic (optionnel)',`${base}.${arrKey}.${j}.link`,row.link):''}</div><div class="item-actions">${cropButton(row.image)}${action('swap-image','Changer',`data-path="${base}.${arrKey}.${j}.image"`)}${action('move-item','↑',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="-1"`)}${action('move-item','↓',`data-index="${index}" data-key="${arrKey}" data-item="${j}" data-dir="1"`)}${action('remove-item','✕',`data-index="${index}" data-key="${arrKey}" data-item="${j}"`,true)}</div></div>`).join('')+
-   `</div><div class="add-row">${action('add-image','+ Choisir une photographie',`data-index="${index}" data-key="${arrKey}"`)}${action('upload-gallery','↑ Importer plusieurs photos',`data-index="${index}" data-key="${arrKey}"`)}</div>`;
+   `</div><div class="add-row">${action('add-image','+ Choisir plusieurs photographies',`data-index="${index}" data-key="${arrKey}"`)}${action('upload-gallery','↑ Importer plusieurs photos',`data-index="${index}" data-key="${arrKey}"`)}</div>`;
  }
  if(block.type==='carrouselProjets'){
    f=field('Titre',`${base}.title`,block.title)+field('Afficher',`${base}.mode`,block.mode,'select',[['photo','Photographies'],['video','Vidéos'],['graphisme','Graphisme'],['all','Tous les univers']])+field('Sélection',`${base}.selection`,block.selection,'select',[['auto','Automatique : tous les projets publiés'],['manual','Sélection manuelle']])+field('Nombre maximum de projets',`${base}.limit`,block.limit);
@@ -98,6 +98,13 @@ function featuredPanel(p){
 let featuredUniverse='photo';
 function portfolioTabs(){return `<section class="form-panel"><div class="panel-eyebrow">PORTFOLIO / RUBRIQUES</div><h2>Choisir la rubrique à modifier</h2><p>Chaque rubrique possède ses propres carrousels et galeries. Les projets sont gérés dans « Photo / Vidéo / Graphisme ».</p><div class="universe-tabs">${['photo','video','graphisme','general'].map(kind=>`<button type="button" data-portfolio-universe="${kind}" class="${portfolioUniverse===kind?'active':''}">${universeNames[kind]||'Commun à toutes'}</button>`).join('')}</div></section>`}
 function projectMedia(photo){const src=validSrc(photo?.url);return src?`<div class="project-thumb"><img src="${e(src)}" alt="${e(photo.alt||'Image')}"></div>`:'<div class="project-thumb">Aucune image</div>'}
+function projectCoverPreview(d){
+ const src=validSrc(d.cover?.url||d.legacyCover);
+ if(!src)return '<div class="info-strip">Choisis une photographie pour visualiser son cadrage ici, avant publication.</div>';
+ const f=photoFrames()[src]||{x:50,y:50,zoom:1,fit:'cover'};
+ const style=`object-position:${Number(f.x)||0}% ${Number(f.y)||0}%;object-fit:${f.fit==='contain'?'contain':'cover'};transform:scale(${Math.max(1,Math.min(2,Number(f.zoom)||1))})`;
+ return `<div class="v51-cover-preview"><div class="v51-cover-preview-item"><small>ACCUEIL / CARROUSEL PRINCIPAL</small><div class="v51-preview-card v51-preview-home"><img src="${e(src)}" alt="Prévisualisation accueil" style="${e(style)}"><div class="v51-preview-gradient"></div><div class="v51-preview-caption"><span>${e(d.category||'PHOTO')}</span><strong>${e(d.title||'NOUVEAU PROJET')}</strong></div><span class="v51-preview-arrow">↗</span></div></div><div class="v51-cover-preview-item"><small>PORTFOLIO / CARTE DE PROJET</small><div class="v51-preview-card v51-preview-portfolio"><img src="${e(src)}" alt="Prévisualisation portfolio" style="${e(style)}"><div class="v51-preview-gradient"></div><div class="v51-preview-caption"><span>◈ PHOTO · ${e(d.category||'PHOTOGRAPHIE')}</span><strong>${e(d.title||'NOUVEAU PROJET')}</strong></div><span class="v51-preview-arrow">↗</span></div></div></div>`;
+}
 function renderProjects(){
  const list=projectDocs.filter(p=>kindOf(p)===projectUniverse);
  const tabs=`<div class="universe-tabs">${['photo','video','graphisme'].map(kind=>`<button type="button" class="${projectUniverse===kind?'active':''}" data-project-universe="${kind}">${universeNames[kind]} (${projectDocs.filter(p=>kindOf(p)===kind).length})</button>`).join('')}</div>`;
@@ -109,11 +116,11 @@ function renderProjects(){
      ${field('Titre du projet','project.title',d.title)}${d.source==='starter'?`<div class="field"><label>Identifiant URL (conservé pour remplacer la carte d’origine)</label><input value="${e(d.slug)}" readonly aria-readonly="true"></div>`:field('Identifiant URL (minuscules et tirets)','project.slug',d.slug)}
      ${projectUniverse!=='graphisme'?field('Catégorie / discipline','project.category',d.category):'<div class="info-strip">Rubrique Graphisme : la catégorie GRAPHISME sera enregistrée automatiquement.</div>'}
      ${field('Ordre dans le Portfolio','project.order',d.order)}
-     <h3>Couverture</h3>${projectMedia(d.cover||{url:d.legacyCover,alt:d.title})}<div class="add-row">${cropButton(d.cover||{url:d.legacyCover})}${action('project-cover-choose','Choisir une photo')}${action('project-cover-upload','↑ Importer une couverture')}</div>
+     <h3>Couverture</h3><p>Voici le rendu de ton image dans les deux cartes du site, avant publication. Tu peux la déplacer, la zoomer et comparer les cadrages sans modifier le fichier original.</p>${projectCoverPreview(d)}<div class="add-row">${action('project-cover-choose','▧ Choisir la couverture')}${action('project-cover-upload','↑ Importer une couverture')}${validSrc(d.cover?.url||d.legacyCover)?action('project-cover-crop','▣ Ajuster le cadrage / prévisualiser'):''}</div>
      ${projectUniverse==='video'?field('Lien vidéo (YouTube, Vimeo ou MP4 hébergé)','project.video',d.video):''}
      <h3>Galerie (${gallery.length} visuel${gallery.length>1?'s':''})</h3><p>Glisse une photo pour changer sa place, ou utilise les flèches.</p>
      <div class="project-gallery-items">${gallery.map((g,i)=>`<div class="collection-item v50-sortable" draggable="true" data-sort-kind="project-gallery" data-item="${i}" title="Glisser pour changer l’ordre">${projectMedia(g.photo||{url:g.legacyUrl,alt:''})}<div class="item-fields">${e(g.photo?.alt||g.legacyUrl||'Photographie')}</div><div class="item-actions">${cropButton(g.photo||{url:g.legacyUrl})}${action('project-gallery-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-gallery-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-gallery-remove','✕',`data-index="${i}"`,true)}</div></div>`).join('')}</div>
-     <div class="add-row">${action('project-gallery-choose','+ Sélectionner une photo')}${action('project-gallery-upload','↑ Importer plusieurs photos')}</div>
+     <div class="add-row">${action('project-gallery-choose','+ Sélectionner plusieurs photos')}${action('project-gallery-upload','↑ Importer plusieurs photos')}</div>
      ${field('Afficher dans le Portfolio','project.published',d.published,'checkbox')}
      <button type="button" class="primary-btn" data-action="project-save" ${savingProject?'disabled':''}>${savingProject?'Enregistrement…':'Enregistrer le projet ↗'}</button></section>`;
  }
@@ -165,7 +172,7 @@ function renderPokedex(){
   <h3>Photographies supplémentaires (${(c.gallery||[]).length})</h3>
   <div class="pokedex-album-photos">${(c.gallery||[]).map((photo,j)=>`<div class="pokedex-album-photo v50-sortable" draggable="true" data-sort-kind="pokedex-gallery" data-section="${i}" data-item="${j}" title="Glisser pour changer l’ordre">${mediaField(`cards.${i}.gallery.${j}`,photo,`Photo ${j+1}`)}
      <div class="item-actions">${action('pokedex-photo-move','←',`data-index="${i}" data-item="${j}" data-dir="-1"`)}${action('pokedex-photo-move','→',`data-index="${i}" data-item="${j}" data-dir="1"`)}${action('pokedex-photo-remove','✕',`data-index="${i}" data-item="${j}"`,true)}</div></div>`).join('')}</div>
-  <div class="add-row">${action('pokedex-photo-add','+ Ajouter une photo',`data-index="${i}"`)}${action('pokedex-photo-upload','↑ Importer plusieurs photos',`data-index="${i}"`)}</div>
+  <div class="add-row">${action('pokedex-photo-add','+ Choisir plusieurs photos',`data-index="${i}"`)}${action('pokedex-photo-upload','↑ Importer plusieurs photos',`data-index="${i}"`)}</div>
   ${field('Afficher cette carte dans le Pokédex',`cards.${i}.published`,c.published,'checkbox')}
  </article>`).join('')||'<div class="empty-state">Ton album est vide. Ajoute ta première personnalité et choisis sa photographie.</div>'}
  <div class="add-row">${action('pokedex-add','+ Nouvelle carte de collection')}</div>
@@ -338,8 +345,13 @@ async function handleLibraryAction(btn){
  if(operation==='prev'||operation==='next'){const next=library.page+(operation==='next'?1:-1);if(next>=1&&next<=library.totalPages)loadLibrary(next);return}
  if(operation==='carousel'||operation==='gallery')createFromLibrary(operation==='carousel'?'carrouselPhotos':'grillePhotos');
 }
-function openCrop(url){
+function openCrop(url,{project=false}={}){
  cropUrl=validSrc(url);if(!cropUrl)return;
+ const context=project&&projectDraft?projectDraft:null;
+ const dlgHead=$('#cropModal .crop-header h2');dlgHead.textContent=context?'Cadrer la couverture du projet':'Cadrage et prévisualisation';
+ const title=context?.title||'TON PROJET';const category=context?.category||'PHOTOGRAPHIE';
+ for(const el of document.querySelectorAll('[data-crop-title]'))el.textContent=title;
+ for(const el of document.querySelectorAll('[data-crop-category]'))el.textContent=category;
  const f=photoFrames()[cropUrl]||{x:50,y:50,zoom:1,fit:'cover'};
  const dlg=$('#cropModal');
  dlg.querySelector('#cropSource').src=cropUrl;
@@ -355,7 +367,7 @@ function updateCropPreview(){
 function saveCrop(){
  if(!cropUrl)return;
  const dlg=$('#cropModal');photoFrames()[cropUrl]={x:Number(dlg.querySelector('#cropX').value),y:Number(dlg.querySelector('#cropY').value),zoom:Number(dlg.querySelector('#cropZoom').value),fit:dlg.querySelector('#cropFit').value};
- markDirty();dlg.close();message('Cadrage mis à jour. Clique sur Publier pour le voir sur ton site.');
+ markDirty();dlg.close();if(selection==='projects'&&projectDraft)render();message('Cadrage appliqué à l’aperçu. Clique sur « Publier les modifications » pour le rendre visible sur ton site.');
 }
 function renderPreview(){
  if(!state||selection==='media'||selection==='projects')return;
@@ -392,19 +404,56 @@ function setNested(root,path,value){
 }
 function getNested(root,path){return String(path).split('.').reduce((o,key)=>o?.[key],root)}
 function move(arr,from,to){if(!Array.isArray(arr)||to<0||to>=arr.length)return false;const [item]=arr.splice(from,1);arr.splice(to,0,item);return true}
-function openPicker(callback){picker=callback;pickerPage=1;$('#mediaModal').showModal();$('#mediaSearch').value='';showMedia(1)}
+function mediaKey(m){return String(m?.id??m?.url??'')}
+function openPicker(callback,{multiple=false}={}){
+ picker={callback,multiple,selected:new Map()};pickerPage=1;
+ $('#mediaModal').showModal();$('#mediaSearch').value='';
+ $('#pickerModeInfo').textContent=multiple?'Clique sur plusieurs photos puis sur « Ajouter la sélection ». Tu peux changer de page sans perdre ta sélection.':'Choisis une photo pour la couverture. Clique dessus pour confirmer.';
+ syncPickerSelection();showMedia(1);
+}
+function syncPickerSelection(){
+ const multiple=picker?.multiple===true;
+ const count=picker?.selected?.size||0;
+ $('#pickerSelectionBar').hidden=!multiple;
+ $('#pickerSelectionCount').textContent=`${count} photographie${count>1?'s':''} sélectionnée${count>1?'s':''}`;
+ const confirmBtn=$('#pickerConfirm');confirmBtn.disabled=!count;
+ confirmBtn.textContent=count?`Ajouter les ${count} photo${count>1?'s':''} sélectionnée${count>1?'s':''} →`:'Sélectionne des photos';
+ $('#pickerClear').disabled=!count;
+}
 async function showMedia(page=1){
  const grid=$('#mediaGrid');grid.innerHTML='<p>Chargement des photographies…</p>';
+ const request=++pickerRequest;
  try{
   const query=new URLSearchParams({view:'media',page:String(page),search:$('#mediaSearch').value.trim()});
   const response=await fetch(`/studio-api?${query}`,{cache:'no-store',credentials:'same-origin'});
   if(!response.ok)throw Error(`HTTP ${response.status}`);
-  const result=await response.json();window._currentMedia=result.media||[];pickerPage=Number(result.page)||page;pickerPages=Math.max(1,Number(result.totalPages)||1);
-  grid.innerHTML=window._currentMedia.length?window._currentMedia.map((m,i)=>`<button type="button" data-photo="${i}"><img loading="lazy" src="${e(validSrc(m.url))}" alt="${e(m.alt||m.filename)}"><small>${e(m.alt||m.filename)}</small></button>`).join(''):'<p>Aucune photographie trouvée.</p>';
+  const result=await response.json();if(request!==pickerRequest)return;
+  window._currentMedia=result.media||[];pickerPage=Number(result.page)||page;pickerPages=Math.max(1,Number(result.totalPages)||1);
+  grid.innerHTML=window._currentMedia.length?window._currentMedia.map((m,i)=>{
+   const checked=picker?.selected?.has(mediaKey(m));return `<button type="button" data-photo="${i}" class="${checked?'picker-selected':''}" aria-pressed="${checked?'true':'false'}"><span class="picker-image"><img loading="lazy" src="${e(validSrc(m.url))}" alt="${e(m.alt||m.filename)}"><span class="picker-check" aria-hidden="true">${checked?'✓':'+'}</span></span><small>${e(m.alt||m.filename)}</small></button>`;
+  }).join(''):'<p>Aucune photographie trouvée.</p>';
   $('#mediaPager').innerHTML=`<span>Page ${pickerPage} / ${pickerPages}</span><div><button type="button" data-picker-page="${pickerPage-1}" ${pickerPage<=1?'disabled':''}>←</button><button type="button" data-picker-page="${pickerPage+1}" ${pickerPage>=pickerPages?'disabled':''}>→</button></div>`;
- }catch(err){grid.innerHTML=`<p class="danger-message">Impossible de charger la médiathèque : ${e(err.message)}</p>`}
+  syncPickerSelection();
+ }catch(err){if(request===pickerRequest)grid.innerHTML=`<p class="danger-message">Impossible de charger la médiathèque : ${e(err.message)}</p>`}
 }
-function closePicker(){$('#mediaModal').close();picker=null}
+function togglePickerPhoto(photo){
+ if(!picker||!photo)return;
+ if(!picker.multiple){const callback=picker.callback;closePicker();callback(photo);return;}
+ const key=mediaKey(photo);
+ if(picker.selected.has(key))picker.selected.delete(key);else picker.selected.set(key,photo);
+ const shown=window._currentMedia||[];
+ for(const button of $('#mediaGrid').querySelectorAll('[data-photo]')){
+  const image=shown[Number(button.dataset.photo)],checked=picker.selected.has(mediaKey(image));
+  button.classList.toggle('picker-selected',checked);button.setAttribute('aria-pressed',String(checked));button.querySelector('.picker-check').textContent=checked?'✓':'+';
+ }
+ syncPickerSelection();
+}
+function confirmPicker(){
+ if(!picker||!picker.multiple||!picker.selected.size)return;
+ const chosen=[...picker.selected.values()],callback=picker.callback;
+ closePicker();callback(chosen);message(`${chosen.length} photographie(s) ajoutée(s) à l'éditeur. Enregistre ou publie pour les mettre en ligne.`);
+}
+function closePicker(){++pickerRequest;$('#mediaModal').close();picker=null;syncPickerSelection()}
 function applyUploaded(photos,target){
  if(!photos.length||!state)return;
  if(target?.kind==='pokedex-gallery'){
@@ -422,7 +471,8 @@ function applyUploaded(photos,target){
  }else if(target?.kind==='field'){
    setNested(root,target.path,{url:photos[0].url,alt:photos[0].alt});
  }else if(picker){
-   const callback=picker;closePicker();callback(photos[0]);return;
+   if(picker.multiple){photos.forEach(photo=>picker.selected.set(mediaKey(photo),photo));syncPickerSelection();message(`${photos.length} photo(s) importée(s) et présélectionnée(s). Clique sur Ajouter la sélection.`);return}
+   const callback=picker.callback;closePicker();callback(photos[0]);return;
  }
  markDirty();render();
 }
@@ -480,7 +530,7 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
   if(command==='pokedex-move'){if(move(cards,index,index+dir)){markDirty();render()}return}
   if(command==='pokedex-delete'){if(confirm('Supprimer cette carte du Pokédex ?')){cards.splice(index,1);markDirty();render()}return}
   if(!card)return;
-  if(command==='pokedex-photo-add'){openPicker(photo=>{card.gallery.push({url:photo.url,alt:photo.alt});markDirty();render()});return}
+  if(command==='pokedex-photo-add'){openPicker(photos=>{photos.forEach(photo=>{if(!card.gallery.some(p=>p.url===photo.url))card.gallery.push({url:photo.url,alt:photo.alt})});markDirty();render()},{multiple:true});return}
   if(command==='pokedex-photo-upload'){uploadTarget={kind:'pokedex-gallery',index};$('#directUploadInput').click();return}
   if(command==='pokedex-photo-remove'){card.gallery.splice(i,1);markDirty();render();return}
   if(command==='pokedex-photo-move'){if(move(card.gallery,i,i+dir)){markDirty();render()}return}
@@ -498,9 +548,10 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='featured-move'){if(move(root.featuredCards[featuredUniverse],index,index+dir)){markDirty();render()}return}
  if(command==='crop-image'){openCrop(btn.dataset.url);return}
  if(command==='project-new'){projectDraft=newProject();render();return}
- if(command==='project-cover-choose'){openPicker(photo=>{projectDraft.cover={id:photo.id,url:photo.url,alt:photo.alt};render()});return}
+ if(command==='project-cover-choose'){openPicker(photo=>{projectDraft.cover={id:photo.id,url:photo.url,alt:photo.alt};render();openCrop(photo.url,{project:true})});return}
  if(command==='project-cover-upload'){uploadTarget={kind:'project-cover'};$('#directUploadInput').click();return}
- if(command==='project-gallery-choose'){openPicker(photo=>{projectDraft.gallery.push({photo:{id:photo.id,url:photo.url,alt:photo.alt},legacyUrl:''});render()});return}
+ if(command==='project-cover-crop'){openCrop(projectDraft.cover?.url||projectDraft.legacyCover,{project:true});return}
+ if(command==='project-gallery-choose'){openPicker(photos=>{for(const photo of photos){if(!projectDraft.gallery.some(x=>x.photo?.url===photo.url))projectDraft.gallery.push({photo:{id:photo.id,url:photo.url,alt:photo.alt},legacyUrl:''})}render()},{multiple:true});return}
  if(command==='project-gallery-upload'){uploadTarget={kind:'project-gallery'};$('#directUploadInput').click();return}
  if(command==='project-gallery-move'){move(projectDraft.gallery,index,index+dir);render();return}
  if(command==='project-gallery-remove'){projectDraft.gallery.splice(index,1);render();return}
@@ -509,7 +560,7 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='move-section'){if(move(sections,index,index+dir)){markDirty();render()}return}
  if(command==='remove-section'){if(confirm('Supprimer cette section de votre page ?')){sections.splice(index,1);markDirty();render()}return}
  if(command==='choose-image'||command==='swap-image'){const path=btn.dataset.path;openPicker(photo=>{setNested(root,path,{url:photo.url,alt:photo.alt});markDirty();render()});return}
- if(command==='add-image'){const key=btn.dataset.key;openPicker(photo=>{sections[index][key].push({image:{url:photo.url,alt:photo.alt},caption:'',link:''});markDirty();render()});return}
+ if(command==='add-image'){const key=btn.dataset.key;openPicker(photos=>{photos.forEach(photo=>{if(!sections[index][key].some(x=>x.image?.url===photo.url))sections[index][key].push({image:{url:photo.url,alt:photo.alt},caption:'',link:''})});markDirty();render()},{multiple:true});return}
  if(command==='upload-field'){uploadTarget={kind:'field',path:btn.dataset.path};$('#directUploadInput').click();return}
  if(command==='upload-gallery'){uploadTarget={kind:'gallery',index,key:btn.dataset.key};$('#directUploadInput').click();return}
  if(command==='move-item'||command==='remove-item'){const list=sections[index][btn.dataset.key];if(command==='move-item')move(list,i,i+dir);else list.splice(i,1);markDirty();render();return}
@@ -548,13 +599,21 @@ $('#closeMedia').addEventListener('click',closePicker);
 $('#mediaModal').addEventListener('click',event=>{
  if(event.target===$('#mediaModal')){closePicker();return}
  const pageBtn=event.target.closest('[data-picker-page]');if(pageBtn){showMedia(Number(pageBtn.dataset.pickerPage));return}
- const btn=event.target.closest('[data-photo]');if(btn){const photo=window._currentMedia[Number(btn.dataset.photo)];if(photo&&picker){const callback=picker;closePicker();callback(photo)}}});
+ const btn=event.target.closest('[data-photo]');if(btn){const photo=window._currentMedia[Number(btn.dataset.photo)];if(photo&&picker)togglePickerPhoto(photo)}});
 $('#mediaSearch').addEventListener('input',()=>{clearTimeout(pickerSearchTimer);pickerSearchTimer=setTimeout(()=>showMedia(1),300)});
+$('#pickerConfirm').addEventListener('click',confirmPicker);
+$('#pickerClear').addEventListener('click',()=>{if(!picker)return;picker.selected.clear();syncPickerSelection();showMedia(pickerPage)});
 $('#refreshMedia').addEventListener('click',refreshMedia);
 $('#studioUploadBtn').addEventListener('click',()=>{uploadTarget=null;$('#directUploadInput').click()});
 $('#directUploadInput').addEventListener('change',event=>{const files=Array.from(event.target.files||[]);importPhotos(files)});
 $('#directoryUploadInput').addEventListener('change',event=>importPhotos(Array.from(event.target.files||[])));
 $('#cropModal').querySelectorAll('input,select').forEach(el=>el.addEventListener('input',updateCropPreview));
+for(const frame of $('#cropModal').querySelectorAll('.crop-frame')){
+ let start=null;
+ frame.addEventListener('pointerdown',ev=>{if(ev.button!==0||!cropUrl)return;start={px:ev.clientX,py:ev.clientY,x:Number($('#cropX').value),y:Number($('#cropY').value)};frame.setPointerCapture(ev.pointerId);frame.classList.add('dragging');ev.preventDefault()});
+ frame.addEventListener('pointermove',ev=>{if(!start)return;const box=frame.getBoundingClientRect();$('#cropX').value=Math.round(Math.max(0,Math.min(100,start.x-(ev.clientX-start.px)/box.width*100)));$('#cropY').value=Math.round(Math.max(0,Math.min(100,start.y-(ev.clientY-start.py)/box.height*100)));updateCropPreview()});
+ const end=()=>{start=null;frame.classList.remove('dragging')};frame.addEventListener('pointerup',end);frame.addEventListener('pointercancel',end);
+}
 $('#cropSave').addEventListener('click',saveCrop);
 $('#cropCancel').addEventListener('click',()=>$('#cropModal').close());
 $('#editor').addEventListener('keydown',event=>{if(event.target.matches('[data-library-name]')&&event.key==='Enter'){event.preventDefault();const id=event.target.dataset.libraryName;renameLibraryItem(id,event.target.value);return}if(event.target.matches('[data-library-name]')&&event.key==='Escape'){library.renamingId=null;syncLibraryView();return}if(event.target.id==='libraryDropzone'&&(event.key==='Enter'||event.key===' ')){event.preventDefault();uploadTarget=null;$('#directUploadInput').click()}});
