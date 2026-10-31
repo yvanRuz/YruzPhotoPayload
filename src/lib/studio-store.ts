@@ -176,7 +176,12 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
   // Virtual media folders and non-destructive per-image framing are stored in
   // the published Studio JSON. Payload media records and Blob URLs remain intact.
   const rawFolders = input.libraryFolders && typeof input.libraryFolders === 'object' ? input.libraryFolders : {}
-  const names = [...new Set((Array.isArray(rawFolders.names) ? rawFolders.names : []).slice(0, 150).map((n:any)=>str(n,55)).filter((n:string)=>n && !/[<>\x00-\x1f]/.test(n)))];
+  const names: string[] = Array.from(new Set<string>(
+    (Array.isArray(rawFolders.names) ? rawFolders.names : [])
+      .slice(0, 150)
+      .map((n: unknown) => str(n, 55))
+      .filter((n: string) => n.length > 0 && !/[<>\x00-\x1f]/.test(n))
+  ))
   const assignments: Record<string,string> = {}
   for (const [id, name] of Object.entries(rawFolders.assignments && typeof rawFolders.assignments === 'object' ? rawFolders.assignments : {}).slice(0,20000)) {
     if (/^[a-zA-Z0-9_-]{1,80}$/.test(id) && names.includes(String(name))) assignments[id] = String(name)
