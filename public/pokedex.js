@@ -8,8 +8,8 @@ const rarities={commun:{label:'COMMUN',symbol:'●'},peu_commune:{label:'PEU COM
 const rarityPriority={legendaire:0,rare:1,peu_commune:2,commun:3};
 let cards=[],filter='all',term='',page=0,selected=null,chosenPhoto=0,turning=false;
 const mobile=()=>matchMedia('(max-width:760px)').matches;
-// V62: 3 columns x 4 rows per leaf on mobile; desktop stays 3 x 3.
-const slotsPerLeaf=()=>mobile()?12:9;
+// V64: 3 columns x 3 rows per leaf on phone AND desktop.
+const slotsPerLeaf=()=>9;
 const perSpread=()=>2*slotsPerLeaf();
 const getFiltered=()=>cards.filter(c=>(filter==='all'||c.rarity===filter)&&(!term||[c.title,c.subtitle,c.category,c.event,c.date,c.description].some(v=>String(v||'').toLocaleLowerCase('fr').includes(term))));
 const pad=i=>String(i).padStart(3,'0');
@@ -84,29 +84,9 @@ $('#pd-filters').addEventListener('click',event=>{const btn=event.target.closest
 $('#pd-query').addEventListener('input',event=>{term=event.target.value.trim().toLocaleLowerCase('fr');page=0;rerender(false)});
 $('#pd-book').addEventListener('click',event=>{const btn=event.target.closest('[data-card]');if(!btn||turning)return;selected=btn.dataset.card;chosenPhoto=0;renderBook();renderDetails();if(mobile())$('#pd-detail').scrollIntoView({behavior:'smooth',block:'start'})});
 $('#pd-detail').addEventListener('click',event=>{const photo=event.target.closest('[data-gallery]');if(!photo)return;chosenPhoto=Number(photo.dataset.gallery)||0;renderDetails()});
-// Mobile-only, optional inspection mode: the same double spread becomes horizontally scrollable and larger.
-const controls=document.querySelector('.pd-page-controls');
-if(controls){
- const zoom=document.createElement('button');
- zoom.id='pd-mobile-zoom';
- zoom.type='button';
- zoom.className='pd-mobile-zoom';
- zoom.setAttribute('aria-label','Agrandir les cartes du classeur');
- zoom.setAttribute('aria-pressed','false');
- zoom.textContent='AGRANDIR LES CARTES';
- controls.insertAdjacentElement('afterend',zoom);
- zoom.addEventListener('click',()=>{
-  const album=document.querySelector('.pd-album');
-  const active=album.classList.toggle('pd-album-zoomed');
-  zoom.textContent=active?'VOIR LE CLASSEUR ENTIER':'AGRANDIR LES CARTES';
-  zoom.setAttribute('aria-pressed',String(active));
-  zoom.setAttribute('aria-label',active?'Réduire le classeur pour voir les deux pages':'Agrandir les cartes du classeur');
-  if(!active)album.scrollLeft=0;
- });
-}
 $('#pd-prev').addEventListener('click',()=>turn(-1));$('#pd-next').addEventListener('click',()=>turn(1));
 document.addEventListener('keydown',event=>{if(/input|textarea/i.test(document.activeElement.tagName))return;if(event.key==='ArrowRight')turn(1);if(event.key==='ArrowLeft')turn(-1)});
-let touchX=null;$('#pd-book').addEventListener('touchstart',e=>{touchX=e.touches[0]?.clientX??null},{passive:true});$('#pd-book').addEventListener('touchend',e=>{if(touchX===null)return;const dx=(e.changedTouches[0]?.clientX??touchX)-touchX;touchX=null;if(document.querySelector('.pd-album')?.classList.contains('pd-album-zoomed'))return;if(Math.abs(dx)>70)turn(dx<0?1:-1)},{passive:true});
+let touchX=null;$('#pd-book').addEventListener('touchstart',e=>{touchX=e.touches[0]?.clientX??null},{passive:true});$('#pd-book').addEventListener('touchend',e=>{if(touchX===null)return;const dx=(e.changedTouches[0]?.clientX??touchX)-touchX;touchX=null;if(Math.abs(dx)>70)turn(dx<0?1:-1)},{passive:true});
 let wasMobile=mobile();window.addEventListener('resize',()=>{if(wasMobile!==mobile()){wasMobile=mobile();page=0;rerender()}});
 init();
 })();

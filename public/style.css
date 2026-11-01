@@ -848,3 +848,16 @@ body:not(.subpage).yruz-motion-ready .yruz-text-reveal.yruz-text-visible::after{
 
 /* V44 — vidéos intégrées dans les fiches portfolio */
 .project-video-embed{display:block;width:100%;max-width:1250px;aspect-ratio:16/9;border:0;border-radius:13px;margin:18px auto 38px;background:#061524}
+
+/* V64 : molette de navigation toujours entiere (premiere et derniere position), ordinateur et telephone. */
+.portfolio-section .carousel-controls {overflow:visible!important;padding-inline:13px!important;min-height:52px!important}
+.portfolio-section .rotation-dial {overflow:visible!important;min-height:46px!important}
+.portfolio-section .rotation-dial .rotation-knob {
+  left:clamp(9px,var(--dial-position,0%),calc(100% - 9px))!important;
+}
+@media screen and (max-width:767px){
+  .portfolio-section .carousel-controls {padding-inline:17px!important;margin-bottom:25px!important}
+  .portfolio-section .rotation-dial .rotation-knob {
+    left:clamp(9px,var(--dial-position,0%),calc(100% - 9px))!important;
+  }
+}

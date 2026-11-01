@@ -239,3 +239,34 @@
  .pd-book .pd-turn-layer {width:calc((100% - 11px - 12px)/2)!important}
 }
 @media screen and (min-width:761px){.pd-mobile-zoom {display:none!important}}
+
+/* V64 : mobile - classeur ouvert 3 x 3 sur CHAQUE page ; identites lisibles. */
+@media screen and (max-width:760px) {
+  .pd-book .pd-slot-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(3,minmax(0,1fr))!important;
+    gap:clamp(3px,.85vw,6px)!important;
+  }
+  .pd-book .pd-slot-grid>.pd-card,.pd-book .pd-slot-grid>.pd-slot-empty {
+    aspect-ratio:.61!important;
+    min-width:0!important; min-height:0!important;
+  }
+  .pd-book .pd-card-photo:after {background:linear-gradient(180deg,#05101a18,transparent 46%,#03121aeb 100%)!important}
+  .pd-book .pd-card-meta {bottom:3px!important;left:3px!important;right:3px!important;max-width:calc(100% - 6px)!important;gap:0!important;z-index:3}
+  .pd-book .pd-card-meta strong {
+    display:-webkit-box!important;-webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    white-space:normal!important;overflow:hidden!important;
+    font-family:'Barlow Condensed',Impact,sans-serif!important;
+    font-size:clamp(7px,2vw,10px)!important;line-height:1.03!important;
+    letter-spacing:0!important;overflow-wrap:anywhere;
+    color:#fff!important;text-shadow:0 1px 3px #000;
+  }
+  .pd-book .pd-card-meta small {display:none!important}
+  .pd-book .pd-card-index {font-size:7px!important}
+  .pd-book .pd-card-rank {font-size:9px!important}
+  .pd-mobile-zoom,.pd-book .yruz-photo-enlarge {display:none!important}
+  .pd-book .pd-card {cursor:pointer;touch-action:manipulation}
+  .pd-book .pd-spine {z-index:5}
+  .pd-detail {scroll-margin-top:14px}
+}
