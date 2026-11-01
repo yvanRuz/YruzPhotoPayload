@@ -143,3 +143,66 @@
    background:rgba(6,24,38,.7);border:1px solid rgba(242,248,255,.8);
  }
 }
+
+/* V63 — Portfolio smartphone : une vraie zone de lecture sous la photographie.
+   La carte reste entierement cliquable, la fleche remplace le bouton Agrandir.
+   Ne concerne pas le lecteur de projet ni la version ordinateur. */
+@media screen and (max-width:767px) {
+  body[data-page="catalog"] .catalog-grid,
+  body[data-page="project"] .project-next .catalog-grid {
+    gap:clamp(9px,2.55vw,13px)!important;
+    align-items:stretch;
+  }
+  body[data-page="catalog"] .catalog-card,
+  body[data-page="project"] .project-next .catalog-card {
+    aspect-ratio:.50!important;
+    background:#081a28!important;
+    border-color:rgba(148,181,204,.42);
+  }
+  body[data-page="catalog"] .catalog-card .catalog-image,
+  body[data-page="project"] .project-next .catalog-card .catalog-image {
+    inset:0 0 77px 0!important;
+    border-radius:9px 9px 0 0;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-image::after,
+  body[data-page="project"] .project-next .catalog-card .catalog-image::after {
+    background:linear-gradient(180deg,transparent 65%,rgba(5,18,29,.25) 100%)!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-meta,
+  body[data-page="project"] .project-next .catalog-card .catalog-meta {
+    bottom:0!important;left:0!important;right:0!important;
+    padding:9px 7px 30px!important;
+    height:77px!important;min-height:77px!important;
+    display:flex!important;justify-content:flex-start!important;align-items:flex-start!important;
+    gap:5px!important;background:#081a28;
+    border-top:1px solid rgba(151,185,207,.17);
+  }
+  body[data-page="catalog"] .catalog-card .catalog-kind,
+  body[data-page="project"] .project-next .catalog-card .catalog-kind {
+    font-size:7px!important;line-height:1.25!important;
+    color:#bbd0dc;max-width:100%;
+    white-space:nowrap;text-overflow:ellipsis;overflow:hidden;
+    display:block!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-title,
+  body[data-page="project"] .project-next .catalog-card .catalog-title {
+    font-size:clamp(12px,3.55vw,16px)!important;
+    line-height:1.12!important;letter-spacing:.05px!important;
+    max-width:100%;width:100%;
+    display:-webkit-box!important;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2!important;overflow:hidden;
+    word-break:normal;overflow-wrap:anywhere;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-arrow,
+  body[data-page="project"] .project-next .catalog-card .catalog-arrow {
+    position:absolute!important;bottom:6px!important;right:7px!important;
+    width:23px!important;height:23px!important;min-width:23px;
+    font-size:12px!important;z-index:4;
+    background:rgba(20,49,67,.84)!important;
+    border-color:rgba(210,229,239,.7)!important;
+  }
+  body[data-page="catalog"] .catalog-card .yruz-photo-enlarge,
+  body[data-page="project"] .project-next .catalog-card .yruz-photo-enlarge {
+    display:none!important;
+  }
+}
