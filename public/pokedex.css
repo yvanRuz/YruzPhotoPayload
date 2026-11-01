@@ -138,7 +138,7 @@
 }
 
 /* =============================================================
-   V61 | Pokédex mobile: true 3 x 3 DOUBLE-PAGE collector binder.
+   V62 | Pokédex mobile: 3 x 4 DOUBLE-PAGE collector binder.
    Same YRUZPHOTO midnight-blue art direction. Scoped below 761px.
    The binder is visible in its entirety; the optional zoom keeps
    individual portraits usable without compromising the layout.
@@ -179,7 +179,7 @@
   .pd-book .pd-slot-grid {
     display:grid!important;
     grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    grid-template-rows:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(4,minmax(0,1fr))!important;
     gap:clamp(2px,.8vw,5px)!important;
     height:auto!important;
     min-height:0!important;

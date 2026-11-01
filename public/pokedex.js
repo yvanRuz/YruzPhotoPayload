@@ -8,8 +8,8 @@ const rarities={commun:{label:'COMMUN',symbol:'●'},peu_commune:{label:'PEU COM
 const rarityPriority={legendaire:0,rare:1,peu_commune:2,commun:3};
 let cards=[],filter='all',term='',page=0,selected=null,chosenPhoto=0,turning=false;
 const mobile=()=>matchMedia('(max-width:760px)').matches;
-// V61: a real 3 x 3 collector binder on both leaves, desktop AND mobile. Mobile can zoom the open binder for legibility.
-const slotsPerLeaf=()=>9;
+// V62: 3 columns x 4 rows per leaf on mobile; desktop stays 3 x 3.
+const slotsPerLeaf=()=>mobile()?12:9;
 const perSpread=()=>2*slotsPerLeaf();
 const getFiltered=()=>cards.filter(c=>(filter==='all'||c.rarity===filter)&&(!term||[c.title,c.subtitle,c.category,c.event,c.date,c.description].some(v=>String(v||'').toLocaleLowerCase('fr').includes(term))));
 const pad=i=>String(i).padStart(3,'0');
