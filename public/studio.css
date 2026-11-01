@@ -182,3 +182,8 @@ body.v56-is-sorting,body.v56-is-sorting *{cursor:grabbing!important}
 .v57-video-empty span{font-size:26px;color:#d7eeff;border:1px solid #85afc6;border-radius:50%;width:54px;height:54px;flex-shrink:0;display:grid;place-items:center}
 .v57-video-empty p{margin:0}.v57-video-invalid{border-color:#b17c6e;color:#f0c5be}
 .v57-video-help{display:inline-block;color:#b6ddfa;text-decoration:none;font-size:12px;border-bottom:1px solid #729cbb;padding:4px 0}
+
+/* V65: structured copy inventory and story chapters (Studio only). */
+.v65-text-list{display:grid;gap:12px;margin-top:18px}.v65-text-item{border:1px solid rgba(155,201,231,.17);border-radius:12px;padding:13px;background:rgba(7,27,44,.28)}.v65-text-location{display:block;font-size:12px;letter-spacing:.04em;color:#a7d8f1;margin-bottom:8px}.v65-copy-hint{font-size:12px;opacity:.75;margin-top:12px}.v65-story-editor{margin-top:18px}.v65-chapter{margin-top:22px;border:1px solid rgba(155,201,231,.22);border-radius:14px;padding:18px;background:rgba(6,23,37,.38)}.v65-chapter-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(155,201,231,.13);padding-bottom:10px;margin-bottom:15px}.v65-chapter-head span{font-size:11px;letter-spacing:.12em;color:#96c4dc}.v65-chapter-head strong{font-size:15px}.v65-chapter-fields{display:grid;gap:10px}@media(max-width:650px){.v65-chapter{padding:12px}.v65-chapter-head{display:block}}
+
+.v65-current-text{font-size:12px;line-height:1.5;color:#b5c9d8;opacity:.85;margin:0 0 12px}

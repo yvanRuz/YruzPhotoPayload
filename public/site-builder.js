@@ -97,6 +97,20 @@
     anchor.insertAdjacentElement(method, wrapper);
     return wrapper;
   };
+  // Text slots are bound to fixed public elements, never to user-defined selectors.
+  const textSlots = {
+    accueil:{heroKicker:'.hero-inner .eyebrow',homeWorksKicker:'#portfolio .section-top .eyebrow',homeWorksTitle:'#portfolio .section-top h2',homeWorksIntro:'#portfolio .section-top p',homeServiceKicker:'#services .section-top .eyebrow',homeServiceTitle:'#services .section-top h2',homeServiceIntro:'#services .section-top p',followKicker:'#me-suivre .eyebrow',followTitle:'#me-suivre h2',followIntro:'#me-suivre p',followButton:'#me-suivre .follow-action'},
+    portfolio:{portfolioKicker:'.catalog-heading .eyebrow',portfolioIntro:'.catalog-heading p'},
+    services:{servicesKicker:'.services-heading .eyebrow',servicesIntro:'.services-heading p'},
+    equipement:{equipmentKicker:'.equip-kicker',equipmentIntro:'.equip-intro p'},
+    contact:{contactKicker:'.contact-page-intro .eyebrow',contactIntro:'.contact-page-intro p'},
+    histoire:{storyTopLeft:'.story-topline > span:nth-child(1)',storyTopCenter:'.story-topline > span:nth-child(2)',storyHint:'.story-progress-label',storyBottomLeft:'.story-bottomline > span:first-child'},
+  };
+  const applyTextSlots = (key, values) => {
+    const allowed=textSlots[key]||{};
+    if(!values || typeof values!=='object')return;
+    Object.entries(allowed).forEach(([name,selector])=>replaceText(selector,values[name]));
+  };
   const applyPage = (key, data, projects) => {
     if (!data) return;
     const selectors = pageMap[key];
@@ -120,6 +134,7 @@
         updateButton(`${scope} .service-link`, item.buttonLabel, item.buttonUrl);
       });
     }
+    applyTextSlots(key, data.textOverrides);
     if (key === 'histoire') {
       (data.storyCards || []).forEach((item, index) => {
         const scope = `.story-panel:nth-child(${index + 1})`;
@@ -128,6 +143,11 @@
         if (img && photo) { img.src = photo; img.alt = item.image.alt || img.alt; }
         replaceText(`${scope} .story-copy h2`, item.title);
         replaceText(`${scope} .story-copy p`, item.body);
+        replaceText(`${scope} .story-kicker`, item.kicker);
+        replaceText(`${scope} .story-index`, item.indexLabel);
+        replaceText(`${scope} .story-photo span`, item.caption);
+        replaceText(`${scope} .story-small-note`, item.note);
+        if(index === 2)updateButton(`${scope} .story-cta`,item.buttonLabel,item.buttonUrl);
       });
     }
     const html = (data.sections || []).map(section => renderSection(section, projects)).join('');

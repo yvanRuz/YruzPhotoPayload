@@ -54,7 +54,7 @@ const defaults = (): StudioRecord => ({
     secondButtonLabel: '', secondButtonUrl: '', bottomButtonLabel: '',
     bottomButtonUrl: '', published: true, sections: [], heroImages: [null, null],
     serviceCards: Array.from({length: 3}, () => ({image:null,caption:'',buttonLabel:'',buttonUrl:''})),
-    storyCards: Array.from({length: 3}, () => ({image:null,title:'',body:''})),
+    storyCards: Array.from({length: 3}, () => ({image:null,title:'',body:''})), textOverrides: {},
     ...(k === 'accueil' ? { featuredCards: {photo:null, video:null, graphisme:null} } : {}),
     ...(k === 'portfolio' ? { universeSections: {photo:[],video:[],graphisme:[]} } : {}),
     ...(k === 'equipement' ? { equipmentCustomized: false, equipmentItems: structuredClone(initialEquipment) } : {}),
@@ -165,7 +165,8 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
       published: bool(p.published),
       heroImages: (Array.isArray(p.heroImages) ? p.heroImages : []).slice(0,2).map(image),
       serviceCards: (Array.isArray(p.serviceCards) ? p.serviceCards : []).slice(0,3).map((row:any) => ({image:image(row.image),caption:str(row.caption,150),buttonLabel:str(row.buttonLabel,140),buttonUrl:url(row.buttonUrl)})),
-      storyCards: (Array.isArray(p.storyCards) ? p.storyCards : []).slice(0,3).map((row:any) => ({image:image(row.image),title:str(row.title,200),body:str(row.body,4000)})),
+      storyCards: (Array.isArray(p.storyCards) ? p.storyCards : []).slice(0,3).map((row:any) => ({image:image(row.image),title:str(row.title,200),body:str(row.body,4000),kicker:str(row.kicker,150),indexLabel:str(row.indexLabel,150),caption:str(row.caption,220),note:str(row.note,250),buttonLabel:str(row.buttonLabel,150),buttonUrl:url(row.buttonUrl)})),
+      textOverrides: Object.fromEntries(Object.entries(p.textOverrides && typeof p.textOverrides==='object' ? p.textOverrides : {}).filter(([k]) => /^[a-zA-Z][a-zA-Z0-9]{0,60}$/.test(k)).slice(0,60).map(([k,v]) => [k,str(v,900)])),
       ...(key === 'accueil' ? { featuredCards: Object.fromEntries(['photo','video','graphisme'].map(mode => {
         const original = p.featuredCards?.[mode]
         return [mode, Array.isArray(original) ? original.slice(0,30).map((r:any)=>({
