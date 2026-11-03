@@ -1,5 +1,32 @@
 /* YRUZPHOTO Site Builder: renders published Payload sections on the existing site. */
 (() => {
+  const isEnglish = () => window.YRUZ_LANG?.current?.() === 'en' || (!window.YRUZ_LANG && (() => { try { return localStorage.getItem('yruzphoto-language') === 'en'; } catch { return false; } })());
+  const chooseText = (fr, en) => isEnglish() && typeof en === 'string' && en.trim() ? en : fr;
+  const translateBlock = block => {
+    if (!isEnglish() || !block) return block;
+    const en = block.en || {};
+    const keys = ['eyebrow','title','body','description','caption','buttonLabel'];
+    const translated = { ...block };
+    for (const k of keys) translated[k] = chooseText(block[k],en[k]);
+    if (Array.isArray(block.slides)) translated.slides=block.slides.map(slide=>({...slide,caption:chooseText(slide.caption,slide.captionEn)}));
+    if (Array.isArray(block.photos)) translated.photos=block.photos.map(photo=>({...photo,caption:chooseText(photo.caption,photo.captionEn)}));
+    if (Array.isArray(block.buttons)) translated.buttons=block.buttons.map(btn=>({...btn,label:chooseText(btn.label,btn.labelEn)}));
+    return translated;
+  };
+  const translatePage = original => {
+    if (!original || !isEnglish()) return original;
+    const en=original.en || {};
+    const translated={ ...original };
+    for (const k of ['heading','intro','mainButtonLabel','secondButtonLabel','bottomButtonLabel'])translated[k]=chooseText(original[k],en[k]);
+    translated.textOverrides={...original.textOverrides,...en.textOverrides};
+    translated.storyCards=(original.storyCards||[]).map(card=>({...card,...Object.fromEntries(Object.entries(card.en||{}).filter(([,v])=>typeof v==='string'&&v.trim()))}));
+    translated.serviceCards=(original.serviceCards||[]).map(card=>({...card,...Object.fromEntries(Object.entries(card.en||{}).filter(([,v])=>typeof v==='string'&&v.trim()))}));
+    translated.sections=(original.sections||[]).map(translateBlock);
+    if(original.universeSections)translated.universeSections=Object.fromEntries(Object.entries(original.universeSections).map(([kind,items])=>[kind,(items||[]).map(translateBlock)]));
+    if(original.featuredCards)translated.featuredCards=Object.fromEntries(Object.entries(original.featuredCards).map(([mode,items])=>[mode,Array.isArray(items)?items.map(card=>({...card,title:chooseText(card.title,card.titleEn),category:chooseText(card.category,card.categoryEn)})):items]));
+    if(original.equipmentItems)translated.equipmentItems=original.equipmentItems.map(item=>({...item,...Object.fromEntries(Object.entries(item.en||{}).filter(([,v])=>typeof v==='string'&&v.trim()))}));
+    return translated;
+  };
   const escapeHtml = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const safeLink = (input) => {
     const url = String(input || '').trim();
@@ -23,6 +50,7 @@
     return `<a class="cms-cta ${secondary ? 'cms-cta-secondary' : ''}" href="${escapeHtml(url)}"${ext ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)} <span aria-hidden="true">\u2197</span></a>`;
   };
   const renderSection = (section, projects) => {
+    section = translateBlock(section);
     switch (section.type) {
       case 'texte': return `<section class="cms-block cms-block-text cms-align-${section.align === 'center' ? 'center' : 'left'}">${section.eyebrow ? `<span class="cms-eyebrow">${escapeHtml(section.eyebrow)}</span>` : ''}${heading(section.title, section.body)}${button(section.buttonLabel, section.buttonUrl)}</section>`;
       case 'photoTexte': {
@@ -111,8 +139,9 @@
     if(!values || typeof values!=='object')return;
     Object.entries(allowed).forEach(([name,selector])=>replaceText(selector,values[name]));
   };
-  const applyPage = (key, data, projects) => {
-    if (!data) return;
+  const applyPage = (key, rawData, projects) => {
+    if (!rawData) return;
+    const data = translatePage(rawData);
     const selectors = pageMap[key];
     if (selectors) { replaceText(selectors.title, data.heading); replaceText(selectors.intro, data.intro); }
     const bottomSelector = { portfolio: '.catalog-bottom a', services: '.services-cta a', equipement: '.equip-bottom a' }[key];
@@ -225,7 +254,7 @@
       const currentPath = location.pathname.split('/').pop() || 'index.html';
       nav.links.forEach(item => {
         const href = safeLink(item.url); if (!href || !item.label) return;
-        const a = document.createElement('a'); a.href = href; a.textContent = item.label;
+        const a = document.createElement('a'); a.href = href; a.textContent = chooseText(item.label,item.labelEn);
         if (href.split(/[?#]/)[0] === currentPath || (currentPath === 'index.html' && href === 'index.html#accueil')) a.classList.add('active');
         if (item.newTab) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
         fragment.append(a);
@@ -233,21 +262,32 @@
       root.insertBefore(fragment, before);
       old.forEach(a => a.remove());
     }
-    updateButton('header nav .nav-cta', nav.ctaLabel, nav.ctaUrl);
-    updateButton('footer .footer-contact', nav.footerContactLabel, nav.footerContactUrl);
+    updateButton('header nav .nav-cta', chooseText(nav.ctaLabel,nav.ctaLabelEn), nav.ctaUrl);
+    updateButton('footer .footer-contact', chooseText(nav.footerContactLabel,nav.footerContactLabelEn), nav.footerContactUrl);
     const instagram = safeLink(nav.instagramUrl);
     if (instagram) document.querySelectorAll('a[href*="instagram.com/"]').forEach(a => { a.href = instagram; });
   };
   const currentFile = location.pathname.split('/').pop() || 'index.html';
   const currentPage = ({ 'index.html': 'accueil', 'portfolio.html': 'portfolio', 'tarifs.html': 'services', 'contact.html': 'contact', 'equipement.html': 'equipement' })[currentFile];
   const pages = currentPage === 'accueil' ? ['accueil', 'histoire', 'services'] : currentPage ? [currentPage] : ['portfolio'];
+  const cache=new Map();
+  let navigationCache=null;
+  const reapply=()=>{
+    if(navigationCache)applyNavigation(navigationCache);
+    for(const [key,data] of cache)applyPage(key,data.page,data.projects);
+    window.YRUZ_LANG?.refresh?.();
+  };
+  window.YRUZ_REAPPLY_CONTENT=reapply;
   const load = async (key, first) => {
     try {
       const response = await fetch(`/cms-content?page=${encodeURIComponent(key)}`, { cache: 'no-store' });
       if (!response.ok) return;
       const data = await response.json();
+      cache.set(key,{page:data.page,projects:data.projects||[]});
+      if (first)navigationCache=data.navigation;
       if (first) applyNavigation(data.navigation);
       applyPage(key, data.page, data.projects || []);
+      window.YRUZ_LANG?.refresh?.();
     } catch (error) { console.warn('YRUZPHOTO: sections CMS non disponibles', error); }
   };
   pages.forEach((page, index) => load(page, index === 0));

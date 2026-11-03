@@ -1,0 +1,11 @@
+/* Language switch — quiet, compact, matching the existing dark-navy visual identity. */
+.yruz-lang-switch{display:inline-flex;align-items:center;gap:3px;padding:4px;border:1px solid rgba(179,210,227,.28);border-radius:18px;background:rgba(5,19,31,.6);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);white-space:nowrap;flex-shrink:0;position:relative;z-index:2}
+.yruz-lang-switch button{font:700 9px/1.3 Inter,Arial,sans-serif!important;letter-spacing:.04em;border:0;border-radius:14px;color:#b5c6d3;background:transparent;padding:5px 7px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;opacity:.72;transition:background .2s,color .2s,opacity .2s}
+.yruz-lang-switch button:hover,.yruz-lang-switch button.is-active{opacity:1;color:#fff;background:rgba(170,206,228,.15)}
+.yruz-lang-switch button:focus-visible{outline:2px solid #94c9e8;outline-offset:2px}.yruz-lang-sep{height:12px;width:1px;background:rgba(192,218,232,.19)}
+#header>.yruz-lang-switch{margin-left:14px}
+.pd-nav>.yruz-lang-switch{margin-left:auto}
+@media(max-width:1050px){.yruz-lang-switch button{padding:5px}.yruz-lang-switch button span{display:none}#header>.yruz-lang-switch{margin-left:8px}}
+@media(max-width:850px){#header>.yruz-lang-switch{position:absolute;right:70px;top:20px;margin:0}#header{justify-content:space-between}.pd-nav>.yruz-lang-switch{margin-left:auto}}
+@media(max-width:380px){#header>.yruz-lang-switch{right:62px}.yruz-lang-switch{padding:2px}}
+@media(min-width:851px) and (max-width:1180px){#header nav{gap:clamp(9px,1.2vw,20px)}#header>.yruz-lang-switch{margin-left:8px}}

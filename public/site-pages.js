@@ -3,6 +3,16 @@
  const params=new URLSearchParams(location.search);
  const view=document.body.dataset.page;
  const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let projectEnglish={},refreshProjectUI=()=>{};
+ const localizedProject=p=>{
+   if(window.YRUZ_LANG?.current?.()!=='en')return p;
+   const translation=projectEnglish[String(p.slug)]||projectEnglish[String(p.id)]||{};
+   return {...p,title:translation.title?.trim()||p.title,category:translation.category?.trim()||p.category};
+ };
+ window.addEventListener('yruz:language-change',()=>{refreshProjectUI();window.YRUZ_LANG?.refresh?.()});
+ fetch('/cms-content?page=portfolio',{cache:'no-store'}).then(res=>res.ok?res.json():null).then(data=>{
+   if(data?.page?.projectEnglish){projectEnglish=data.page.projectEnglish;refreshProjectUI();window.YRUZ_LANG?.refresh?.()}
+ }).catch(()=>{});
  const validMedia = u => {const s=String(u||'').trim();return /^(https?:\/\/|\/api\/media\/|\/assets\/|assets\/|medias\/)/i.test(s)&&!/[<>"'`]/.test(s)?s:''};
  const mediaImg=(url,alt,loading='lazy')=>`<img ${loading==='lazy'?'loading="lazy"':''} src="${escapeHtml(validMedia(url))}" alt="${escapeHtml(alt)}">`;
 
@@ -25,12 +35,12 @@
 
  const isGraphic = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
  const matchesFilter = (p, filter) => filter === 'graphisme' ? isGraphic(p) : filter === 'photo' ? p.mode === 'photo' && !isGraphic(p) : p.mode === 'video';
- const card=p=>{const yt=p.mode==='video'?youtubeInfo(p.video):null;const cover=validMedia(p.cover)||(yt?yt.thumb:'');return `<a class="catalog-card ${yt?'yruz-video-card':''}" href="${yruzProjectUrl(p)}" aria-label="Ouvrir ${escapeHtml(p.title)}"><span class="catalog-image">${cover?mediaImg(cover,p.title):'<span class="yruz-video-missing-cover">YRUZPHOTO / VIDÉO</span>'}${yt?'<span class="yruz-video-card-play" aria-hidden="true">▶</span>':''}</span><span class="catalog-meta"><span class="catalog-kind">${p.mode==='video'?'▶ VIDÉO':isGraphic(p)?'✦ GRAPHISME':'◈ PHOTO'} · ${escapeHtml(p.category)}</span><span class="catalog-title">${escapeHtml(p.title)}</span><span class="catalog-arrow" aria-hidden="true">↗</span></span></a>`};
+ const card=original=>{const p=localizedProject(original);const yt=p.mode==='video'?youtubeInfo(p.video):null;const cover=validMedia(p.cover)||(yt?yt.thumb:'');return `<a class="catalog-card ${yt?'yruz-video-card':''}" href="${yruzProjectUrl(p)}" aria-label="Ouvrir ${escapeHtml(p.title)}"><span class="catalog-image">${cover?mediaImg(cover,p.title):'<span class="yruz-video-missing-cover">YRUZPHOTO / VIDÉO</span>'}${yt?'<span class="yruz-video-card-play" aria-hidden="true">▶</span>':''}</span><span class="catalog-meta"><span class="catalog-kind">${p.mode==='video'?'▶ VIDÉO':isGraphic(p)?'✦ GRAPHISME':'◈ PHOTO'} · ${escapeHtml(p.category)}</span><span class="catalog-title">${escapeHtml(p.title)}</span><span class="catalog-arrow" aria-hidden="true">↗</span></span></a>`};
  if(view==='catalog'){
   const grid=document.getElementById('catalogGrid'),tabs=[...document.querySelectorAll('[data-filter]')];
   let filter=['photo','video','graphisme'].includes(params.get('type'))?params.get('type'):'photo';
   function render(){tabs.forEach(el=>{const selected=el.dataset.filter===filter;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',String(selected))});const subset=items.filter(p=>matchesFilter(p,filter));grid.innerHTML=subset.length?subset.map(card).join(''):`<div class="catalog-empty-v42"><span>YRUZPHOTO / ${escapeHtml(filter.toUpperCase())}</span><h2>LES PROJETS ARRIVENT.</h2><p>De nouvelles créations seront visibles ici dès leur mise en ligne.</p></div>`;document.getElementById('projectCount').textContent=`${String(subset.length).padStart(2,'0')} PROJETS`;const url=new URL(location.href);url.searchParams.set('type',filter);history.replaceState(null,'',url)}
-  tabs.forEach(el=>el.addEventListener('click',()=>{filter=el.dataset.filter;render()}));render();
+  tabs.forEach(el=>el.addEventListener('click',()=>{filter=el.dataset.filter;render()}));refreshProjectUI=render;render();
  }
  if(view==='project'){
   const p=items.find(x=>x.id===params.get('id'));const content=document.getElementById('projectContent');
@@ -69,6 +79,13 @@
   };
   const videoMarkup=hasVideo?`<div class="gallery-heading"><div><span class="eyebrow">FILM</span><h2>LA VIDÉO</h2></div></div>${videoEmbed(p.video)}`:'';
   content.innerHTML=`<div class="project-overline">${isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'} / ${escapeHtml(p.category)}</div><h1>${escapeHtml(p.title)}</h1><div class="project-actions"><a class="btn outline" href="portfolio.html?type=${projectType}">← TOUS LES PROJETS</a><span class="project-state">${p.demoGallery?'GALERIE DE DÉMONSTRATION — PHOTOS À REMPLACER':isEmpty?'DOSSIER PRÊT À RECEVOIR VOS FICHIERS':`${gallery.length} PHOTO${gallery.length>1?'S':''}${hasVideo?' · 1 VIDÉO':''}`}</span></div>${videoMarkup}${mansCarousel?galleryCarouselMarkup:(hasVideo?'':galleryMarkup)}<div class="project-next"><div><span class="eyebrow">POUR ALLER PLUS LOIN</span><h2>À DÉCOUVRIR AUSSI</h2></div><div class="catalog-grid">${related.map(card).join('')}</div></div>`;
+  refreshProjectUI=()=>{
+    const translated=localizedProject(p),heading=content.querySelector('h1'),overline=content.querySelector('.project-overline');
+    if(heading)heading.textContent=translated.title;
+    if(overline)overline.textContent=(window.YRUZ_LANG?.current?.()==='en'?(isGraphic(p)?'DESIGN':p.mode==='photo'?'PHOTOGRAPHY':'VIDEO'):(isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'))+' / '+translated.category;
+    document.title=translated.title+' — YRUZPHOTO';
+  };
+  refreshProjectUI();
   content.querySelectorAll('[data-youtube-play]').forEach(button=>button.addEventListener('click',()=>{
    const id=button.dataset.youtubePlay;
    if(!/^[a-zA-Z0-9_-]{11}$/.test(id||''))return;

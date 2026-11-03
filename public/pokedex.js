@@ -6,6 +6,7 @@ const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const safeImage=v=>{const src=typeof v==='string'?v:v?.url;return /^(https?:\/\/[^\s<>"'`]+|\/api\/media\/[^\s<>"'`]+|\/?assets\/[^\s<>"'`]+)$/i.test(String(src||''))?src:''};
 const rarities={commun:{label:'COMMUN',symbol:'●'},peu_commune:{label:'PEU COMMUNE',symbol:'◇'},rare:{label:'RARE',symbol:'◆'},legendaire:{label:'LÉGENDAIRE',symbol:'★'}};
 const rarityPriority={legendaire:0,rare:1,peu_commune:2,commun:3};
+let originalCards=[],publishedPage=null;
 let cards=[],filter='all',term='',page=0,selected=null,chosenPhoto=0,turning=false;
 const mobile=()=>matchMedia('(max-width:760px)').matches;
 // V64: 3 columns x 3 rows per leaf on phone AND desktop.
@@ -68,16 +69,26 @@ function turn(direction){
  requestAnimationFrame(()=>requestAnimationFrame(()=>layer.classList.add('go')));
  setTimeout(finish,550);
 }
+function applyLocale(){
+ const en=window.YRUZ_LANG?.current?.()==='en';
+ cards=originalCards.map(card=>en?{...card,...(card.en||{})}:({...card}));
+ if(publishedPage){
+  $('#pd-heading').textContent=(en&&publishedPage.en?.heading)||publishedPage.heading||'LE POKÉDEX';
+  $('#pd-intro').textContent=(en&&publishedPage.en?.intro)||publishedPage.intro||'Mes rencontres, mes photos, ma collection.';
+ }
+ page=0;rerender(false);window.YRUZ_LANG?.refresh?.();
+}
+window.addEventListener('yruz:language-change',applyLocale);
 async function init(){
  try{
   const res=await fetch('/cms-content?page=pokedex',{cache:'no-store'});if(!res.ok)throw new Error('HTTP '+res.status);
   const data=await res.json();const content=data.page;
   if(content){
    $('#pd-heading').textContent=content.heading||'LE POKÉDEX';$('#pd-intro').textContent=content.intro||'Mes rencontres, mes photos, ma collection.';
-   cards=(Array.isArray(content.cards)?content.cards:[]).filter(c=>c&&c.published!==false).map((c,i)=>({...c,id:c.id||`carte-${i}`,rarity:rarities[c.rarity]?c.rarity:'commun'}));
-   if(content.sortMode!=='manual')cards.sort((a,b)=>(rarityPriority[a.rarity]??3)-(rarityPriority[b.rarity]??3));
+   originalCards=(Array.isArray(content.cards)?content.cards:[]).filter(c=>c&&c.published!==false).map((c,i)=>({...c,id:c.id||`carte-${i}`,rarity:rarities[c.rarity]?c.rarity:'commun'}));
+   if(content.sortMode!=='manual')originalCards.sort((a,b)=>(rarityPriority[a.rarity]??3)-(rarityPriority[b.rarity]??3));
   }
-  rerender(false);
+  publishedPage=content;applyLocale();
  }catch(error){console.warn('Pokédex : impossible de lire les contenus',error);$('#pd-book').innerHTML='<div class="pd-loader">COLLECTION MOMENTANÉMENT INDISPONIBLE.</div>';$('#pd-detail').innerHTML='<div class="pd-detail-placeholder"><strong>À BIENTÔT.</strong><p>La collection ne peut pas être chargée pour le moment.</p></div>'}
 }
 $('#pd-filters').addEventListener('click',event=>{const btn=event.target.closest('[data-filter]');if(!btn)return;filter=btn.dataset.filter;page=0;rerender(false)});

@@ -126,6 +126,15 @@ const image = (v: unknown) => {
   if (!/^(https?:\/\/[^\s<>"'`]+|\/api\/media\/[^\s<>"'`]+|\/?assets\/[^\s<>"'`]+)$/i.test(raw)) return null
   return { url: raw, alt: str(value.alt, 250) }
 }
+const english = (v: any, keys: readonly string[], max = 2500) => {
+  const raw = v && typeof v === 'object' ? v : {}
+  return Object.fromEntries(keys.map(k => [k, str(raw[k], max)]).filter(([,v]) => v))
+}
+const textOverridesEn = (v: any) => Object.fromEntries(
+  Object.entries(v && typeof v === 'object' ? v : {}).filter(([k]) => /^[a-zA-Z][a-zA-Z0-9]{0,60}$/.test(k))
+    .slice(0,80).map(([k,v]) => [k, str(v,1200)]).filter(([,v]) => v)
+)
+const sectionEnglish = (b: Record<string, any>) => english(b.en, ['eyebrow','title','body','description','caption','buttonLabel'],8000)
 const buttonFields = (p: Record<string, unknown>) => ({
   buttonLabel: str(p.buttonLabel, 160), buttonUrl: url(p.buttonUrl),
 })
@@ -134,13 +143,13 @@ function cleanSection(raw: unknown): unknown | null {
   if (!raw || typeof raw !== 'object') return null
   const b = raw as Record<string, unknown>
   const type = str(b.type, 40)
-  const common = { type, title: str(b.title, 180) }
+  const common = { type, title: str(b.title, 180), en: sectionEnglish(b) }
   if (type === 'texte') return { ...common, eyebrow: str(b.eyebrow, 100), body: str(b.body, 8000), align: b.align === 'center' ? 'center' : 'left', ...buttonFields(b) }
   if (type === 'photoTexte') return { ...common, image: image(b.image), description: str(b.description, 4000), caption: str(b.caption, 280), placement: b.placement === 'right' ? 'right' : 'left', ...buttonFields(b) }
-  if (type === 'carrouselPhotos') return { ...common, description: str(b.description, 3000), slides: (Array.isArray(b.slides) ? b.slides : []).slice(0, 150).map((r:any) => ({ image: image(r.image), caption: str(r.caption, 300), link: url(r.link) })).filter((r:any) => r.image) }
-  if (type === 'grillePhotos') return { ...common, columns: ['2','3','4'].includes(String(b.columns)) ? String(b.columns) : '3', photos: (Array.isArray(b.photos) ? b.photos : []).slice(0, 150).map((r:any) => ({ image: image(r.image), caption: str(r.caption, 300) })).filter((r:any) => r.image) }
+  if (type === 'carrouselPhotos') return { ...common, description: str(b.description, 3000), slides: (Array.isArray(b.slides) ? b.slides : []).slice(0, 150).map((r:any) => ({ image: image(r.image), caption: str(r.caption, 300), captionEn: str(r.captionEn, 300), link: url(r.link) })).filter((r:any) => r.image) }
+  if (type === 'grillePhotos') return { ...common, columns: ['2','3','4'].includes(String(b.columns)) ? String(b.columns) : '3', photos: (Array.isArray(b.photos) ? b.photos : []).slice(0, 150).map((r:any) => ({ image: image(r.image), caption: str(r.caption, 300), captionEn: str(r.captionEn, 300) })).filter((r:any) => r.image) }
   if (type === 'carrouselProjets') return { ...common, mode: ['photo','video','graphisme','all'].includes(String(b.mode)) ? b.mode : 'photo', selection: b.selection === 'manual' ? 'manual' : 'auto', chosenSlugs: (Array.isArray(b.chosenSlugs) ? b.chosenSlugs : []).slice(0,30).map((s:any) => str(s, 100)), limit: Math.max(1, Math.min(30, Number(b.limit) || 8)) }
-  if (type === 'boutons') return { ...common, buttons: (Array.isArray(b.buttons) ? b.buttons : []).slice(0, 40).map((r:any) => ({ label: str(r.label, 140), url: url(r.url), style: r.style === 'secondary' ? 'secondary' : 'primary' })).filter((r:any) => r.label && r.url) }
+  if (type === 'boutons') return { ...common, buttons: (Array.isArray(b.buttons) ? b.buttons : []).slice(0, 40).map((r:any) => ({ label: str(r.label, 140), labelEn: str(r.labelEn, 140), url: url(r.url), style: r.style === 'secondary' ? 'secondary' : 'primary' })).filter((r:any) => r.label && r.url) }
   return null
 }
 
@@ -150,27 +159,31 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
   const nav = input.navigation || {}
   const inputPages = input.pages || {}
   const navigation = {
-    links: (Array.isArray(nav.links) ? nav.links : initial.navigation.links as any[]).slice(0,20).map((r:any) => ({ label: str(r.label,80), url: url(r.url), enabled: bool(r.enabled), newTab: r.newTab === true })).filter((r:any) => r.label && r.url),
-    ctaLabel: str(nav.ctaLabel,140), ctaUrl: url(nav.ctaUrl), instagramUrl: url(nav.instagramUrl),
-    footerContactLabel: str(nav.footerContactLabel,80), footerContactUrl: url(nav.footerContactUrl),
+    links: (Array.isArray(nav.links) ? nav.links : initial.navigation.links as any[]).slice(0,20).map((r:any) => ({ label: str(r.label,80), labelEn: str(r.labelEn,120), url: url(r.url), enabled: bool(r.enabled), newTab: r.newTab === true })).filter((r:any) => r.label && r.url),
+    ctaLabel: str(nav.ctaLabel,140), ctaLabelEn: str(nav.ctaLabelEn,160), ctaUrl: url(nav.ctaUrl), instagramUrl: url(nav.instagramUrl),
+    footerContactLabel: str(nav.footerContactLabel,80), footerContactLabelEn: str(nav.footerContactLabelEn,120), footerContactUrl: url(nav.footerContactUrl),
   }
   const pages: Record<string, unknown> = {}
   for (const [key,title] of Object.entries(pageNames)) {
     const p = inputPages[key] && typeof inputPages[key] === 'object' ? inputPages[key] : {}
     pages[key] = {
       title, heading: str(p.heading,250), intro: str(p.intro,4000),
+      en: { ...english(p.en, ['heading','intro','mainButtonLabel','secondButtonLabel','bottomButtonLabel'],4500),
+        textOverrides: textOverridesEn(p.en?.textOverrides) },
       mainButtonLabel: str(p.mainButtonLabel,160), mainButtonUrl: url(p.mainButtonUrl),
       secondButtonLabel: str(p.secondButtonLabel,160), secondButtonUrl: url(p.secondButtonUrl),
       bottomButtonLabel: str(p.bottomButtonLabel,160), bottomButtonUrl: url(p.bottomButtonUrl),
       published: bool(p.published),
       heroImages: (Array.isArray(p.heroImages) ? p.heroImages : []).slice(0,2).map(image),
-      serviceCards: (Array.isArray(p.serviceCards) ? p.serviceCards : []).slice(0,3).map((row:any) => ({image:image(row.image),caption:str(row.caption,150),buttonLabel:str(row.buttonLabel,140),buttonUrl:url(row.buttonUrl)})),
-      storyCards: (Array.isArray(p.storyCards) ? p.storyCards : []).slice(0,3).map((row:any) => ({image:image(row.image),title:str(row.title,200),body:str(row.body,4000),kicker:str(row.kicker,150),indexLabel:str(row.indexLabel,150),caption:str(row.caption,220),note:str(row.note,250),buttonLabel:str(row.buttonLabel,150),buttonUrl:url(row.buttonUrl)})),
+      serviceCards: (Array.isArray(p.serviceCards) ? p.serviceCards : []).slice(0,3).map((row:any) => ({image:image(row.image),caption:str(row.caption,150),buttonLabel:str(row.buttonLabel,140),buttonUrl:url(row.buttonUrl),
+        en: english(row.en,['caption','buttonLabel'],300)})),
+      storyCards: (Array.isArray(p.storyCards) ? p.storyCards : []).slice(0,3).map((row:any) => ({image:image(row.image),title:str(row.title,200),body:str(row.body,4000),kicker:str(row.kicker,150),indexLabel:str(row.indexLabel,150),caption:str(row.caption,220),note:str(row.note,250),buttonLabel:str(row.buttonLabel,150),buttonUrl:url(row.buttonUrl),
+      en: english(row.en,['title','body','kicker','indexLabel','caption','note','buttonLabel'],4000)})),
       textOverrides: Object.fromEntries(Object.entries(p.textOverrides && typeof p.textOverrides==='object' ? p.textOverrides : {}).filter(([k]) => /^[a-zA-Z][a-zA-Z0-9]{0,60}$/.test(k)).slice(0,60).map(([k,v]) => [k,str(v,900)])),
       ...(key === 'accueil' ? { featuredCards: Object.fromEntries(['photo','video','graphisme'].map(mode => {
         const original = p.featuredCards?.[mode]
         return [mode, Array.isArray(original) ? original.slice(0,30).map((r:any)=>({
-          title:str(r.title,180), category:str(r.category,140), cover:image(r.cover), link:url(r.link), enabled:bool(r.enabled)
+          title:str(r.title,180), category:str(r.category,140), titleEn:str(r.titleEn,180), categoryEn:str(r.categoryEn,140), cover:image(r.cover), link:url(r.link), enabled:bool(r.enabled)
         })) : null]
       })) } : {}),
       ...(key === 'equipement' ? {
@@ -182,7 +195,7 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
             name: str(raw?.name, 140), category: str(raw?.category, 85),
             glyph: str(raw?.glyph, 16), description: str(raw?.description, 2400),
             specs: (Array.isArray(raw?.specs) ? raw.specs : []).slice(0,20).map((v:any)=>str(v,250)).filter(Boolean),
-            image: image(raw?.image),
+            image: image(raw?.image), en: english(raw?.en,['name','category','description'],2400),
           })).filter((item:any) => item.name)
       } : {}),
       ...(key === 'pokedex' ? { sortMode: p.sortMode === 'manual' ? 'manual' : 'rarity', cards: (Array.isArray(p.cards) ? p.cards : []).slice(0,200).map((raw:any, index:number) => ({
@@ -192,8 +205,12 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
         category: str(raw.category, 140), event: str(raw.event, 180),
         date: str(raw.date, 100), description: str(raw.description, 3000),
         cover: image(raw.cover), gallery: (Array.isArray(raw.gallery) ? raw.gallery : []).slice(0,40).map(image).filter(Boolean),
-        published: bool(raw.published),
+        published: bool(raw.published), en: english(raw.en,['subtitle','category','event','description'],3000),
       })).sort((a:any,b:any) => p.sortMode === 'manual' ? 0 : (pokedexPriority[a.rarity] ?? 3) - (pokedexPriority[b.rarity] ?? 3)) } : {}),
+      ...(key === 'portfolio' ? { projectEnglish: Object.fromEntries(
+        Object.entries(p.projectEnglish && typeof p.projectEnglish === 'object' ? p.projectEnglish : {}).filter(([key]) => /^[a-zA-Z0-9_-]{1,120}$/.test(key)).slice(0,350)
+          .map(([slug, value]) => [slug, english(value,['title','category'],250)])
+      ) } : {}),
       ...(key === 'portfolio' ? { universeSections: Object.fromEntries(['photo','video','graphisme'].map(mode => [
         mode, (Array.isArray(p.universeSections?.[mode]) ? p.universeSections[mode] : []).slice(0,80).map(cleanSection).filter(Boolean)
       ])) } : {}),
