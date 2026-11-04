@@ -159,7 +159,7 @@
         const scope = `.services-board .service-column:nth-child(${index + 1})`;
         const photo = safeImage(item?.image?.url);
         const img = document.querySelector(`${scope} .service-visual img`);
-        if (img && photo) { img.src = photo; img.alt = item.image.alt || img.alt; }
+        if (img && photo) { if (img.getAttribute('src') !== photo && img.src !== photo) img.src = photo; img.alt = item.image.alt || img.alt; }
         replaceText(`${scope} .service-caption`, item.caption);
         updateButton(`${scope} .service-link`, item.buttonLabel, item.buttonUrl);
       });
@@ -170,7 +170,7 @@
         const scope = `.story-panel:nth-child(${index + 1})`;
         const photo = safeImage(item?.image?.url);
         const img = document.querySelector(`${scope} .story-photo img`);
-        if (img && photo) { img.src = photo; img.alt = item.image.alt || img.alt; }
+        if (img && photo) { if (img.getAttribute('src') !== photo && img.src !== photo) img.src = photo; img.alt = item.image.alt || img.alt; }
         replaceText(`${scope} .story-copy h2`, item.title);
         replaceText(`${scope} .story-copy p`, item.body);
         replaceText(`${scope} .story-kicker`, item.kicker);
@@ -303,7 +303,15 @@
     // Projects in dynamic CMS sections still need their catalog, if configured.
     const needsProjects = (initial.page?.sections || []).some(section => section.type === 'carrouselProjets');
     if (needsProjects) load(currentPage, true);
-    if (currentPage === 'accueil') pages.filter(page => page !== 'accueil').forEach(page => load(page, false));
+    if (currentPage === 'accueil') {
+      for (const relatedKey of ['histoire', 'services']) {
+        if (Object.prototype.hasOwnProperty.call(initial.related || {}, relatedKey)) {
+          const relatedPage = initial.related[relatedKey];
+          cache.set(relatedKey, {page: relatedPage, projects: []});
+          applyPage(relatedKey, relatedPage, []);
+        } else load(relatedKey, false);
+      }
+    }
   } else {
     pages.forEach((page, index) => load(page, index === 0));
   }

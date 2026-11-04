@@ -159,7 +159,11 @@ function renderCarousel(value=activeValue){
     card.style.pointerEvents=visible?'auto':'none';
     card.style.zIndex=String(200-Math.round(mag*40)+(state==='current'?40:state==='neighbour'?18:0));
     card.style.transform=`translate3d(calc(-50% + ${x}px),${y}px,${z}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
-    card.style.filter=`brightness(${bright}) saturate(${sat}) blur(${blur}px)`;
+    // Keep tonal depth, but don't recomposite a large blurred bitmap on every frame.
+    const tone = state === 'current' ? 'brightness(1) saturate(1)' :
+      state === 'neighbour' ? 'brightness(.9) saturate(.96)' :
+      'brightness(.74) saturate(.86)';
+    if (card.dataset.tone !== tone) { card.style.filter = tone; card.dataset.tone = tone; }
     card.style.setProperty('--mirror-opacity',String(Math.max(0,mirror)));
     card.style.setProperty('--card-depth',String(1-Math.min(1,mag/3)));
     card.setAttribute('aria-hidden',visible?'false':'true');
@@ -215,7 +219,10 @@ function mountCards(){
     const image=document.createElement('img');
     image.src=p.cover;
     image.alt=p.title;
-    image.loading=Math.abs(distanceFromCenter(i,0))<=1?'eager':'lazy';
+    // Fetch the two neighbouring cards on each side before the first rotation.
+    // This prevents stutters when the back row is brought to the foreground.
+    image.loading=Math.abs(distanceFromCenter(i,0))<=2.35?'eager':'lazy';
+    image.decoding='async';
     if(image.loading==='eager')image.fetchPriority=i===0?'high':'auto';
     shell.appendChild(image);
 

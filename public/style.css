@@ -861,3 +861,11 @@ body:not(.subpage).yruz-motion-ready .yruz-text-reveal.yruz-text-visible::after{
     left:clamp(9px,var(--dial-position,0%),calc(100% - 9px))!important;
   }
 }
+
+/* V68: transform positions are interpolated by requestAnimationFrame already.
+   CSS transform/filter transitions caused the cards to lag behind the dial. */
+.portfolio-v42 .floating-card {
+  transition: none !important;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
