@@ -291,16 +291,20 @@
       window.YRUZ_LANG?.refresh?.();
     } catch (error) { console.warn('YRUZPHOTO: sections CMS non disponibles', error); }
   };
-  // The homepage was embedded in the HTML response, so do not fetch it again
-  // after the original carousel has already mounted.
-  const initial=window.YRUZ_INITIAL_HOME;
-  if(currentPage==='accueil' && initial && Object.prototype.hasOwnProperty.call(initial,'page')){
-    navigationCache=initial.navigation;
+  // Server-embedded content is available immediately: no temporary stock pictures.
+  // Other pages keep the existing asynchronous workflow for project collections.
+  const initial = window.YRUZ_INITIAL_PAGE;
+  if (initial && initial.key === currentPage && Object.prototype.hasOwnProperty.call(initial, 'page')
+      && (currentPage === 'accueil' || currentPage === 'services')) {
+    navigationCache = initial.navigation;
     applyNavigation(initial.navigation);
-    cache.set('accueil',{page:initial.page,projects:[]});
-    applyPage('accueil',initial.page,[]);
-    pages.filter(page=>page!=='accueil').forEach(page=>load(page,false));
-  }else{
-    pages.forEach((page,index)=>load(page,index===0));
+    cache.set(currentPage, {page: initial.page, projects: []});
+    applyPage(currentPage, initial.page, []);
+    // Projects in dynamic CMS sections still need their catalog, if configured.
+    const needsProjects = (initial.page?.sections || []).some(section => section.type === 'carrouselProjets');
+    if (needsProjects) load(currentPage, true);
+    if (currentPage === 'accueil') pages.filter(page => page !== 'accueil').forEach(page => load(page, false));
+  } else {
+    pages.forEach((page, index) => load(page, index === 0));
   }
 })();
