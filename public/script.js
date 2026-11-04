@@ -54,6 +54,50 @@ document.getElementById('nextHero')?.addEventListener('click',()=>changeHero(1))
 document.getElementById('prevHero')?.addEventListener('click',()=>changeHero(-1));
 drawHero();
 
+// V71 - Adapter la taille du titre d'accueil au texte enregistre dans le Studio.
+// Les textes courts conservent leur taille de police et le style historique.
+(() => {
+  const hero = document.querySelector('.hero');
+  const heading = hero?.querySelector('.hero-inner h1');
+  if (!hero || !heading) return;
+  let pending = 0;
+  const fitHeading = () => {
+    pending = 0;
+    // Retablir d'abord la taille CSS normale sur chaque nouvelle mesure.
+    heading.style.fontSize = '';
+    const content = (heading.textContent || '').trim();
+    if (content.length <= 20) return;
+    const base = parseFloat(getComputedStyle(heading).fontSize);
+    if (!Number.isFinite(base) || base <= 0) return;
+    // Garder de l'espace pour le surtitre, l'introduction et les CTA.
+    const maxHeight = Math.min(hero.clientHeight * .43, window.innerHeight * .46);
+    const maxWidth = hero.clientWidth * (window.innerWidth < 768 ? .91 : .87);
+    let low = 18, high = base;
+    const fits = size => {
+      heading.style.fontSize = `${size}px`;
+      const bounds = heading.getBoundingClientRect();
+      return bounds.height <= maxHeight && heading.scrollWidth <= Math.max(maxWidth, heading.clientWidth) + 2;
+    };
+    if (fits(base)) { heading.style.fontSize = ''; return; }
+    for (let i = 0; i < 13; i++) {
+      const mid = (low + high) / 2;
+      if (fits(mid)) low = mid; else high = mid;
+    }
+    heading.style.fontSize = `${Math.floor(low)}px`;
+  };
+  const scheduleFit = () => {
+    if (pending) cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(fitHeading);
+  };
+  const watch = new MutationObserver(scheduleFit);
+  watch.observe(heading, {subtree:true, characterData:true, childList:true});
+  window.addEventListener('resize', scheduleFit, {passive:true});
+  window.addEventListener('yruz:language-change', scheduleFit);
+  if ('ResizeObserver' in window) new ResizeObserver(scheduleFit).observe(hero);
+  document.fonts?.ready?.then(scheduleFit);
+  scheduleFit();
+})();
+
 let mode='photo';
 let projects=carouselItems(mode);
 let current=0;

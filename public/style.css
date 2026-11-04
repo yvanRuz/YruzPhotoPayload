@@ -869,3 +869,12 @@ body:not(.subpage).yruz-motion-ready .yruz-text-reveal.yruz-text-visible::after{
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
+
+
+/* V71 - Accueil : titres personnalises longs. Ne change pas YRUZPHOTO court. */
+.hero .hero-inner { width: min(100%, 1160px); max-width: calc(100% - 110px); margin-inline: auto; }
+.hero .hero-inner h1 { max-width: 100%; overflow-wrap: normal; word-break: normal; text-wrap: balance; }
+@media (max-width: 767px) {
+  .hero .hero-inner { max-width: 100%; }
+  .hero .hero-inner h1 { overflow-wrap: break-word; }
+}
