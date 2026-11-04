@@ -3,15 +3,17 @@
  const params=new URLSearchParams(location.search);
  const view=document.body.dataset.page;
  const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let projectEnglish={},refreshProjectUI=()=>{};
+ let projectEnglish={},projectPortuguese={},refreshProjectUI=()=>{};
  const localizedProject=p=>{
-   if(window.YRUZ_LANG?.current?.()!=='en')return p;
-   const translation=projectEnglish[String(p.slug)]||projectEnglish[String(p.id)]||{};
+   const current=window.YRUZ_LANG?.current?.();
+   const source=current==='en'?projectEnglish:current==='pt-BR'?projectPortuguese:null;
+   if(!source)return p;
+   const translation=source[String(p.slug)]||source[String(p.id)]||{};
    return {...p,title:translation.title?.trim()||p.title,category:translation.category?.trim()||p.category};
  };
  window.addEventListener('yruz:language-change',()=>{refreshProjectUI();window.YRUZ_LANG?.refresh?.()});
  fetch('/cms-content?page=portfolio',{cache:'no-store'}).then(res=>res.ok?res.json():null).then(data=>{
-   if(data?.page?.projectEnglish){projectEnglish=data.page.projectEnglish;refreshProjectUI();window.YRUZ_LANG?.refresh?.()}
+   if(data?.page){projectEnglish=data.page.projectEnglish||{};projectPortuguese=data.page.projectPortuguese||{};refreshProjectUI();window.YRUZ_LANG?.refresh?.()}
  }).catch(()=>{});
  const validMedia = u => {const s=String(u||'').trim();return /^(https?:\/\/|\/api\/media\/|\/assets\/|assets\/|medias\/)/i.test(s)&&!/[<>"'`]/.test(s)?s:''};
  const mediaImg=(url,alt,loading='lazy')=>`<img ${loading==='lazy'?'loading="lazy"':''} src="${escapeHtml(validMedia(url))}" alt="${escapeHtml(alt)}">`;
@@ -82,7 +84,7 @@
   refreshProjectUI=()=>{
     const translated=localizedProject(p),heading=content.querySelector('h1'),overline=content.querySelector('.project-overline');
     if(heading)heading.textContent=translated.title;
-    if(overline)overline.textContent=(window.YRUZ_LANG?.current?.()==='en'?(isGraphic(p)?'DESIGN':p.mode==='photo'?'PHOTOGRAPHY':'VIDEO'):(isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'))+' / '+translated.category;
+    if(overline)overline.textContent=(window.YRUZ_LANG?.current?.()==='pt-BR'?(isGraphic(p)?'DESIGN GRÁFICO':p.mode==='photo'?'FOTOGRAFIA':'VÍDEO'):window.YRUZ_LANG?.current?.()==='en'?(isGraphic(p)?'DESIGN':p.mode==='photo'?'PHOTOGRAPHY':'VIDEO'):(isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'))+' / '+translated.category;
     document.title=translated.title+' — YRUZPHOTO';
   };
   refreshProjectUI();

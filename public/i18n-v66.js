@@ -3,7 +3,7 @@
   'use strict';
   const KEY='yruzphoto-language';
   let lang='fr';
-  try { lang=localStorage.getItem(KEY)==='en'?'en':'fr'; } catch {}
+  try { const saved=localStorage.getItem(KEY);lang=['en','pt-BR'].includes(saved)?saved:'fr'; } catch {}
   const pairs = [
     ['ACCUEIL','HOME'],['ÉQUIPEMENT','GEAR'],['MON ÉQUIPEMENT','MY GEAR'],['SERVICES','SERVICES'],['CONTACT','CONTACT'],['PORTFOLIO','PORTFOLIO'],['PHOTO','PHOTO'],['VIDÉO','VIDEO'],['GRAPHISME','DESIGN'],['DESIGN','DESIGN'],
     ['PARLONS DE VOTRE PROJET','LET’S TALK ABOUT YOUR PROJECT'],['↗   PARLONS DE VOTRE PROJET','↗   LET’S TALK ABOUT YOUR PROJECT'],['PARLONS DE VOTRE PROJET ↗','LET’S TALK ABOUT YOUR PROJECT ↗'],
@@ -147,6 +147,1109 @@
     ['CRÉATIONS GRAPHIQUES','GRAPHIC DESIGN'],
     ['TOUS LES PROJETS','ALL PROJECTS']
   );
+  // V69 — Traductions professionnelles de l’interface en portugais brésilien.
+  const ptPairs = [
+  [
+    "ACCUEIL",
+    "INÍCIO"
+  ],
+  [
+    "ÉQUIPEMENT",
+    "EQUIPAMENTO"
+  ],
+  [
+    "MON ÉQUIPEMENT",
+    "MEU EQUIPAMENTO"
+  ],
+  [
+    "SERVICES",
+    "SERVIÇOS"
+  ],
+  [
+    "CONTACT",
+    "CONTATO"
+  ],
+  [
+    "PORTFOLIO",
+    "PORTFÓLIO"
+  ],
+  [
+    "PHOTO",
+    "FOTO"
+  ],
+  [
+    "VIDÉO",
+    "VÍDEO"
+  ],
+  [
+    "GRAPHISME",
+    "DESIGN GRÁFICO"
+  ],
+  [
+    "DESIGN",
+    "DESIGN"
+  ],
+  [
+    "PHOTOGRAPHIE",
+    "FOTOGRAFIA"
+  ],
+  [
+    "PARLONS DE VOTRE PROJET",
+    "VAMOS FALAR DO SEU PROJETO"
+  ],
+  [
+    "↗   PARLONS DE VOTRE PROJET",
+    "↗   VAMOS FALAR DO SEU PROJETO"
+  ],
+  [
+    "PARLONS DE VOTRE PROJET ↗",
+    "VAMOS FALAR DO SEU PROJETO ↗"
+  ],
+  [
+    "PHOTOGRAPHE & VIDÉASTE",
+    "FOTÓGRAFO E VIDEOMAKER"
+  ],
+  [
+    "Basé à Paris, passionné de Sport Automobile et de musique,",
+    "Radicado em Paris, apaixonado por automobilismo e música,"
+  ],
+  [
+    "je fais des photos et des vidéos pour capturer des émotions.",
+    "faço fotos e vídeos para registrar emoções."
+  ],
+  [
+    "MES TRAVAUX ↗",
+    "MEUS TRABALHOS ↗"
+  ],
+  [
+    "MES TRAVAUX  ↗",
+    "MEUS TRABALHOS ↗"
+  ],
+  [
+    "MES TRAVAUX",
+    "MEUS TRABALHOS"
+  ],
+  [
+    "MON ÉQUIPEMENT  ↗",
+    "MEU EQUIPAMENTO ↗"
+  ],
+  [
+    "MON ÉQUIPEMENT ↗",
+    "MEU EQUIPAMENTO ↗"
+  ],
+  [
+    "DÉFILER ↓",
+    "ROLAR ↓"
+  ],
+  [
+    "YRUZPHOTO — MON HISTOIRE",
+    "YRUZPHOTO — MINHA HISTÓRIA"
+  ],
+  [
+    "01 — LE PARCOURS",
+    "01 — A TRAJETÓRIA"
+  ],
+  [
+    "DÉFILER POUR DÉCOUVRIR →",
+    "DESLIZE PARA DESCOBRIR →"
+  ],
+  [
+    "01 / LE DÉBUT",
+    "01 / O COMEÇO"
+  ],
+  [
+    "CHAPITRE 01",
+    "CAPÍTULO 01"
+  ],
+  [
+    "CHAPITRE 02 — LA PASSION",
+    "CAPÍTULO 02 — A PAIXÃO"
+  ],
+  [
+    "CHAPITRE 03 — AUJOURD’HUI",
+    "CAPÍTULO 03 — HOJE"
+  ],
+  [
+    "CHAPITRE 03 — AUJOURD'HUI",
+    "CAPÍTULO 03 — HOJE"
+  ],
+  [
+    "TOUT PART D'UN REGARD.",
+    "TUDO COMEÇA COM UM OLHAR."
+  ],
+  [
+    "TOUT PART",
+    "TUDO COMEÇA"
+  ],
+  [
+    "D'UN REGARD.",
+    "COM UM OLHAR."
+  ],
+  [
+    "LE MOUVEMENT.",
+    "O MOVIMENTO."
+  ],
+  [
+    "L'ÉMOTION.",
+    "A EMOÇÃO."
+  ],
+  [
+    "LA SUITE",
+    "A HISTÓRIA"
+  ],
+  [
+    "S'ÉCRIT.",
+    "CONTINUA."
+  ],
+  [
+    "PREMIERS REGARDS — IMAGE ILLUSTRATIVE",
+    "PRIMEIROS OLHARES — IMAGEM ILUSTRATIVA"
+  ],
+  [
+    "SPORT AUTOMOBILE — LE MANS",
+    "AUTOMOBILISMO — LE MANS"
+  ],
+  [
+    "AU PLUS PRÈS DES ÉMOTIONS",
+    "MAIS PERTO DAS EMOÇÕES"
+  ],
+  [
+    "CHAQUE IMAGE A UNE HISTOIRE.",
+    "CADA IMAGEM CONTA UMA HISTÓRIA."
+  ],
+  [
+    "Photographier, c'est apprendre à remarquer ce que les autres ne voient pas toujours.",
+    "Fotografar é aprender a perceber o que nem sempre os outros veem."
+  ],
+  [
+    "Du sport automobile à la musique, l'envie de capturer une atmosphère et de raconter l'instant.",
+    "Do automobilismo à música, a vontade de registrar atmosferas e contar a história de cada instante."
+  ],
+  [
+    "Une nouvelle rencontre, un projet, un moment à saisir. Et toujours la même curiosité.",
+    "Um novo encontro, um projeto, um momento a registrar. E sempre a mesma curiosidade."
+  ],
+  [
+    "DÉCOUVRIR MES PROJETS ↗",
+    "CONHEÇA MEUS PROJETOS ↗"
+  ],
+  [
+    "PHOTOGRAPHIE & VIDÉO",
+    "FOTOGRAFIA E VÍDEO"
+  ],
+  [
+    "TRAVAUX RÉCENTS",
+    "TRABALHOS RECENTES"
+  ],
+  [
+    "MES TRAVAUX EN IMAGES",
+    "MEUS TRABALHOS EM IMAGENS"
+  ],
+  [
+    "Reportages photo, films et créations graphiques : des images qui racontent une histoire, quel que soit leur format.",
+    "Reportagens fotográficas, filmes e criações gráficas: imagens que contam histórias, em qualquer formato."
+  ],
+  [
+    "TOUT VOIR ↗",
+    "VER TUDO ↗"
+  ],
+  [
+    "TOUT VOIR — TOUS LES PROJETS ↗",
+    "VER TUDO — TODOS OS PROJETOS ↗"
+  ],
+  [
+    "FAIRE TOURNER",
+    "GIRAR"
+  ],
+  [
+    "PHOTO / VIDÉO / DESIGN",
+    "FOTO / VÍDEO / DESIGN"
+  ],
+  [
+    "MES SERVICES",
+    "MEUS SERVIÇOS"
+  ],
+  [
+    "Les mêmes prestations que sur ma page Services : photo, vidéo et création graphique, adaptées à chaque projet.",
+    "Os mesmos serviços da página Serviços: fotografia, vídeo e design gráfico, adaptados a cada projeto."
+  ],
+  [
+    "ÉVÉNEMENT / SOIRÉE",
+    "EVENTO / FESTA"
+  ],
+  [
+    "Photo portrait",
+    "Fotografia de retrato"
+  ],
+  [
+    "Photo ambiance",
+    "Fotografia de ambiente"
+  ],
+  [
+    "Détail",
+    "Detalhes"
+  ],
+  [
+    "Action / reportage",
+    "Ação / cobertura"
+  ],
+  [
+    "Format YouTube",
+    "Formato YouTube"
+  ],
+  [
+    "Ours",
+    "Versão preliminar"
+  ],
+  [
+    "Reportage",
+    "Reportagem"
+  ],
+  [
+    "Inside",
+    "Bastidores"
+  ],
+  [
+    "Interview",
+    "Entrevista"
+  ],
+  [
+    "COMMUNICATION / ANNONCE",
+    "COMUNICAÇÃO / CAMPANHA"
+  ],
+  [
+    "Affiche",
+    "Cartaz"
+  ],
+  [
+    "Post",
+    "Publicação"
+  ],
+  [
+    "Annonce",
+    "Anúncio"
+  ],
+  [
+    "Habillage social media",
+    "Identidade visual para redes sociais"
+  ],
+  [
+    "CHOISIR CE SERVICE ↗",
+    "ESCOLHER ESTE SERVIÇO ↗"
+  ],
+  [
+    "PARLER D'UN FILM ↗",
+    "CONVERSAR SOBRE UM FILME ↗"
+  ],
+  [
+    "PRÉPARER UN VISUEL ↗",
+    "CRIAR UMA PEÇA VISUAL ↗"
+  ],
+  [
+    "VOIR TOUS MES SERVICES ↗",
+    "VER TODOS OS MEUS SERVIÇOS ↗"
+  ],
+  [
+    "RESTONS CONNECTÉS",
+    "VAMOS NOS CONECTAR"
+  ],
+  [
+    "ME SUIVRE.",
+    "ME ACOMPANHE."
+  ],
+  [
+    "Les coulisses, les images et les prochains projets, à retrouver sur Instagram.",
+    "Bastidores, fotos e próximos projetos no Instagram."
+  ],
+  [
+    "SUIVRE SUR INSTAGRAM ↗",
+    "ACOMPANHAR NO INSTAGRAM ↗"
+  ],
+  [
+    "UN PROJET EN TÊTE ?",
+    "TEM UM PROJETO EM MENTE?"
+  ],
+  [
+    "DISCUTONS-EN.",
+    "VAMOS CONVERSAR."
+  ],
+  [
+    "Une idée, un événement ou une collaboration ? Décris-moi ton projet et préparons une création qui te ressemble.",
+    "Uma ideia, um evento ou uma colaboração? Conte sobre seu projeto e vamos criar algo com a sua cara."
+  ],
+  [
+    "VOTRE NOM",
+    "SEU NOME"
+  ],
+  [
+    "VOTRE E-MAIL",
+    "SEU E-MAIL"
+  ],
+  [
+    "VOTRE PROJET",
+    "SEU PROJETO"
+  ],
+  [
+    "PARLEZ-MOI DE VOTRE PROJET",
+    "CONTE SOBRE SEU PROJETO"
+  ],
+  [
+    "Votre nom",
+    "Seu nome"
+  ],
+  [
+    "Quelques mots sur vos besoins...",
+    "Conte um pouco sobre o que você precisa..."
+  ],
+  [
+    "Mariage",
+    "Casamento"
+  ],
+  [
+    "Portrait",
+    "Retrato"
+  ],
+  [
+    "Corporate & Marque",
+    "Corporativo e marcas"
+  ],
+  [
+    "Film & Aftermovie",
+    "Filme e aftermovie"
+  ],
+  [
+    "Autre projet",
+    "Outro projeto"
+  ],
+  [
+    "PRÉPARER MON E-MAIL ↗",
+    "PREPARAR MEU E-MAIL ↗"
+  ],
+  [
+    "Prototype : le bouton ouvre votre messagerie, sans enregistrer aucune donnée sur le site.",
+    "O botão abre seu aplicativo de e-mail. Nenhum dado é salvo neste site."
+  ],
+  [
+    "MES CRÉATIONS / COLLECTIONS",
+    "MINHAS CRIAÇÕES / COLEÇÕES"
+  ],
+  [
+    "LE PORTFOLIO",
+    "O PORTFÓLIO"
+  ],
+  [
+    "Photographie, vidéo et graphisme : chaque création a son histoire. Choisis un univers pour explorer les projets.",
+    "Fotografia, vídeo e design: cada criação tem sua história. Escolha uma categoria para explorar os projetos."
+  ],
+  [
+    "CHOISIS UNE CARTE POUR OUVRIR LE PROJET ↗",
+    "ESCOLHA UM CARTÃO PARA ABRIR O PROJETO ↗"
+  ],
+  [
+    "LES PROJETS ARRIVENT.",
+    "EM BREVE, NOVOS PROJETOS."
+  ],
+  [
+    "De nouvelles créations seront visibles ici dès leur mise en ligne.",
+    "Novos trabalhos aparecerão aqui assim que forem publicados."
+  ],
+  [
+    "06 PROJETS",
+    "06 PROJETOS"
+  ],
+  [
+    "PROJETS",
+    "PROJETOS"
+  ],
+  [
+    "PROJET INTROUVABLE",
+    "PROJETO NÃO ENCONTRADO"
+  ],
+  [
+    "Ce dossier n’existe pas dans le catalogue.",
+    "Este projeto não está no catálogo."
+  ],
+  [
+    "RETOUR AU PORTFOLIO ↗",
+    "VOLTAR AO PORTFÓLIO ↗"
+  ],
+  [
+    "TOUS LES PROJETS ↑",
+    "TODOS OS PROJETOS ↑"
+  ],
+  [
+    "VOIR LES AUTRES PROJETS ↗",
+    "VER OUTROS PROJETOS ↗"
+  ],
+  [
+    "DES FORMATS CLAIRS POUR CHAQUE BESOIN",
+    "FORMATOS PARA CADA NECESSIDADE"
+  ],
+  [
+    "Photo, vidéo et design : une offre pensée pour couvrir un événement, raconter une histoire et livrer des contenus prêts à être diffusés.",
+    "Fotografia, vídeo e design: serviços para cobrir eventos, contar histórias e entregar conteúdo pronto para publicar."
+  ],
+  [
+    "SUR MESURE",
+    "SOB MEDIDA"
+  ],
+  [
+    "UN BESOIN PLUS SPÉCIFIQUE ?",
+    "PRECISA DE ALGO MAIS ESPECÍFICO?"
+  ],
+  [
+    "Chaque mission peut être adaptée selon la durée, le lieu, les livrables et le niveau d’accompagnement attendu.",
+    "Cada trabalho pode ser adaptado à duração, ao local, às entregas e ao acompanhamento necessário."
+  ],
+  [
+    "YRUZPHOTO / INVENTAIRE INTERACTIF",
+    "YRUZPHOTO / INVENTÁRIO INTERATIVO"
+  ],
+  [
+    "MON",
+    "MEU"
+  ],
+  [
+    "Découvre mon matériel, sélectionne un équipement et prépare ton sac avant de partir en tournage.",
+    "Conheça meus equipamentos, escolha o que levar e prepare a mochila para a produção."
+  ],
+  [
+    "01 — INVENTAIRE",
+    "01 — INVENTÁRIO"
+  ],
+  [
+    "LES OBJETS PRÉSENTÉS SONT DES EXEMPLES MODIFIABLES.",
+    "OS ITENS EXIBIDOS SÃO EXEMPLOS PERSONALIZÁVEIS."
+  ],
+  [
+    "DÉCOUVRIR LE PORTFOLIO ↗",
+    "EXPLORAR O PORTFÓLIO ↗"
+  ],
+  [
+    "PRÊT À PARTIR",
+    "PRONTO PARA SAIR"
+  ],
+  [
+    "ÉQUIPER",
+    "EQUIPAR"
+  ],
+  [
+    "DÉSÉQUIPER",
+    "REMOVER"
+  ],
+  [
+    "SAC À DOS",
+    "MOCHILA"
+  ],
+  [
+    "CAMÉRA",
+    "CÂMERA"
+  ],
+  [
+    "OPTIQUE",
+    "LENTE"
+  ],
+  [
+    "LUMIÈRE",
+    "ILUMINAÇÃO"
+  ],
+  [
+    "TOUT",
+    "TUDO"
+  ],
+  [
+    "UN PROJET À IMAGINER",
+    "UM PROJETO PARA CRIAR"
+  ],
+  [
+    "Chaque collaboration commence par un échange. Décrivez votre idée et préparons ensemble la suite.",
+    "Toda parceria começa com uma conversa. Conte sua ideia e vamos planejar os próximos passos."
+  ],
+  [
+    "MAQUETTE DE PRÉSENTATION",
+    "PRÉVIA DE APRESENTAÇÃO"
+  ],
+  [
+    "PROTOTYPE DE PRÉSENTATION",
+    "PRÉVIA DE APRESENTAÇÃO"
+  ],
+  [
+    "CONTENUS ET PHOTOS ILLUSTRATIFS",
+    "CONTEÚDO E FOTOS ILUSTRATIVOS"
+  ],
+  [
+    "PHOTOS ILLUSTRATIVES",
+    "FOTOGRAFIAS ILUSTRATIVAS"
+  ],
+  [
+    "DOSSIER PROJET",
+    "DETALHES DO PROJETO"
+  ],
+  [
+    "RETOUR EN HAUT ↑",
+    "VOLTAR AO TOPO ↑"
+  ],
+  [
+    "RETOUR À L’ACCUEIL ↑",
+    "VOLTAR AO INÍCIO ↑"
+  ],
+  [
+    "RETOUR À L'ACCUEIL ↑",
+    "VOLTAR AO INÍCIO ↑"
+  ],
+  [
+    "COLLECTION SECRÈTE · MES RENCONTRES",
+    "COLEÇÃO SECRETA · MEUS ENCONTROS"
+  ],
+  [
+    "ÉDITION PERSONNELLE / COLLECTION",
+    "EDIÇÃO PESSOAL / COLEÇÃO"
+  ],
+  [
+    "RETOUR AU SITE",
+    "VOLTAR AO SITE"
+  ],
+  [
+    "LE POKÉDEX",
+    "A POKÉDEX"
+  ],
+  [
+    "Mes rencontres, mes photos, ma collection.",
+    "Meus encontros, minhas fotos, minha coleção."
+  ],
+  [
+    "TOUTES",
+    "TODAS"
+  ],
+  [
+    "LÉGENDAIRE",
+    "LENDÁRIA"
+  ],
+  [
+    "RARE",
+    "RARA"
+  ],
+  [
+    "PEU COMMUNE",
+    "INCOMUM"
+  ],
+  [
+    "COMMUN",
+    "COMUM"
+  ],
+  [
+    "CATÉGORIE",
+    "CATEGORIA"
+  ],
+  [
+    "ÉVÉNEMENT",
+    "EVENTO"
+  ],
+  [
+    "FICHE DE RENCONTRE",
+    "PERFIL DO ENCONTRO"
+  ],
+  [
+    "PHOTOGRAPHIES ASSOCIÉES",
+    "FOTOGRAFIAS RELACIONADAS"
+  ],
+  [
+    "UNE RENCONTRE,",
+    "UM ENCONTRO,"
+  ],
+  [
+    "UNE HISTOIRE.",
+    "UMA HISTÓRIA."
+  ],
+  [
+    "Sélectionne une carte du classeur pour découvrir son histoire et ses photographies.",
+    "Selecione uma carta do álbum para descobrir sua história e fotografias."
+  ],
+  [
+    "SÉLECTIONNE UNE CARTE POUR DÉCOUVRIR SON HISTOIRE",
+    "SELECIONE UMA CARTA PARA CONHECER SUA HISTÓRIA"
+  ],
+  [
+    "UTILISE LES FLÈCHES POUR TOURNER LES PAGES",
+    "USE AS SETAS PARA VIRAR AS PÁGINAS"
+  ],
+  [
+    "RETOUR À L’ACCUEIL ↗",
+    "VOLTAR AO INÍCIO ↗"
+  ],
+  [
+    "IMAGES D’AUJOURD’HUI, MÉMOIRES DE DEMAIN.",
+    "IMAGENS DE HOJE, MEMÓRIAS DE AMANHÃ."
+  ],
+  [
+    "La collection est prête. Ajoute tes premiers portraits depuis le Studio YRUZPHOTO.",
+    "A coleção está pronta. Adicione os primeiros retratos no Studio YRUZPHOTO."
+  ],
+  [
+    "Aucune carte ne correspond à cette recherche.",
+    "Nenhuma carta corresponde à sua busca."
+  ],
+  [
+    "Photographies à venir.",
+    "Fotos em breve."
+  ],
+  [
+    "COLLECTION MOMENTANÉMENT INDISPONIBLE.",
+    "COLEÇÃO TEMPORARIAMENTE INDISPONÍVEL."
+  ],
+  [
+    "AGRANDIR ↗",
+    "AMPLIAR ↗"
+  ],
+  [
+    "AGRANDIR",
+    "AMPLIAR"
+  ],
+  [
+    "PHOTO SUIVANTE",
+    "PRÓXIMA FOTO"
+  ],
+  [
+    "PHOTO PRÉCÉDENTE",
+    "FOTO ANTERIOR"
+  ],
+  [
+    "FAIRE DEFILER LES REPORTAGES",
+    "PERCORRER OS PROJETOS"
+  ],
+  [
+    "FAIRE DÉFILER LES REPORTAGES",
+    "PERCORRER OS PROJETOS"
+  ],
+  [
+    "PARLONS-EN.",
+    "VAMOS CONVERSAR."
+  ],
+  [
+    "MATÉRIEL D'EXEMPLE À PERSONNALISER",
+    "EQUIPAMENTOS DE EXEMPLO PARA PERSONALIZAR"
+  ],
+  [
+    "02 — SAC À DOS",
+    "02 — MOCHILA"
+  ],
+  [
+    "MON SAC À DOS",
+    "MINHA MOCHILA"
+  ],
+  [
+    "PRÊT À PARTIR ↗",
+    "PRONTO PARA SAIR ↗"
+  ],
+  [
+    "ÉQUIPE UNE CAMÉRA ET AU MOINS UN AUTRE OBJET",
+    "EQUIPE UMA CÂMERA E PELO MENOS MAIS UM ITEM"
+  ],
+  [
+    "· UTILISE LES FLÈCHES POUR TOURNER LES PAGES",
+    "· USE AS SETAS PARA VIRAR AS PÁGINAS"
+  ],
+  [
+    "Choisis une carte de l'album pour afficher son portrait et les photos de cette rencontre.",
+    "Escolha uma carta do álbum para ver o retrato e as fotos deste encontro."
+  ],
+  [
+    "IMAGES D'AUJOURD'HUI, MÉMOIRES DE DEMAIN.",
+    "IMAGENS DE HOJE, MEMÓRIAS DE AMANHÃ."
+  ],
+  [
+    "RETOUR À L'ACCUEIL ↗",
+    "VOLTAR AO INÍCIO ↗"
+  ],
+  [
+    "GLISSER OU CLIQUER",
+    "DESLIZE OU CLIQUE"
+  ],
+  [
+    "GALERIE DU PROJET",
+    "GALERIA DO PROJETO"
+  ],
+  [
+    "LES IMAGES",
+    "AS IMAGENS"
+  ],
+  [
+    "FILM",
+    "FILME"
+  ],
+  [
+    "LA VIDÉO",
+    "O VÍDEO"
+  ],
+  [
+    "REGARDER LE FILM",
+    "ASSISTIR AO FILME"
+  ],
+  [
+    "Regarder sur YouTube",
+    "Assistir no YouTube"
+  ],
+  [
+    "GALERIE DE DÉMONSTRATION — PHOTOS À REMPLACER",
+    "GALERIA DE DEMONSTRAÇÃO — SUBSTITUIR FOTOS"
+  ],
+  [
+    "DOSSIER PRÊT À RECEVOIR VOS FICHIERS",
+    "PROJETO PRONTO PARA RECEBER ARQUIVOS"
+  ],
+  [
+    "PHOTOS DE DÉMONSTRATION",
+    "FOTOS DE EXEMPLO"
+  ],
+  [
+    "POUR ALLER PLUS LOIN",
+    "SAIBA MAIS"
+  ],
+  [
+    "À DÉCOUVRIR AUSSI",
+    "EXPLORE TAMBÉM"
+  ],
+  [
+    "← TOUS LES PROJETS",
+    "← TODOS OS PROJETOS"
+  ],
+  [
+    "LA COLLECTION ATTEND SES PREMIÈRES CARTES",
+    "A COLEÇÃO AGUARDA SUAS PRIMEIRAS CARTAS"
+  ],
+  [
+    "OUVERTURE DE LA COLLECTION…",
+    "ABRINDO A COLEÇÃO…"
+  ],
+  [
+    "VOS COORDONNÉES",
+    "SEUS DADOS DE CONTATO"
+  ],
+  [
+    "MODE DÉMONSTRATION",
+    "MODO DE DEMONSTRAÇÃO"
+  ],
+  [
+    "08 ÉQUIPEMENTS",
+    "08 EQUIPAMENTOS"
+  ],
+  [
+    "RÉINITIALISER ↺",
+    "REDEFINIR ↺"
+  ],
+  [
+    "emplacements équipés",
+    "itens equipados"
+  ],
+  [
+    "ÉQUIPEMENTS",
+    "EQUIPAMENTOS"
+  ],
+  [
+    "◈ PHOTO",
+    "◈ FOTO"
+  ],
+  [
+    "▶ VIDÉO",
+    "▶ VÍDEO"
+  ],
+  [
+    "✦ GRAPHISME",
+    "✦ DESIGN GRÁFICO"
+  ],
+  [
+    "PROJETS PHOTO",
+    "PROJETOS DE FOTO"
+  ],
+  [
+    "PROJETS VIDÉO",
+    "PROJETOS DE VÍDEO"
+  ],
+  [
+    "PROJETS GRAPHISME",
+    "PROJETOS DE DESIGN"
+  ],
+  [
+    "MA GALERIE",
+    "MINHA GALERIA"
+  ],
+  [
+    "MES PHOTOS",
+    "MINHAS FOTOS"
+  ],
+  [
+    "PHOTOS",
+    "FOTOS"
+  ],
+  [
+    "VIDÉOS",
+    "VÍDEOS"
+  ],
+  [
+    "VISUELS",
+    "IMAGENS"
+  ],
+  [
+    "CLIQUEZ POUR AGRANDIR",
+    "CLIQUE PARA AMPLIAR"
+  ],
+  [
+    "CLIQUEZ POUR OUVRIR",
+    "CLIQUE PARA ABRIR"
+  ],
+  [
+    "PHOTOGRAPHIE PRÉCÉDENTE",
+    "FOTO ANTERIOR"
+  ],
+  [
+    "PHOTOGRAPHIE SUIVANTE",
+    "PRÓXIMA FOTO"
+  ],
+  [
+    "PRÉCÉDENT",
+    "ANTERIOR"
+  ],
+  [
+    "SUIVANT",
+    "PRÓXIMO"
+  ],
+  [
+    "Agrandir la photo",
+    "Ampliar a foto"
+  ],
+  [
+    "Choisir une photographie",
+    "Escolher uma fotografia"
+  ],
+  [
+    "Choisir une photo",
+    "Escolher uma foto"
+  ],
+  [
+    "Visionneuse de photos",
+    "Visualizador de fotos"
+  ],
+  [
+    "Fermer la visionneuse",
+    "Fechar o visualizador"
+  ],
+  [
+    "Afficher la photo",
+    "Exibir a foto"
+  ],
+  [
+    "Lire la vidéo",
+    "Reproduzir o vídeo"
+  ],
+  [
+    "Votre navigateur ne prend pas en charge cette vidéo.",
+    "Seu navegador não suporta este vídeo."
+  ],
+  [
+    "Les médias de ce projet seront ajoutés prochainement.",
+    "Os arquivos deste projeto serão adicionados em breve."
+  ],
+  [
+    "AUCUN PROJET",
+    "NENHUM PROJETO"
+  ],
+  [
+    "AUCUNE PHOTO",
+    "NENHUMA FOTO"
+  ],
+  [
+    "AUCUNE VIDÉO",
+    "NENHUM VÍDEO"
+  ],
+  [
+    "IMAGES À VENIR",
+    "IMAGENS EM BREVE"
+  ],
+  [
+    "CHARGEMENT DES PROJETS",
+    "CARREGANDO PROJETOS"
+  ],
+  [
+    "CHARGEMENT…",
+    "CARREGANDO…"
+  ],
+  [
+    "RETOUR",
+    "VOLTAR"
+  ],
+  [
+    "DÉCOUVRIR",
+    "DESCOBRIR"
+  ],
+  [
+    "EN SAVOIR PLUS",
+    "SAIBA MAIS"
+  ],
+  [
+    "VOIR LE PROJET",
+    "VER PROJETO"
+  ],
+  [
+    "OUVRIR LE PROJET",
+    "ABRIR PROJETO"
+  ],
+  [
+    "DEMANDE DE DEVIS",
+    "SOLICITAR ORÇAMENTO"
+  ],
+  [
+    "PHOTOGRAPHE",
+    "FOTÓGRAFO"
+  ],
+  [
+    "VIDÉASTE",
+    "VIDEOMAKER"
+  ],
+  [
+    "PHOTOGRAPHIE ET VIDÉO",
+    "FOTOGRAFIA E VÍDEO"
+  ],
+  [
+    "LE CLASSEUR",
+    "O ÁLBUM"
+  ],
+  [
+    "TOURNER LA PAGE",
+    "VIRAR A PÁGINA"
+  ],
+  [
+    "PAGE SUIVANTE",
+    "PRÓXIMA PÁGINA"
+  ],
+  [
+    "PAGE PRÉCÉDENTE",
+    "PÁGINA ANTERIOR"
+  ],
+  [
+    "CARTE SUIVANTE",
+    "PRÓXIMA CARTA"
+  ],
+  [
+    "CARTE PRÉCÉDENTE",
+    "CARTA ANTERIOR"
+  ],
+  [
+    "OUVRIR LA FICHE",
+    "ABRIR PERFIL"
+  ],
+  [
+    "FERMER LA FICHE",
+    "FECHAR PERFIL"
+  ],
+  [
+    "LES RENCONTRES",
+    "OS ENCONTROS"
+  ],
+  [
+    "RECHERCHER UNE PERSONNE",
+    "BUSCAR UMA PESSOA"
+  ],
+  [
+    "RECHERCHER",
+    "BUSCAR"
+  ],
+  [
+    "TRIER",
+    "ORDENAR"
+  ],
+  [
+    "TOUTES LES RARETÉS",
+    "TODAS AS RARIDADES"
+  ],
+  [
+    "LÉGENDAIRES",
+    "LENDÁRIAS"
+  ],
+  [
+    "RARES",
+    "RARAS"
+  ],
+  [
+    "PEU COMMUNES",
+    "INCOMUNS"
+  ],
+  [
+    "COMMUNES",
+    "COMUNS"
+  ],
+  [
+    "RETOUR AU CLASSEUR",
+    "VOLTAR AO ÁLBUM"
+  ],
+  [
+    "APERÇU",
+    "PRÉVIA"
+  ],
+  [
+    "ÉQUIPEMENT AUDIO",
+    "EQUIPAMENTO DE ÁUDIO"
+  ],
+  [
+    "AUDIO",
+    "ÁUDIO"
+  ],
+  [
+    "LENTILLE",
+    "LENTE"
+  ],
+  [
+    "OBJECTIF",
+    "LENTE"
+  ],
+  [
+    "ACCESSOIRES",
+    "ACESSÓRIOS"
+  ],
+  [
+    "DANS LE SAC",
+    "NA MOCHILA"
+  ],
+  [
+    "AJOUTER AU SAC",
+    "ADICIONAR À MOCHILA"
+  ],
+  [
+    "RETIRER DU SAC",
+    "RETIRAR DA MOCHILA"
+  ],
+  [
+    "CONTACTEZ-MOI",
+    "ENTRE EM CONTATO"
+  ],
+  [
+    "ÉCRIVEZ-MOI",
+    "FALE COMIGO"
+  ],
+  [
+    "ENVOYER",
+    "ENVIAR"
+  ],
+  [
+    "VOTRE MESSAGE",
+    "SUA MENSAGEM"
+  ],
+  [
+    "ÉVÉNEMENT",
+    "EVENTO"
+  ],
+  [
+    "CRÉATION GRAPHIQUE",
+    "DESIGN GRÁFICO"
+  ],
+  [
+    "CRÉATIONS GRAPHIQUES",
+    "CRIAÇÕES GRÁFICAS"
+  ],
+  [
+    "TOUS LES PROJETS",
+    "TODOS OS PROJETOS"
+  ]
+];
   const titlePairs = new Map([
     ['YRUZPHOTO — Prototype','YRUZPHOTO — Portfolio'],
     ['Portfolio — YRUZPHOTO','Portfolio — YRUZPHOTO'],
@@ -156,19 +1259,38 @@
     ['Contact — YRUZPHOTO','Contact — YRUZPHOTO'],
     ['Le Pokédex — YRUZPHOTO','The Pokédex — YRUZPHOTO']
   ]);
+  const ptTitlePairs = new Map([
+    ['YRUZPHOTO — Prototype','YRUZPHOTO — Portfólio'],
+    ['Portfolio — YRUZPHOTO','Portfólio — YRUZPHOTO'],
+    ['Projet — YRUZPHOTO','Projeto — YRUZPHOTO'],
+    ['Services — YRUZPHOTO','Serviços — YRUZPHOTO'],
+    ['Mon équipement — YRUZPHOTO','Meu equipamento — YRUZPHOTO'],
+    ['Contact — YRUZPHOTO','Contato — YRUZPHOTO'],
+    ['Le Pokédex — YRUZPHOTO','A Pokédex — YRUZPHOTO']
+  ]);
   let frenchTitle = null;
   function updateTitle(){
-    if(lang==='en'){
-      // Only translate a known stock page title; never replace a custom project title.
-      const translated=titlePairs.get(document.title);
-      if(translated){if(frenchTitle===null)frenchTitle=document.title;document.title=translated}
-    }else if(frenchTitle!==null){
-      if(document.title===titlePairs.get(frenchTitle))document.title=frenchTitle;
-      frenchTitle=null;
+    const titles = lang==='pt-BR' ? ptTitlePairs : lang==='en' ? titlePairs : null;
+    if(titles){
+      const original = frenchTitle || document.title;
+      const translated=titles.get(original);
+      if(translated){frenchTitle=original;document.title=translated;}
+    } else if(frenchTitle !== null){
+      document.title=frenchTitle;frenchTitle=null;
     }
   }
   function translateDynamic(value) {
     let match;
+    if (lang==='pt-BR') {
+      if((match=/^(\d+)\s+VISUELS?\s*[·•]\s*CLIQUEZ POUR AGRANDIR$/i.exec(value)))return `${match[1]} IMAGENS · CLIQUE PARA AMPLIAR`;
+      if((match=/^(\d+)\s+PHOTOS?\s*(?:[·•]\s*(\d+)\s+VIDÉOS?)?$/i.exec(value)))return `${match[1]} ${Number(match[1])===1?'FOTO':'FOTOS'}${match[2]?' · '+match[2]+' '+(Number(match[2])===1?'VÍDEO':'VÍDEOS'):''}`;
+      if((match=/^(\d+)\s+ÉQUIPEMENTS?$/i.exec(value)))return `${match[1]} EQUIPAMENTOS`;
+      if((match=/^(\d+)\s*\/\s*(\d+)\s+emplacements équipés$/i.exec(value)))return `${match[1]} / ${match[2]} ITENS EQUIPADOS`;
+      if((match=/^Afficher la photo\s+(\d+)$/i.exec(value)))return `Exibir foto ${match[1]}`;
+      if((match=/^Agrandir la photo\s+(\d+)(?:\s+sur\s+(\d+))?$/i.exec(value)))return `Ampliar foto ${match[1]}${match[2]?' de '+match[2]:''}`;
+      if((match=/^Lire la vidéo\s+(.+)$/i.exec(value)))return `Reproduzir vídeo: ${match[1]}`;
+      return null;
+    }
     if((match=/^(\d+)\s+VISUELS?\s*[·•]\s*CLIQUEZ POUR AGRANDIR$/i.exec(value)))return `${match[1]} IMAGES · CLICK TO ENLARGE`;
     if((match=/^(\d+)\s+PHOTOS?\s*(?:[·•]\s*(\d+)\s+VIDÉOS?)?$/i.exec(value)))return `${match[1]} ${Number(match[1])===1?'PHOTO':'PHOTOS'}${match[2]?' · '+match[2]+' '+(Number(match[2])===1?'VIDEO':'VIDEOS'):''}`;
     if((match=/^(\d+)\s+ÉQUIPEMENTS?$/i.exec(value)))return `${match[1]} GEAR ITEMS`;
@@ -182,6 +1304,8 @@
   }
   const normalized = s => String(s||'').replace(/\s+/g,' ').trim();
   const dict = new Map(pairs.map(([fr,en])=>[normalized(fr),en]));
+  const ptDict = new Map(ptPairs.map(([fr,pt])=>[normalized(fr),pt]));
+  const translation = value => (lang === 'pt-BR' ? ptDict : dict).get(normalized(value)) || translateDynamic(normalized(value));
   const tracked=new Map();
   const translatedAttrs=new Map();
   let observer,processing=false;
@@ -191,32 +1315,31 @@
     const raw=node.nodeValue||'';
     if(!raw.trim())return;
     const prior=tracked.get(node);
-    // DOM libraries can replace a text node in place. Translate its *new* original,
-    // never restore stale text from the previous version when switching to French.
-    if(prior && raw===prior.en)return;
-    if(prior && raw===prior.fr){const en=dict.get(normalized(raw))||translateDynamic(normalized(raw));if(en)node.nodeValue=prior.en=en;return}
-    const value=normalized(raw),en=dict.get(value)||translateDynamic(value);
-    if(!en)return;
-    const final=raw.replace(/^(\s*)[\s\S]*?(\s*)$/,(_all,prefix,suffix)=>prefix+en+suffix);
-    tracked.set(node,{fr:raw,en:final});
-    node.nodeValue=final;
+    if(prior && raw===prior.translated)return;
+    const original=prior && raw===prior.fr ? prior.fr : raw;
+    const translated=translation(original);
+    if(!translated)return;
+    const final=original.replace(/^(\s*)[\s\S]*?(\s*)$/,(_all,prefix,suffix)=>prefix+translated+suffix);
+    tracked.set(node,{fr:original,translated:final});
+    if(raw!==final)node.nodeValue=final;
   }
   function translateAttributes(root){
     const nodes=[];if(root.nodeType===1)nodes.push(root);
     if(root.querySelectorAll)nodes.push(...root.querySelectorAll('[placeholder],[aria-label],[title]'));
     for(const el of nodes)for(const attr of ['placeholder','aria-label','title']){
       if(!el.hasAttribute?.(attr)||el.closest?.('.yruz-lang-switch'))continue;
-      const old=el.getAttribute(attr),en=dict.get(normalized(old))||translateDynamic(normalized(old));if(!en)continue;
+      const current=el.getAttribute(attr);
+      const previous=translatedAttrs.get(el)?.[attr];
+      if(previous && current===previous.translated)continue;
+      const original=previous && current===previous.fr ? previous.fr : current;
+      const translated=translation(original);if(!translated)continue;
       if(!translatedAttrs.has(el))translatedAttrs.set(el,{});
-      const state=translatedAttrs.get(el);
-      // Replacing a placeholder or label while English is selected must refresh
-      // the French value used on the way back, not restore an old CMS value.
-      if(state[attr]!==old)state[attr]=old;
-      if(old!==en)el.setAttribute(attr,en);
+      translatedAttrs.get(el)[attr]={fr:original,translated};
+      if(current!==translated)el.setAttribute(attr,translated);
     }
   }
   function scan(root=document.body){
-    if(lang!=='en'||!root)return;
+    if(lang==='fr'||!root)return;
     if(root.nodeType===3){translateTextNode(root);return}
     if(root.nodeType!==1)return;
     translateAttributes(root);
@@ -224,37 +1347,37 @@
     let node;while((node=walker.nextNode()))translateTextNode(node);
   }
   function restore(){
-    for(const [node,state] of tracked)if(node.isConnected&&node.nodeValue===state.en)node.nodeValue=state.fr;
+    for(const [node,state] of tracked)if(node.isConnected&&node.nodeValue===state.translated)node.nodeValue=state.fr;
     tracked.clear();
-    for(const [el,values] of translatedAttrs)if(el.isConnected)for(const [key,value] of Object.entries(values))el.setAttribute(key,value);
+    for(const [el,values] of translatedAttrs)if(el.isConnected)for(const [key,value] of Object.entries(values))if(el.getAttribute(key)===value.translated)el.setAttribute(key,value.fr);
     translatedAttrs.clear();
   }
   function ui(){
     const host=document.querySelector('header#header')||document.querySelector('.pd-nav');
     if(!host||host.querySelector('.yruz-lang-switch'))return;
     const el=document.createElement('div');el.className='yruz-lang-switch';el.setAttribute('role','group');el.setAttribute('aria-label','Langue / Language');
-    el.innerHTML='<button type="button" data-lang="fr" lang="fr" aria-label="Français" title="Français">🇫🇷<span>FR</span></button><span class="yruz-lang-sep" aria-hidden="true"></span><button type="button" data-lang="en" lang="en" aria-label="English" title="English">🇬🇧<span>EN</span></button>';
+    el.innerHTML='<button type="button" data-lang="fr" lang="fr" aria-label="Français" title="Français">🇫🇷<span>FR</span></button><span class="yruz-lang-sep" aria-hidden="true"></span><button type="button" data-lang="en" lang="en" aria-label="English" title="English">🇬🇧<span>EN</span></button><span class="yruz-lang-sep" aria-hidden="true"></span><button type="button" data-lang="pt-BR" lang="pt-BR" aria-label="Português do Brasil" title="Português (Brasil)">🇧🇷<span>BR</span></button>';
     el.addEventListener('click',e=>{const btn=e.target.closest('[data-lang]');if(btn)select(btn.dataset.lang)});
     host.append(el);
   }
   function updateButtons(){document.querySelectorAll('.yruz-lang-switch [data-lang]').forEach(b=>{const active=b.dataset.lang===lang;b.classList.toggle('is-active',active);b.setAttribute('aria-pressed',String(active))})}
   function select(value){
-    const next=value==='en'?'en':'fr';if(next===lang)return;
-    if(lang==='en')restore();
+    const next=['fr','en','pt-BR'].includes(value)?value:'fr';if(next===lang)return;
+    if(lang!=='fr')restore();
     lang=next;
     try{localStorage.setItem(KEY,lang)}catch{}
     document.documentElement.lang=lang;
     window.dispatchEvent(new CustomEvent('yruz:language-change',{detail:{lang}}));
     window.YRUZ_REAPPLY_CONTENT?.();
-    if(lang==='en')scan();
+    if(lang!=='fr')scan();
     updateTitle();
     updateButtons();
   }
-  window.YRUZ_LANG={current:()=>lang,select,refresh:()=>{if(lang==='en')scan();updateTitle();updateButtons()}};
+  window.YRUZ_LANG={current:()=>lang,select,refresh:()=>{if(lang!=='fr')scan();updateTitle();updateButtons()}};
   function start(){
-    document.documentElement.lang=lang;ui();updateButtons();if(lang==='en')scan();updateTitle();
+    document.documentElement.lang=lang;ui();updateButtons();if(lang!=='fr')scan();updateTitle();
     observer=new MutationObserver(mutations=>{
-      if(lang!=='en'||processing)return;
+      if(lang==='fr'||processing)return;
       processing=true;
       observer.disconnect();
       try{

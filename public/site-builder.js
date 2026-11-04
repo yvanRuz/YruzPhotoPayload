@@ -1,30 +1,31 @@
 /* YRUZPHOTO Site Builder: renders published Payload sections on the existing site. */
 (() => {
-  const isEnglish = () => window.YRUZ_LANG?.current?.() === 'en' || (!window.YRUZ_LANG && (() => { try { return localStorage.getItem('yruzphoto-language') === 'en'; } catch { return false; } })());
-  const chooseText = (fr, en) => isEnglish() && typeof en === 'string' && en.trim() ? en : fr;
+  const activeLanguage = () => window.YRUZ_LANG?.current?.() || (() => { try { return localStorage.getItem('yruzphoto-language') || 'fr'; } catch { return 'fr'; } })();
+  const localeKey = () => activeLanguage() === 'pt-BR' ? 'ptBr' : activeLanguage() === 'en' ? 'en' : null;
+  const chooseText = (fr, en, ptBr) => {
+    const candidate = localeKey() === 'ptBr' ? ptBr : localeKey() === 'en' ? en : null;
+    return typeof candidate === 'string' && candidate.trim() ? candidate : fr;
+  };
+  const localFields = (source, locale) => Object.fromEntries(Object.entries(source?.[locale] || {}).filter(([,v]) => typeof v === 'string' && v.trim()));
   const translateBlock = block => {
-    if (!isEnglish() || !block) return block;
-    const en = block.en || {};
-    const keys = ['eyebrow','title','body','description','caption','buttonLabel'];
-    const translated = { ...block };
-    for (const k of keys) translated[k] = chooseText(block[k],en[k]);
-    if (Array.isArray(block.slides)) translated.slides=block.slides.map(slide=>({...slide,caption:chooseText(slide.caption,slide.captionEn)}));
-    if (Array.isArray(block.photos)) translated.photos=block.photos.map(photo=>({...photo,caption:chooseText(photo.caption,photo.captionEn)}));
-    if (Array.isArray(block.buttons)) translated.buttons=block.buttons.map(btn=>({...btn,label:chooseText(btn.label,btn.labelEn)}));
+    const locale=localeKey();if(!locale || !block)return block;
+    const translated={...block,...localFields(block,locale)};
+    const suffix=locale === 'en' ? 'En' : 'PtBr';
+    if(Array.isArray(block.slides))translated.slides=block.slides.map(slide=>({...slide,caption:chooseText(slide.caption,slide.captionEn,slide.captionPtBr)}));
+    if(Array.isArray(block.photos))translated.photos=block.photos.map(photo=>({...photo,caption:chooseText(photo.caption,photo.captionEn,photo.captionPtBr)}));
+    if(Array.isArray(block.buttons))translated.buttons=block.buttons.map(btn=>({...btn,label:chooseText(btn.label,btn.labelEn,btn.labelPtBr)}));
     return translated;
   };
   const translatePage = original => {
-    if (!original || !isEnglish()) return original;
-    const en=original.en || {};
-    const translated={ ...original };
-    for (const k of ['heading','intro','mainButtonLabel','secondButtonLabel','bottomButtonLabel'])translated[k]=chooseText(original[k],en[k]);
-    translated.textOverrides={...original.textOverrides,...en.textOverrides};
-    translated.storyCards=(original.storyCards||[]).map(card=>({...card,...Object.fromEntries(Object.entries(card.en||{}).filter(([,v])=>typeof v==='string'&&v.trim()))}));
-    translated.serviceCards=(original.serviceCards||[]).map(card=>({...card,...Object.fromEntries(Object.entries(card.en||{}).filter(([,v])=>typeof v==='string'&&v.trim()))}));
+    const locale=localeKey();if(!original||!locale)return original;
+    const translated={...original,...localFields(original,locale)};
+    translated.textOverrides={...original.textOverrides,...(original[locale]?.textOverrides||{})};
+    translated.storyCards=(original.storyCards||[]).map(card=>({...card,...localFields(card,locale)}));
+    translated.serviceCards=(original.serviceCards||[]).map(card=>({...card,...localFields(card,locale)}));
     translated.sections=(original.sections||[]).map(translateBlock);
     if(original.universeSections)translated.universeSections=Object.fromEntries(Object.entries(original.universeSections).map(([kind,items])=>[kind,(items||[]).map(translateBlock)]));
-    if(original.featuredCards)translated.featuredCards=Object.fromEntries(Object.entries(original.featuredCards).map(([mode,items])=>[mode,Array.isArray(items)?items.map(card=>({...card,title:chooseText(card.title,card.titleEn),category:chooseText(card.category,card.categoryEn)})):items]));
-    if(original.equipmentItems)translated.equipmentItems=original.equipmentItems.map(item=>({...item,...Object.fromEntries(Object.entries(item.en||{}).filter(([,v])=>typeof v==='string'&&v.trim()))}));
+    if(original.featuredCards)translated.featuredCards=Object.fromEntries(Object.entries(original.featuredCards).map(([mode,items])=>[mode,Array.isArray(items)?items.map(card=>({...card,title:chooseText(card.title,card.titleEn,card.titlePtBr),category:chooseText(card.category,card.categoryEn,card.categoryPtBr)})):items]));
+    if(original.equipmentItems)translated.equipmentItems=original.equipmentItems.map(item=>({...item,...localFields(item,locale)}));
     return translated;
   };
   const escapeHtml = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -254,7 +255,7 @@
       const currentPath = location.pathname.split('/').pop() || 'index.html';
       nav.links.forEach(item => {
         const href = safeLink(item.url); if (!href || !item.label) return;
-        const a = document.createElement('a'); a.href = href; a.textContent = chooseText(item.label,item.labelEn);
+        const a = document.createElement('a'); a.href = href; a.textContent = chooseText(item.label,item.labelEn,item.labelPtBr);
         if (href.split(/[?#]/)[0] === currentPath || (currentPath === 'index.html' && href === 'index.html#accueil')) a.classList.add('active');
         if (item.newTab) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
         fragment.append(a);
@@ -262,8 +263,8 @@
       root.insertBefore(fragment, before);
       old.forEach(a => a.remove());
     }
-    updateButton('header nav .nav-cta', chooseText(nav.ctaLabel,nav.ctaLabelEn), nav.ctaUrl);
-    updateButton('footer .footer-contact', chooseText(nav.footerContactLabel,nav.footerContactLabelEn), nav.footerContactUrl);
+    updateButton('header nav .nav-cta', chooseText(nav.ctaLabel,nav.ctaLabelEn,nav.ctaLabelPtBr), nav.ctaUrl);
+    updateButton('footer .footer-contact', chooseText(nav.footerContactLabel,nav.footerContactLabelEn,nav.footerContactLabelPtBr), nav.footerContactUrl);
     const instagram = safeLink(nav.instagramUrl);
     if (instagram) document.querySelectorAll('a[href*="instagram.com/"]').forEach(a => { a.href = instagram; });
   };

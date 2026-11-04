@@ -70,11 +70,12 @@ function turn(direction){
  setTimeout(finish,550);
 }
 function applyLocale(){
- const en=window.YRUZ_LANG?.current?.()==='en';
- cards=originalCards.map(card=>en?{...card,...(card.en||{})}:({...card}));
+ const language=window.YRUZ_LANG?.current?.()||'fr';
+ const locale=language==='pt-BR'?'ptBr':language==='en'?'en':null;
+ cards=originalCards.map(card=>locale?{...card,...Object.fromEntries(Object.entries(card[locale]||{}).filter(([,v])=>typeof v==='string'&&v.trim()))}:{...card});
  if(publishedPage){
-  $('#pd-heading').textContent=(en&&publishedPage.en?.heading)||publishedPage.heading||'LE POKÉDEX';
-  $('#pd-intro').textContent=(en&&publishedPage.en?.intro)||publishedPage.intro||'Mes rencontres, mes photos, ma collection.';
+  $('#pd-heading').textContent=(locale&&publishedPage[locale]?.heading)||publishedPage.heading||'LE POKÉDEX';
+  $('#pd-intro').textContent=(locale&&publishedPage[locale]?.intro)||publishedPage.intro||'Mes rencontres, mes photos, ma collection.';
  }
  page=0;rerender(false);window.YRUZ_LANG?.refresh?.();
 }

@@ -9,3 +9,7 @@
 @media(max-width:850px){#header>.yruz-lang-switch{position:absolute;right:70px;top:20px;margin:0}#header{justify-content:space-between}.pd-nav>.yruz-lang-switch{margin-left:auto}}
 @media(max-width:380px){#header>.yruz-lang-switch{right:62px}.yruz-lang-switch{padding:2px}}
 @media(min-width:851px) and (max-width:1180px){#header nav{gap:clamp(9px,1.2vw,20px)}#header>.yruz-lang-switch{margin-left:8px}}
+
+/* V69: a third language stays discreet on desktop and fits the phone header. */
+@media (max-width:1250px) { .yruz-lang-switch button span { display:none; } .yruz-lang-switch button { padding:5px 6px; font-size:13px!important; } }
+@media (max-width:480px) { #header>.yruz-lang-switch { right:58px; top:18px; } .yruz-lang-switch { gap:2px; padding:3px; } .yruz-lang-sep { height:10px; } .yruz-lang-switch button { padding:4px 5px; } }
