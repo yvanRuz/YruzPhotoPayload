@@ -511,6 +511,7 @@ function render(){
  $('#crumb').textContent=isProjects?'PORTFOLIO / PROJETS':isMedia?'PHOTOGRAPHIES / BIBLIOTHÈQUE':isLinks?'NAVIGATION / LIENS':'PAGES DU SITE / '+pageNames[selection].toUpperCase();
  $('#editorSubtitle').textContent=isProjects?'Crée et modifie chaque réalisation par univers.':isMedia?'Importer, organiser et réutiliser tes photos sans quitter le Studio.':isLinks?'Tous les boutons et liens principaux depuis un seul endroit.':'Textes, sections et photographies : tout est modifiable ici.';
  $('#viewLive').href={accueil:'/index.html',portfolio:'/portfolio.html',services:'/tarifs.html',histoire:'/index.html#mon-histoire',equipement:'/equipement.html',contact:'/contact.html',pokedex:'/pokedex.html',links:'/index.html'}[selection]||'/portfolio.html';
+ if($('#devicePreviewDialog').open) syncDevicePreviewPage();
  $('#saveBtn').hidden=(isMedia||isProjects)&&!dirty;
  $('.main-layout').classList.toggle('library-layout',isMedia||isProjects);
  $('.preview-pane').hidden=isMedia||isProjects;
@@ -923,6 +924,61 @@ $('#editor').addEventListener('keydown',event=>{
     message(context.publish?'Ordre modifié · Clique sur Publier':'Ordre modifié · Enregistre le projet');
   }
 });
+
+
+// V69: apercu responsive du site publie depuis Studio.
+// L'iframe conserve un viewport reel pour declencher les media queries du site.
+const previewSizes={desktop:{width:1280,height:800},mobile:{width:390,height:844}};
+let previewDevice='desktop';
+const previewDialog=$('#devicePreviewDialog');
+const previewArea=$('#devicePreviewArea');
+const previewFrame=$('#devicePreviewFrame');
+const previewIframe=$('#devicePreviewIframe');
+function syncDevicePreviewPage(){
+ const link=$('#viewLive');
+ const url=link?.getAttribute('href')||'/index.html';
+ const newTab=$('#devicePreviewNewTab');
+ newTab.href=url;
+ $('#devicePreviewTitle').textContent='Aperçu · '+(pageNames[selection]||({projects:'Portfolio',links:'Menu du site',media:'Médiathèque'}[selection])||'Site');
+ if(previewIframe.getAttribute('src')!==url)previewIframe.setAttribute('src',url);
+}
+function sizeDevicePreview(){
+ if(!previewDialog.open)return;
+ const size=previewSizes[previewDevice];
+ // Espace interieur: l'iframe est plus grande que son cadre visible et est reduite visuellement.
+ const bounds=previewArea.getBoundingClientRect();
+ const availableWidth=Math.max(1,bounds.width-28);
+ const availableHeight=Math.max(1,bounds.height-28);
+ const scale=Math.min(1,availableWidth/size.width,availableHeight/size.height);
+ previewFrame.style.width=`${Math.round(size.width*scale)}px`;
+ previewFrame.style.height=`${Math.round(size.height*scale)}px`;
+ previewIframe.style.width=`${size.width}px`;
+ previewIframe.style.height=`${size.height}px`;
+ previewIframe.style.transform=`scale(${scale})`;
+ $('#devicePreviewDimensions').textContent=`${size.width} × ${size.height} px · ${Math.round(scale*100)} %`;
+}
+function changeDevicePreview(device){
+ if(!previewSizes[device])return;
+ previewDevice=device;
+ previewArea.dataset.device=device;
+ previewDialog.querySelectorAll('[data-preview-device]').forEach(button=>{
+  const active=button.dataset.previewDevice===device;
+  button.classList.toggle('is-active',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ sizeDevicePreview();
+}
+$('#openDevicePreview').addEventListener('click',()=>{
+ syncDevicePreviewPage();
+ previewDialog.showModal();
+ changeDevicePreview(previewDevice);
+ requestAnimationFrame(sizeDevicePreview);
+});
+$('#closeDevicePreview').addEventListener('click',()=>previewDialog.close());
+previewDialog.querySelectorAll('[data-preview-device]').forEach(button=>button.addEventListener('click',()=>changeDevicePreview(button.dataset.previewDevice)));
+previewDialog.addEventListener('click',event=>{if(event.target===previewDialog)previewDialog.close()});
+window.addEventListener('resize',sizeDevicePreview);
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(sizeDevicePreview).observe(previewArea);
 
 initialLoad();
 })();

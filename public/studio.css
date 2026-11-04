@@ -187,3 +187,25 @@ body.v56-is-sorting,body.v56-is-sorting *{cursor:grabbing!important}
 .v65-text-list{display:grid;gap:12px;margin-top:18px}.v65-text-item{border:1px solid rgba(155,201,231,.17);border-radius:12px;padding:13px;background:rgba(7,27,44,.28)}.v65-text-location{display:block;font-size:12px;letter-spacing:.04em;color:#a7d8f1;margin-bottom:8px}.v65-copy-hint{font-size:12px;opacity:.75;margin-top:12px}.v65-story-editor{margin-top:18px}.v65-chapter{margin-top:22px;border:1px solid rgba(155,201,231,.22);border-radius:14px;padding:18px;background:rgba(6,23,37,.38)}.v65-chapter-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(155,201,231,.13);padding-bottom:10px;margin-bottom:15px}.v65-chapter-head span{font-size:11px;letter-spacing:.12em;color:#96c4dc}.v65-chapter-head strong{font-size:15px}.v65-chapter-fields{display:grid;gap:10px}@media(max-width:650px){.v65-chapter{padding:12px}.v65-chapter-head{display:block}}
 
 .v65-current-text{font-size:12px;line-height:1.5;color:#b5c9d8;opacity:.85;margin:0 0 12px}
+
+
+/* V69 — Prévisualisation ordinateur / téléphone depuis le Studio */
+.device-preview-launch{border:1px solid #5a87ab;background:#16354d;color:#e0f3ff;border-radius:9px;padding:11px 15px;font-size:12px;font-weight:750;white-space:nowrap}
+.device-preview-launch:hover,.device-preview-launch:focus-visible{background:#244b68;border-color:#aed5f2}
+.device-preview-dialog{position:fixed;inset:0;margin:auto;width:min(1450px,96vw);height:min(960px,95dvh);max-width:96vw;max-height:95dvh;padding:0;background:#071625;color:#eff8ff;border:1px solid #3d6583;border-radius:16px;overflow:hidden;box-shadow:0 25px 90px #000a}
+.device-preview-dialog::backdrop{background:#01060de8;backdrop-filter:blur(6px)}
+.device-preview-dialog[open]{display:flex;flex-direction:column}
+.device-preview-header{display:flex;align-items:center;gap:20px;justify-content:space-between;padding:16px 22px;border-bottom:1px solid #28455c;flex-wrap:wrap}
+.device-preview-title small{display:block;color:#87b3d1;font-size:10px;letter-spacing:.14em}.device-preview-title h2{margin:4px 0 0;font-size:17px}
+.device-preview-controls{display:flex;background:#0b263b;border:1px solid #365974;border-radius:10px;padding:4px;gap:4px}
+.device-preview-choice{background:transparent;color:#aac9df;padding:9px 16px;border:0;border-radius:7px;font-size:12px;font-weight:700}
+.device-preview-choice.is-active{background:#baddf5;color:#0c2739}.device-preview-choice:focus-visible{outline:2px solid #e6f6ff;outline-offset:2px}
+.device-preview-close{background:#19364d;border:1px solid #486b85;color:#e4f1ff;border-radius:8px;width:36px;height:36px}
+.device-preview-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 22px;font-size:11px;color:#93b5ce;border-bottom:1px solid #233c50}
+.device-preview-toolbar a{color:#c7e4fb;text-decoration:none}.device-preview-toolbar a:hover{text-decoration:underline}
+.device-preview-area{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;min-width:0;overflow:hidden;padding:14px;background:radial-gradient(circle at 50% 10%,#153149,#07111f 70%)}
+.device-preview-frame{position:relative;flex:none;overflow:hidden;border:1px solid #63829b;background:#071523;border-radius:8px;box-shadow:0 16px 55px #0008}
+.device-preview-area[data-device="mobile"] .device-preview-frame{border:6px solid #182c3e;border-radius:26px;box-sizing:content-box}
+.device-preview-frame iframe{position:absolute;inset:0;border:0;display:block;transform-origin:top left;background:#071523}
+.device-preview-help{padding:11px 22px 15px;margin:0;border-top:1px solid #233c50;font-size:11px;color:#96b8ce;line-height:1.5}
+@media(max-width:700px){.device-preview-header{gap:10px;padding:12px}.device-preview-title{width:100%}.device-preview-title h2{font-size:14px}.device-preview-controls{flex:1;justify-content:center}.device-preview-choice{padding:9px}.device-preview-toolbar{padding:9px 12px}.device-preview-help{padding:10px 12px}.device-preview-dialog{width:99vw;max-width:99vw;height:97dvh;max-height:97dvh}.device-preview-launch{flex:1}}
