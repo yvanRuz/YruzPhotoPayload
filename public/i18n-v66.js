@@ -1352,15 +1352,53 @@
     for(const [el,values] of translatedAttrs)if(el.isConnected)for(const [key,value] of Object.entries(values))if(el.getAttribute(key)===value.translated)el.setAttribute(key,value.fr);
     translatedAttrs.clear();
   }
+  const languages={
+    fr:{flag:'🇫🇷',code:'FR',name:'Français'},
+    en:{flag:'🇬🇧',code:'EN',name:'English'},
+    'pt-BR':{flag:'🇧🇷',code:'BR',name:'Português (Brasil)'}
+  };
+  function closeLanguageMenus(){
+    document.querySelectorAll('.yruz-lang-switch.is-open').forEach(el=>{
+      el.classList.remove('is-open');
+      el.querySelector('.yruz-lang-trigger')?.setAttribute('aria-expanded','false');
+    });
+  }
   function ui(){
     const host=document.querySelector('header#header')||document.querySelector('.pd-nav');
     if(!host||host.querySelector('.yruz-lang-switch'))return;
-    const el=document.createElement('div');el.className='yruz-lang-switch';el.setAttribute('role','group');el.setAttribute('aria-label','Langue / Language');
-    el.innerHTML='<button type="button" data-lang="fr" lang="fr" aria-label="Français" title="Français">🇫🇷<span>FR</span></button><span class="yruz-lang-sep" aria-hidden="true"></span><button type="button" data-lang="en" lang="en" aria-label="English" title="English">🇬🇧<span>EN</span></button><span class="yruz-lang-sep" aria-hidden="true"></span><button type="button" data-lang="pt-BR" lang="pt-BR" aria-label="Português do Brasil" title="Português (Brasil)">🇧🇷<span>BR</span></button>';
-    el.addEventListener('click',e=>{const btn=e.target.closest('[data-lang]');if(btn)select(btn.dataset.lang)});
+    const el=document.createElement('div');
+    el.className='yruz-lang-switch';
+    el.innerHTML=`<button class="yruz-lang-trigger" type="button" aria-label="Changer de langue" aria-haspopup="true" aria-expanded="false" aria-controls="yruz-lang-options"><span class="yruz-lang-current-flag" aria-hidden="true">🇫🇷</span><span class="yruz-lang-current-code">FR</span><svg class="yruz-lang-chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="m3 6 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="yruz-lang-options" id="yruz-lang-options" role="group" aria-label="Choisir une langue">${Object.entries(languages).map(([key,item])=>`<button type="button" data-lang="${key}" lang="${key}" aria-label="${item.name}"><span class="yruz-lang-flag" aria-hidden="true">${item.flag}</span><span class="yruz-lang-name">${item.name}</span><span class="yruz-lang-check" aria-hidden="true">✓</span></button>`).join('')}</div>`;
+    el.addEventListener('click',event=>{
+      const option=event.target.closest('[data-lang]');
+      if(option){select(option.dataset.lang);closeLanguageMenus();return;}
+      if(event.target.closest('.yruz-lang-trigger')){
+        const opening=!el.classList.contains('is-open');
+        closeLanguageMenus();
+        el.classList.toggle('is-open',opening);
+        el.querySelector('.yruz-lang-trigger').setAttribute('aria-expanded',String(opening));
+      }
+    });
+    document.addEventListener('pointerdown',event=>{if(!el.contains(event.target))closeLanguageMenus()});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeLanguageMenus();el.querySelector('.yruz-lang-trigger')?.focus()}});
     host.append(el);
   }
-  function updateButtons(){document.querySelectorAll('.yruz-lang-switch [data-lang]').forEach(b=>{const active=b.dataset.lang===lang;b.classList.toggle('is-active',active);b.setAttribute('aria-pressed',String(active))})}
+  function updateButtons(){
+    const current=languages[lang]||languages.fr;
+    document.querySelectorAll('.yruz-lang-switch').forEach(el=>{
+      const flag=el.querySelector('.yruz-lang-current-flag');
+      const code=el.querySelector('.yruz-lang-current-code');
+      const trigger=el.querySelector('.yruz-lang-trigger');
+      if(flag)flag.textContent=current.flag;
+      if(code)code.textContent=current.code;
+      if(trigger)trigger.setAttribute('aria-label',`Langue : ${current.name}. Changer de langue`);
+      el.querySelectorAll('[data-lang]').forEach(button=>{
+        const active=button.dataset.lang===lang;
+        button.classList.toggle('is-active',active);
+        button.setAttribute('aria-pressed',String(active));
+      });
+    });
+  }
   function select(value){
     const next=['fr','en','pt-BR'].includes(value)?value:'fr';if(next===lang)return;
     if(lang!=='fr')restore();
