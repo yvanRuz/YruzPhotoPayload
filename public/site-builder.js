@@ -144,7 +144,14 @@
     if (!rawData) return;
     const data = translatePage(rawData);
     const selectors = pageMap[key];
-    if (selectors) { replaceText(selectors.title, data.heading); replaceText(selectors.intro, data.intro); }
+    if (selectors) {
+      // Accueil: le titre principal est la signature graphique YRUZPHOTO.
+      // Les traductions du Studio restent appliquees aux autres textes, mais ne
+      // remplacent jamais ce logotype par une longue description multiligne.
+      if (key === 'accueil') replaceText(selectors.title, 'YRUZPHOTO');
+      else replaceText(selectors.title, data.heading);
+      replaceText(selectors.intro, data.intro);
+    }
     const bottomSelector = { portfolio: '.catalog-bottom a', services: '.services-cta a', equipement: '.equip-bottom a' }[key];
     if (bottomSelector) updateButton(bottomSelector, data.bottomButtonLabel, data.bottomButtonUrl);
     if (key === 'accueil') {
