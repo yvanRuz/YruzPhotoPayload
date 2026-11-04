@@ -323,3 +323,28 @@
     pages.forEach((page, index) => load(page, index === 0));
   }
 })();
+
+/* V75: smooth return button, active on every page (including server-rendered home). */
+(() => {
+  const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('a.footer-home-return').forEach(link => {
+    link.addEventListener('click', event => {
+      const target = document.getElementById('accueil');
+      if (target) {
+        event.preventDefault();
+        target.scrollIntoView({ behavior: motionOK ? 'smooth' : 'instant', block: 'start' });
+        if (history.replaceState) history.replaceState(null, '', '#accueil');
+      } else {
+        try { sessionStorage.setItem('yruz-return-home', '1'); } catch {}
+      }
+    });
+  });
+  if (document.getElementById('accueil')) {
+    let returning = false;
+    try { returning = sessionStorage.getItem('yruz-return-home') === '1'; sessionStorage.removeItem('yruz-return-home'); } catch {}
+    if (returning) {
+      // On another page, navigate home first; the destination scrolls gently to its top.
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: motionOK ? 'smooth' : 'instant' })));
+    }
+  }
+})();

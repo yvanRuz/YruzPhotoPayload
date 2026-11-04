@@ -407,6 +407,6 @@ if(contactForm){
     const data=new FormData(e.currentTarget);
     const subject=`Demande de devis — ${data.get('type')}`;
     const body=`Bonjour,\n\nJe m'appelle ${data.get('nom')}.\nMon adresse e-mail : ${data.get('email')}\n\nProjet : ${data.get('type')}\n\n${data.get('message')}\n\nCordialement,\n${data.get('nom')}`;
-    location.href=`mailto:${window.YRUZ_SITE_CONFIG?.contact_email || 'contact@yruzphoto.fr'}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    location.href=`mailto:${window.YRUZ_SITE_CONFIG?.contact_email || 'ruzyvan@gmail.com'}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
 }

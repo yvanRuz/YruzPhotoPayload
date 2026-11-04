@@ -869,3 +869,11 @@ body:not(.subpage).yruz-motion-ready .yruz-text-reveal.yruz-text-visible::after{
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
+
+/* V75: discreet return-to-home control, maintaining YRUZPHOTO's dark visual identity */
+.footer .footer-home-return{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:42px;padding:7px 15px 7px 8px;border:1px solid rgba(173,205,225,.32);border-radius:999px;background:rgba(18,48,67,.36);font-size:10px;font-weight:700;letter-spacing:.08em;color:#e9f4fa;transition:background .25s ease,border-color .25s ease,transform .25s ease,box-shadow .25s ease}
+.footer .footer-home-return-icon{display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border-radius:50%;background:rgba(231,244,255,.11);font-size:17px;line-height:1;transition:transform .25s ease,background .25s ease}
+.footer .footer-home-return:hover{background:rgba(36,77,99,.56);border-color:rgba(209,233,247,.7);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.footer .footer-home-return:hover .footer-home-return-icon{transform:translateY(-3px);background:rgba(231,244,255,.18)}
+.footer .footer-home-return:focus-visible{outline:2px solid #bde4fc;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.footer .footer-home-return,.footer .footer-home-return-icon{transition:none!important}}

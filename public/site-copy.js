@@ -1,6 +1,8 @@
 (()=>{
  const s=window.YRUZ_SITE_CONFIG;
  if(!s)return;
+ // Old demo value is no longer a valid contact address. Preserve any custom Studio address.
+ if(!s.contact_email || s.contact_email.toLowerCase().trim()==='contact@yruzphoto.fr') s.contact_email='ruzyvan@gmail.com';
  const text=(sel,val)=>{if(typeof val!=='string'||!val.trim())return;document.querySelectorAll(sel).forEach(el=>el.textContent=val)};
  const image=(sel,url)=>{if(typeof url!=='string'||! /^(?:https?:\/\/|\/api\/media\/|\/assets\/|assets\/)/.test(url))return;document.querySelectorAll(sel).forEach(el=>{el.src=url;el.loading='lazy'})};
  const urlSafe=url=>{
