@@ -291,5 +291,16 @@
       window.YRUZ_LANG?.refresh?.();
     } catch (error) { console.warn('YRUZPHOTO: sections CMS non disponibles', error); }
   };
-  pages.forEach((page, index) => load(page, index === 0));
+  // The homepage was embedded in the HTML response, so do not fetch it again
+  // after the original carousel has already mounted.
+  const initial=window.YRUZ_INITIAL_HOME;
+  if(currentPage==='accueil' && initial && Object.prototype.hasOwnProperty.call(initial,'page')){
+    navigationCache=initial.navigation;
+    applyNavigation(initial.navigation);
+    cache.set('accueil',{page:initial.page,projects:[]});
+    applyPage('accueil',initial.page,[]);
+    pages.filter(page=>page!=='accueil').forEach(page=>load(page,false));
+  }else{
+    pages.forEach((page,index)=>load(page,index===0));
+  }
 })();

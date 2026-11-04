@@ -4,24 +4,44 @@
 const isGraphicProject = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
 const projectsForMode = selected => (window.YRUZ_PROJECTS || []).filter(p => selected === 'graphisme' ? isGraphicProject(p) : selected === 'photo' ? p.mode === 'photo' && !isGraphicProject(p) : p.mode === 'video');
 // V44: optional Studio-authored featured cards. Null = original Payload projects.
-const featuredCards = {photo:null,video:null,graphisme:null};
+const initialHome=window.YRUZ_INITIAL_HOME?.page || null;
+const initialLanguage=(()=>{try{return localStorage.getItem('yruzphoto-language')||'fr'}catch{return 'fr'}})();
+const initialLabel=(item,key)=>{
+  const translated=initialLanguage==='en'?item?.[key+'En']:initialLanguage==='pt-BR'?item?.[key+'PtBr']:null;
+  return typeof translated==='string'&&translated.trim()?translated:item?.[key];
+};
+const normalizeFeaturedCards=(cards,kind)=>Array.isArray(cards?.[kind])?cards[kind].map(c=>({
+  title:String(initialLabel(c,'title')||''),category:String(initialLabel(c,'category')||''),
+  cover:String(c.cover?.url||''),link:String(c.link||''),enabled:c.enabled!==false
+})):null;
+// Studio cards are known before the first paint; never briefly render legacy cards.
+const featuredCards=Object.fromEntries(['photo','video','graphisme'].map(kind=>[kind,normalizeFeaturedCards(initialHome?.featuredCards,kind)]));
 const carouselItems = kind => Array.isArray(featuredCards[kind]) ? featuredCards[kind].filter(c=>c.enabled!==false && c.cover && c.title).map((c,i)=>({
   id:'studio-'+kind+'-'+i,mode:kind,category:c.category||kind.toUpperCase(),title:c.title,cover:c.cover,
   gallery:[],url:c.link||'',isStudioCard:true
 })) : projectsForMode(kind);
 let photos = projectsForMode('photo');
 const mansProject = (window.YRUZ_PROJECTS || []).find(p => p.id === 'mans-nuit');
-const heroImages=(window.YRUZ_SITE_CONFIG?.homeImages?.length ? window.YRUZ_SITE_CONFIG.homeImages : [photos[0]?.gallery?.[1]||photos[0]?.cover,photos[0]?.gallery?.[2]||photos[0]?.cover]).filter(Boolean);
+const initialHero=(initialHome?.heroImages||[]).map(item=>item?.url).filter(Boolean);
+const heroImages=(initialHero.length ? initialHero : window.YRUZ_SITE_CONFIG?.homeImages?.length ? window.YRUZ_SITE_CONFIG.homeImages : [photos[0]?.gallery?.[1]||photos[0]?.cover,photos[0]?.gallery?.[2]||photos[0]?.cover]).filter(Boolean);
 let heroIndex=0;
-window.yruzSetHeroImages = function (urls) { if (!Array.isArray(urls) || !urls.length) return; heroImages.splice(0, heroImages.length, ...urls); heroIndex = 0; drawHero(); };
+let heroDrawn=false;
+window.yruzSetHeroImages = function (urls) { if (!Array.isArray(urls) || !urls.length || (urls.length===heroImages.length && urls.every((url,i)=>url===heroImages[i]))) return; heroImages.splice(0, heroImages.length, ...urls); heroIndex = 0; drawHero(); };
 function drawHero(){
   const bg=document.getElementById('heroBg');
   if(!bg||!heroImages.length)return;
-  bg.style.opacity='.5';
-  setTimeout(()=>{
+  // The first CMS image must not be delayed by the old 150 ms crossfade.
+  if(!heroDrawn){
     bg.style.backgroundImage=`url("${heroImages[heroIndex]}")`;
     bg.style.opacity='1';
-  },150);
+    heroDrawn=true;
+  }else{
+    bg.style.opacity='.5';
+    setTimeout(()=>{
+      bg.style.backgroundImage=`url("${heroImages[heroIndex]}")`;
+      bg.style.opacity='1';
+    },150);
+  }
   const counter=document.getElementById('heroCounter');
   if(counter)counter.textContent=`${String(heroIndex+1).padStart(2,'0')} / ${String(heroImages.length).padStart(2,'0')}`;
 }
@@ -195,7 +215,8 @@ function mountCards(){
     const image=document.createElement('img');
     image.src=p.cover;
     image.alt=p.title;
-    image.loading='lazy';
+    image.loading=Math.abs(distanceFromCenter(i,0))<=1?'eager':'lazy';
+    if(image.loading==='eager')image.fetchPriority=i===0?'high':'auto';
     shell.appendChild(image);
 
     const txt=document.createElement('span');
@@ -245,12 +266,11 @@ mountCards();
 updateLinks();
 // Site Builder loads asynchronously and calls this when published content arrives.
 window.yruzSetCarouselCards = function (config) {
-  for (const kind of ['photo','video','graphisme']) {
-    featuredCards[kind] = Array.isArray(config?.[kind]) ? config[kind].map(c=>({
-      title:String(c.title||''),category:String(c.category||''),cover:String(c.cover?.url||''),
-      link:String(c.link||''),enabled:c.enabled!==false
-    })) : null;
-  }
+  const next=Object.fromEntries(['photo','video','graphisme'].map(kind=>[kind,normalizeFeaturedCards(config,kind)]));
+  // Applying the same Studio cards twice would rebuild the entire carousel,
+  // reset its position and visibly reload the photos.
+  if(JSON.stringify(next)===JSON.stringify(featuredCards))return;
+  for(const kind of ['photo','video','graphisme'])featuredCards[kind]=next[kind];
   applyMode(mode);
 };
 
