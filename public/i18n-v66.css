@@ -27,3 +27,8 @@
   #header>.yruz-lang-switch .yruz-lang-current-code{font-size:10px}
 }
 @media(max-width:520px){.pd-nav>.yruz-lang-switch{margin-left:auto;margin-right:6px}.pd-nav .yruz-lang-trigger{min-width:66px}}
+
+/* V74: flag artwork, independent of platform emoji fonts. */
+.yruz-lang-current-flag,.yruz-lang-flag{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:22px;height:16px;overflow:hidden;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.2);font-size:0}
+.yruz-lang-current-flag svg,.yruz-lang-flag svg{display:block;width:100%;height:100%}
+@media(max-width:380px){#header>.yruz-lang-switch .yruz-lang-current-flag{width:20px;height:14px}}

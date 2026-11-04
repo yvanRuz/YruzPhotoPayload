@@ -1367,10 +1367,16 @@
     for(const [el,values] of translatedAttrs)if(el.isConnected)for(const [key,value] of Object.entries(values))if(el.getAttribute(key)===value.translated)el.setAttribute(key,value.fr);
     translatedAttrs.clear();
   }
+  // SVG graphics avoid Windows showing country codes (FR/GB/BR) in place of emoji flags.
+  const flags={
+    fr:'<svg viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><path d="M0 0h8v16H0z" fill="#002395"/><path d="M16 0h8v16h-8z" fill="#ed2939"/></svg>',
+    en:'<svg viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><clipPath id="yruz-uk-clip"><rect width="24" height="16"/></clipPath></defs><g clip-path="url(#yruz-uk-clip)"><rect width="24" height="16" fill="#012169"/><path d="M-2-2L26 18M26-2L-2 18" stroke="#fff" stroke-width="4"/><path d="M-2-2L26 18M26-2L-2 18" stroke="#c8102e" stroke-width="1.7"/><path d="M12 0v16M0 8h24" stroke="#fff" stroke-width="5"/><path d="M12 0v16M0 8h24" stroke="#c8102e" stroke-width="2.5"/></g></svg>',
+    'pt-BR':'<svg viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="24" height="16" fill="#009b3a"/><path d="M12 1.2 22 8 12 14.8 2 8Z" fill="#ffdf00"/><circle cx="12" cy="8" r="4.1" fill="#002776"/><path d="M8.3 6.6c2.8-.3 5.5.4 7.6 2" fill="none" stroke="#fff" stroke-width="1"/></svg>'
+  };
   const languages={
-    fr:{flag:'🇫🇷',code:'FR',name:'Français'},
-    en:{flag:'🇬🇧',code:'EN',name:'English'},
-    'pt-BR':{flag:'🇧🇷',code:'BR',name:'Português (Brasil)'}
+    fr:{flag:flags.fr,code:'FR',name:'Français'},
+    en:{flag:flags.en,code:'EN',name:'English'},
+    'pt-BR':{flag:flags['pt-BR'],code:'BR',name:'Português (Brasil)'}
   };
   function closeLanguageMenus(){
     document.querySelectorAll('.yruz-lang-switch.is-open').forEach(el=>{
@@ -1383,7 +1389,7 @@
     if(!host||host.querySelector('.yruz-lang-switch'))return;
     const el=document.createElement('div');
     el.className='yruz-lang-switch';
-    el.innerHTML=`<button class="yruz-lang-trigger" type="button" aria-label="Changer de langue" aria-haspopup="true" aria-expanded="false" aria-controls="yruz-lang-options"><span class="yruz-lang-current-flag" aria-hidden="true">🇫🇷</span><span class="yruz-lang-current-code">FR</span><svg class="yruz-lang-chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="m3 6 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="yruz-lang-options" id="yruz-lang-options" role="group" aria-label="Choisir une langue">${Object.entries(languages).map(([key,item])=>`<button type="button" data-lang="${key}" lang="${key}" aria-label="${item.name}"><span class="yruz-lang-flag" aria-hidden="true">${item.flag}</span><span class="yruz-lang-name">${item.name}</span><span class="yruz-lang-check" aria-hidden="true">✓</span></button>`).join('')}</div>`;
+    el.innerHTML=`<button class="yruz-lang-trigger" type="button" aria-label="Changer de langue" aria-haspopup="true" aria-expanded="false" aria-controls="yruz-lang-options"><span class="yruz-lang-current-flag" aria-hidden="true">${languages.fr.flag}</span><span class="yruz-lang-current-code">FR</span><svg class="yruz-lang-chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="m3 6 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="yruz-lang-options" id="yruz-lang-options" role="group" aria-label="Choisir une langue">${Object.entries(languages).map(([key,item])=>`<button type="button" data-lang="${key}" lang="${key}" aria-label="${item.name}"><span class="yruz-lang-flag" aria-hidden="true">${item.flag}</span><span class="yruz-lang-name">${item.name}</span><span class="yruz-lang-check" aria-hidden="true">✓</span></button>`).join('')}</div>`;
     el.addEventListener('click',event=>{
       const option=event.target.closest('[data-lang]');
       if(option){select(option.dataset.lang);closeLanguageMenus();return;}
@@ -1404,7 +1410,7 @@
       const flag=el.querySelector('.yruz-lang-current-flag');
       const code=el.querySelector('.yruz-lang-current-code');
       const trigger=el.querySelector('.yruz-lang-trigger');
-      if(flag)flag.textContent=current.flag;
+      if(flag)flag.innerHTML=current.flag;
       if(code)code.textContent=current.code;
       if(trigger)trigger.setAttribute('aria-label',`Langue : ${current.name}. Changer de langue`);
       el.querySelectorAll('[data-lang]').forEach(button=>{
