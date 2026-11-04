@@ -1302,6 +1302,21 @@
     if((match=/^Visionneuse de photos$/i.exec(value)))return `Photo viewer`;
     return null;
   }
+  // V73 : phrase de presentation personnalisee dans le Studio.
+  // Elle ne figurait pas dans le dictionnaire statique de la V72.
+  // Les traductions explicites saisies dans le Studio restent prioritaires.
+  pairs.push(
+    ['Je suis Yvan, Content Manager pour la FFSA : Photographe / Vidéaste / Graphiste',
+     'I’m Yvan, Content Manager at the FFSA — Photographer / Filmmaker / Graphic Designer'],
+    ['Je suis Yvan, Content Manager pour la FFSA : Photographe / Vidéaste / Graphiste.',
+     'I’m Yvan, Content Manager at the FFSA — Photographer / Filmmaker / Graphic Designer.']
+  );
+  ptPairs.push(
+    ['Je suis Yvan, Content Manager pour la FFSA : Photographe / Vidéaste / Graphiste',
+     'Sou Yvan, gestor de conteúdo da FFSA — fotógrafo / videomaker / designer gráfico'],
+    ['Je suis Yvan, Content Manager pour la FFSA : Photographe / Vidéaste / Graphiste.',
+     'Sou Yvan, gestor de conteúdo da FFSA — fotógrafo / videomaker / designer gráfico.']
+  );
   const normalized = s => String(s||'').replace(/\s+/g,' ').trim();
   const dict = new Map(pairs.map(([fr,en])=>[normalized(fr),en]));
   const ptDict = new Map(ptPairs.map(([fr,pt])=>[normalized(fr),pt]));
