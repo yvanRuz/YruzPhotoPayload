@@ -54,6 +54,132 @@
     ["PARLEZ-MOI DE VOTRE PROJET","TELL ME ABOUT YOUR PROJECT"],
     ["VOS COORDONNÉES","YOUR CONTACT DETAILS"],
   ];
+  // V67: additional hard-coded strings from the actual site pages and galleries.
+  // Custom texts entered in the Studio remain author-controlled in their English fields.
+  pairs.push(
+    ['PHOTOGRAPHIE','PHOTOGRAPHY'],
+    ['SERVICES.','SERVICES.'],
+    ['MODE DÉMONSTRATION','DEMO MODE'],
+    ['08 ÉQUIPEMENTS','08 GEAR ITEMS'],
+    ['RÉINITIALISER ↺','RESET ↺'],
+    ['0 / 4 emplacements équipés','0 / 4 ITEMS PACKED'],
+    ['emplacements équipés','items packed'],
+    ['ÉQUIPEMENTS','GEAR ITEMS'],
+    ['CONTACT ↗','CONTACT ↗'],
+    ['IG ↗','IG ↗'],
+    ['◈ PHOTO','◈ PHOTO'],
+    ['▶ VIDÉO','▶ VIDEO'],
+    ['✦ GRAPHISME','✦ DESIGN'],
+    ['PROJETS PHOTO','PHOTO PROJECTS'],
+    ['PROJETS VIDÉO','VIDEO PROJECTS'],
+    ['PROJETS GRAPHISME','DESIGN PROJECTS'],
+    ['MA GALERIE','MY GALLERY'],
+    ['MES PHOTOS','MY PHOTOS'],
+    ['PHOTOS','PHOTOS'],
+    ['VIDÉOS','VIDEOS'],
+    ['VISUELS','IMAGES'],
+    ['CLIQUEZ POUR AGRANDIR','CLICK TO ENLARGE'],
+    ['CLIQUEZ POUR OUVRIR','CLICK TO OPEN'],
+    ['PHOTO PRÉCÉDENTE','PREVIOUS PHOTO'],
+    ['PHOTOGRAPHIE PRÉCÉDENTE','PREVIOUS PHOTO'],
+    ['PHOTOGRAPHIE SUIVANTE','NEXT PHOTO'],
+    ['PRÉCÉDENT','PREVIOUS'],
+    ['SUIVANT','NEXT'],
+    ['Agrandir la photo','Enlarge photo'],
+    ['Choisir une photographie','Choose a photograph'],
+    ['Choisir une photo','Choose a photo'],
+    ['Visionneuse de photos','Photo viewer'],
+    ['Fermer la visionneuse','Close photo viewer'],
+    ['Choisir une photographie','Choose a photograph'],
+    ['Afficher la photo','Show photo'],
+    ['Lire la vidéo','Play video'],
+    ['Votre navigateur ne prend pas en charge cette vidéo.','Your browser does not support this video.'],
+    ['Les médias de ce projet seront ajoutés prochainement.','Media for this project will be added soon.'],
+    ['AUCUN PROJET','NO PROJECTS'],
+    ['AUCUNE PHOTO','NO PHOTOS'],
+    ['AUCUNE VIDÉO','NO VIDEOS'],
+    ['IMAGES À VENIR','PHOTOS COMING SOON'],
+    ['CHARGEMENT DES PROJETS','LOADING PROJECTS'],
+    ['CHARGEMENT…','LOADING…'],
+    ['RETOUR','BACK'],
+    ['DÉCOUVRIR','DISCOVER'],
+    ['EN SAVOIR PLUS','LEARN MORE'],
+    ['VOIR LE PROJET','VIEW PROJECT'],
+    ['OUVRIR LE PROJET','OPEN PROJECT'],
+    ['DEMANDE DE DEVIS','REQUEST A QUOTE'],
+    ['PHOTOGRAPHE','PHOTOGRAPHER'],
+    ['VIDÉASTE','FILMMAKER'],
+    ['PHOTOGRAPHIE ET VIDÉO','PHOTOGRAPHY AND VIDEO'],
+    ['LE CLASSEUR','THE BINDER'],
+    ['TOURNER LA PAGE','TURN THE PAGE'],
+    ['PAGE SUIVANTE','NEXT PAGE'],
+    ['PAGE PRÉCÉDENTE','PREVIOUS PAGE'],
+    ['CARTE SUIVANTE','NEXT CARD'],
+    ['CARTE PRÉCÉDENTE','PREVIOUS CARD'],
+    ['OUVRIR LA FICHE','OPEN PROFILE'],
+    ['FERMER LA FICHE','CLOSE PROFILE'],
+    ['LES RENCONTRES','ENCOUNTERS'],
+    ['RECHERCHER UNE PERSONNE','SEARCH FOR A PERSON'],
+    ['RECHERCHER','SEARCH'],
+    ['TRIER','SORT'],
+    ['TOUTES LES RARETÉS','ALL RARITIES'],
+    ['LÉGENDAIRES','LEGENDARY'],
+    ['RARES','RARE'],
+    ['PEU COMMUNES','UNCOMMON'],
+    ['COMMUNES','COMMON'],
+    ['RETOUR AU CLASSEUR','BACK TO THE BINDER'],
+    ['APERÇU','PREVIEW'],
+    ['ÉQUIPEMENT AUDIO','AUDIO EQUIPMENT'],
+    ['AUDIO','AUDIO'],
+    ['LENTILLE','LENS'],
+    ['OBJECTIF','LENS'],
+    ['ACCESSOIRES','ACCESSORIES'],
+    ['DANS LE SAC','IN THE BAG'],
+    ['AJOUTER AU SAC','ADD TO BAG'],
+    ['RETIRER DU SAC','REMOVE FROM BAG'],
+    ['CONTACTEZ-MOI','CONTACT ME'],
+    ['ÉCRIVEZ-MOI','GET IN TOUCH'],
+    ['ENVOYER','SEND'],
+    ['VOTRE MESSAGE','YOUR MESSAGE'],
+    ['ÉVÉNEMENT','EVENT'],
+    ['INTERVIEW','INTERVIEW'],
+    ['CRÉATION GRAPHIQUE','GRAPHIC DESIGN'],
+    ['CRÉATIONS GRAPHIQUES','GRAPHIC DESIGN'],
+    ['TOUS LES PROJETS','ALL PROJECTS']
+  );
+  const titlePairs = new Map([
+    ['YRUZPHOTO — Prototype','YRUZPHOTO — Portfolio'],
+    ['Portfolio — YRUZPHOTO','Portfolio — YRUZPHOTO'],
+    ['Projet — YRUZPHOTO','Project — YRUZPHOTO'],
+    ['Services — YRUZPHOTO','Services — YRUZPHOTO'],
+    ['Mon équipement — YRUZPHOTO','My Gear — YRUZPHOTO'],
+    ['Contact — YRUZPHOTO','Contact — YRUZPHOTO'],
+    ['Le Pokédex — YRUZPHOTO','The Pokédex — YRUZPHOTO']
+  ]);
+  let frenchTitle = null;
+  function updateTitle(){
+    if(lang==='en'){
+      // Only translate a known stock page title; never replace a custom project title.
+      const translated=titlePairs.get(document.title);
+      if(translated){if(frenchTitle===null)frenchTitle=document.title;document.title=translated}
+    }else if(frenchTitle!==null){
+      if(document.title===titlePairs.get(frenchTitle))document.title=frenchTitle;
+      frenchTitle=null;
+    }
+  }
+  function translateDynamic(value) {
+    let match;
+    if((match=/^(\d+)\s+VISUELS?\s*[·•]\s*CLIQUEZ POUR AGRANDIR$/i.exec(value)))return `${match[1]} IMAGES · CLICK TO ENLARGE`;
+    if((match=/^(\d+)\s+PHOTOS?\s*(?:[·•]\s*(\d+)\s+VIDÉOS?)?$/i.exec(value)))return `${match[1]} ${Number(match[1])===1?'PHOTO':'PHOTOS'}${match[2]?' · '+match[2]+' '+(Number(match[2])===1?'VIDEO':'VIDEOS'):''}`;
+    if((match=/^(\d+)\s+ÉQUIPEMENTS?$/i.exec(value)))return `${match[1]} GEAR ITEMS`;
+    if((match=/^(\d+)\s*\/\s*(\d+)\s+emplacements équipés$/i.exec(value)))return `${match[1]} / ${match[2]} ITEMS PACKED`;
+    if((match=/^Afficher la photo\s+(\d+)$/i.exec(value)))return `Show photo ${match[1]}`;
+    if((match=/^Choisir une photographie\s+(\d+)$/i.exec(value)))return `Choose photograph ${match[1]}`;
+    if((match=/^Agrandir la photo\s+(\d+)(?:\s+sur\s+(\d+))?$/i.exec(value)))return `Enlarge photo ${match[1]}${match[2]?' of '+match[2]:''}`;
+    if((match=/^Lire la vidéo\s+(.+)$/i.exec(value)))return `Play video: ${match[1]}`;
+    if((match=/^Visionneuse de photos$/i.exec(value)))return `Photo viewer`;
+    return null;
+  }
   const normalized = s => String(s||'').replace(/\s+/g,' ').trim();
   const dict = new Map(pairs.map(([fr,en])=>[normalized(fr),en]));
   const tracked=new Map();
@@ -62,20 +188,31 @@
   const skip=node=>!node.parentElement||node.parentElement.closest('script,style,noscript,textarea,code,pre,[contenteditable],.yruz-lang-switch,#studioRoot');
   function translateTextNode(node){
     if(skip(node))return;
-    const raw=node.nodeValue||'',value=normalized(raw),en=dict.get(value);
-    if(!en||raw.trim()==='')return;
-    if(!tracked.has(node))tracked.set(node,raw);
-    node.nodeValue=raw.replace(/^(\s*)[\s\S]*?(\s*)$/,(_all,prefix,suffix)=>prefix+en+suffix);
+    const raw=node.nodeValue||'';
+    if(!raw.trim())return;
+    const prior=tracked.get(node);
+    // DOM libraries can replace a text node in place. Translate its *new* original,
+    // never restore stale text from the previous version when switching to French.
+    if(prior && raw===prior.en)return;
+    if(prior && raw===prior.fr){const en=dict.get(normalized(raw))||translateDynamic(normalized(raw));if(en)node.nodeValue=prior.en=en;return}
+    const value=normalized(raw),en=dict.get(value)||translateDynamic(value);
+    if(!en)return;
+    const final=raw.replace(/^(\s*)[\s\S]*?(\s*)$/,(_all,prefix,suffix)=>prefix+en+suffix);
+    tracked.set(node,{fr:raw,en:final});
+    node.nodeValue=final;
   }
   function translateAttributes(root){
     const nodes=[];if(root.nodeType===1)nodes.push(root);
     if(root.querySelectorAll)nodes.push(...root.querySelectorAll('[placeholder],[aria-label],[title]'));
     for(const el of nodes)for(const attr of ['placeholder','aria-label','title']){
       if(!el.hasAttribute?.(attr)||el.closest?.('.yruz-lang-switch'))continue;
-      const old=el.getAttribute(attr),en=dict.get(normalized(old));if(!en)continue;
+      const old=el.getAttribute(attr),en=dict.get(normalized(old))||translateDynamic(normalized(old));if(!en)continue;
       if(!translatedAttrs.has(el))translatedAttrs.set(el,{});
-      const state=translatedAttrs.get(el);if(!(attr in state))state[attr]=old;
-      el.setAttribute(attr,en);
+      const state=translatedAttrs.get(el);
+      // Replacing a placeholder or label while English is selected must refresh
+      // the French value used on the way back, not restore an old CMS value.
+      if(state[attr]!==old)state[attr]=old;
+      if(old!==en)el.setAttribute(attr,en);
     }
   }
   function scan(root=document.body){
@@ -87,7 +224,7 @@
     let node;while((node=walker.nextNode()))translateTextNode(node);
   }
   function restore(){
-    for(const [node,fr] of tracked)if(node.isConnected)node.nodeValue=fr;
+    for(const [node,state] of tracked)if(node.isConnected&&node.nodeValue===state.en)node.nodeValue=state.fr;
     tracked.clear();
     for(const [el,values] of translatedAttrs)if(el.isConnected)for(const [key,value] of Object.entries(values))el.setAttribute(key,value);
     translatedAttrs.clear();
@@ -110,19 +247,26 @@
     window.dispatchEvent(new CustomEvent('yruz:language-change',{detail:{lang}}));
     window.YRUZ_REAPPLY_CONTENT?.();
     if(lang==='en')scan();
+    updateTitle();
     updateButtons();
   }
-  window.YRUZ_LANG={current:()=>lang,select,refresh:()=>{if(lang==='en')scan();updateButtons()}};
+  window.YRUZ_LANG={current:()=>lang,select,refresh:()=>{if(lang==='en')scan();updateTitle();updateButtons()}};
   function start(){
-    document.documentElement.lang=lang;ui();updateButtons();if(lang==='en')scan();
+    document.documentElement.lang=lang;ui();updateButtons();if(lang==='en')scan();updateTitle();
     observer=new MutationObserver(mutations=>{
       if(lang!=='en'||processing)return;
       processing=true;
       observer.disconnect();
-      try{for(const mutation of mutations){for(const node of mutation.addedNodes)if(node.nodeType===1||node.nodeType===3)scan(node)}}
-      finally{observer.observe(document.body,{subtree:true,childList:true});processing=false}
+      try{
+        for(const mutation of mutations){
+          if(mutation.type==='characterData'){scan(mutation.target);continue}
+          if(mutation.type==='attributes'){translateAttributes(mutation.target);continue}
+          for(const node of mutation.addedNodes)if(node.nodeType===1||node.nodeType===3)scan(node);
+        }
+      }
+      finally{observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});processing=false}
     });
-    observer.observe(document.body,{subtree:true,childList:true});
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
