@@ -644,40 +644,25 @@ async function importPhotos(files){
 }
 
 async function refreshMedia(){if($('#mediaModal').open)await showMedia(pickerPage);if(selection==='media')await loadLibrary(library.page);message('Médiathèque actualisée')}
-<<<<<<< HEAD
-async function initialLoad(){
- try{
-  const r=await fetch('/studio-api',{cache:'no-store',credentials:'same-origin'});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){const error=new Error(data.error||('Erreur HTTP '+r.status));error.recovery=data.recovery===true;error.retryAt=data.retryAt;throw error}
-  state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;
-  $('#saveBtn').disabled=false;
-  setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render();loadProjectDocs();
- }catch(error){
-  console.error('Studio indisponible:',error.message);
-  state=null;$('#saveBtn').disabled=true;
-  setStatus('Récupération en attente',true);
-  const recovery=error.recovery===true;
-  const retryDate=error.retryAt?new Date(error.retryAt):null;
-  const hint=retryDate&&!Number.isNaN(retryDate.getTime())?'Prochain essai automatique à partir du '+retryDate.toLocaleString('fr-FR')+'.':'';
-  $('#editor').innerHTML=`<div class="danger-message"><strong>${recovery?'Sauvegarde Studio momentanément inaccessible':'Impossible de charger le Studio'}</strong><p>${e(error.message)}</p>${recovery?`<p>Les données existantes ne sont pas effacées. La publication est désactivée jusqu'à leur récupération.</p><p>${e(hint)}</p><button type="button" class="outline-btn" id="studioMigrationRetry">Réessayer la récupération</button>`:''}</div>`;
-  message('Chargement impossible',true);
+async function initialLoad(){try{
+ const r=await fetch('/studio-api',{cache:'no-store',credentials:'same-origin'});
+ const data=await r.json();
+ if(!r.ok)throw Error(data.error||'HTTP '+r.status);
+ if(data.recoveryMode||!data.content){
+   state=null;media=data.media||[];projects=data.projects||[];dirty=false;
+   $('#saveBtn').disabled=true;$('#saveBtn').hidden=true;
+   setStatus('Récupération Blob en attente — lecture seule',true);
+   $('#editorTitle').textContent='Récupération des contenus';
+   $('#editorSubtitle').textContent='La version publiée dans Blob est provisoirement inaccessible. Aucune donnée ne sera remplacée.';
+   $('#editor').innerHTML='<div class="danger-message">'+e(data.error||'Migration du Studio impossible.')+'</div>'+
+     '<section class="form-panel"><h2>Inventaire des médias Payload (lecture seule)</h2><p>Les fichiers ci-dessous sont référencés dans la base Payload. Leur affichage peut rester bloqué tant que le quota Blob n’est pas rétabli. Ne supprime rien et ne publie pas de nouvelle configuration.</p>'+
+     (data.mediaAvailable?'<p>'+media.length+' médias retrouvés parmi les 200 plus récents.</p>':'<p>La liste des médias Payload est momentanément indisponible.</p>')+
+     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">'+media.map(m=>'<div style="min-width:0;overflow:hidden"><img loading="lazy" style="width:100%;height:110px;object-fit:cover" src="'+e(validSrc(m.url))+'" alt="'+e(m.alt||m.filename||'Photo')+'"><small style="display:block;overflow-wrap:anywhere">'+e(m.alt||m.filename||'Média')+'</small></div>').join('')+'</div></section>';
+   return;
  }
-}
-async function retryStudioMigration(){
- const button=$('#studioMigrationRetry');if(!button)return;
- button.disabled=true;button.textContent='Vérification en cours…';
- try{
-  const r=await fetch('/studio-api?retryMigration=1',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}'});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){message(data.error||'Récupération impossible pour le moment',true);await initialLoad();return}
-  message('Sauvegarde récupérée dans Neon');await initialLoad();
- }catch(error){message('Erreur pendant la récupération',true);await initialLoad()}
-}
-
-=======
-async function initialLoad(){try{const r=await fetch('/studio-api',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;$('#saveBtn').disabled=false;setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render();loadProjectDocs()}catch(error){console.error(error);setStatus('Connexion impossible',true);$('#editor').innerHTML='<div class="danger-message">Impossible de charger le Studio. Vérifiez votre connexion Payload et la variable BLOB_READ_WRITE_TOKEN dans Vercel.</div>';message('Chargement impossible',true)}}
->>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
+ state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;$('#saveBtn').disabled=false;
+ setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render();loadProjectDocs();
+ }catch(error){console.error(error);setStatus('Connexion impossible',true);$('#saveBtn').disabled=true;$('#editor').innerHTML='<div class="danger-message">'+e(error.message||'Chargement impossible')+'</div>';message('Chargement impossible',true)}}
 async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;$('#saveBtn').hidden=selection==='media'||selection==='projects';setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
 function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset.index),i=Number(btn.dataset.item),dir=Number(btn.dataset.dir);
  const root=currentRoot(),sections=sectionList();
@@ -747,10 +732,6 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='toggle-project'){const b=sections[index];const sl=btn.dataset.slug;const set=new Set(b.chosenSlugs||[]);btn.checked?set.add(sl):set.delete(sl);b.chosenSlugs=[...set];markDirty();return}
 }
 document.addEventListener('click',event=>{
-<<<<<<< HEAD
- if(event.target.closest('#studioMigrationRetry')){retryStudioMigration();return}
-=======
->>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
  const mediaAction=event.target.closest('[data-library-action]');if(mediaAction){handleLibraryAction(mediaAction);return}
  if(event.target.closest('#libraryDropzone')){uploadTarget=null;$('#directUploadInput').click();return}
  const featuredTab=event.target.closest('[data-featured-universe]');if(featuredTab){featuredUniverse=featuredTab.dataset.featuredUniverse;render();return}
