@@ -63,7 +63,6 @@ const defaults = (): StudioRecord => ({
   }])),
 })
 
-<<<<<<< HEAD
 // V77: Studio pages are stored in Neon. Historical Blob snapshots are read only
 // for their one-time import. No missing or inaccessible snapshot is ever
 // replaced automatically by demo data.
@@ -100,33 +99,12 @@ async function ensureTable(): Promise<void> {
   return initialization
 }
 
-=======
-// V76: Studio content now lives in Neon, not in a new Blob on every publish.
-// Only a one-time import reads the historical versioned Blob objects.
-// Keeping a single SQL row avoids list() calls on every site visit.
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 3 })
-let initialization: Promise<void> | undefined
-async function ensureTable(): Promise<void> {
-  if (!initialization) {
-    initialization = pool.query(`CREATE TABLE IF NOT EXISTS yruzphoto_studio_content (
-      id integer PRIMARY KEY CHECK (id = 1),
-      revision text NOT NULL,
-      content jsonb NOT NULL,
-      updated_at timestamptz NOT NULL DEFAULT now()
-    )`).then(() => undefined).catch(error => { initialization = undefined; throw error })
-  }
-  return initialization
-}
->>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
 async function fromDatabase(): Promise<StudioRecord | null> {
   await ensureTable()
   const result = await pool.query('SELECT content FROM yruzphoto_studio_content WHERE id = 1')
   return result.rows[0]?.content as StudioRecord || null
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
 function mergeWithDefaults(stored: StudioRecord): StudioRecord {
   const initial = defaults()
   return {
@@ -143,26 +121,16 @@ function mergeWithDefaults(stored: StudioRecord): StudioRecord {
     ])),
   }
 }
-<<<<<<< HEAD
 
 async function importLegacyBlob(): Promise<StudioRecord> {
   const token = process.env.BLOB_READ_WRITE_TOKEN
   if (!token) throw new Error('Token de lecture Vercel Blob manquant')
 
-=======
-async function importLegacyBlob(): Promise<StudioRecord> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN missing; cannot migrate Studio')
-  // Imported once. Subsequent reads and saves are entirely Neon-based.
->>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
   let cursor: string | undefined
   let latest: { pathname: string; url: string } | undefined
   let loops = 0
   do {
-<<<<<<< HEAD
     const batch = await list({ prefix: PREFIX, limit: 1000, cursor, token })
-=======
-    const batch = await list({ prefix: PREFIX, limit: 1000, cursor, token: process.env.BLOB_READ_WRITE_TOKEN })
->>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
     for (const blob of batch.blobs) {
       if (blob.pathname.endsWith('.json') && (!latest || blob.pathname > latest.pathname)) {
         latest = { pathname: blob.pathname, url: blob.url }
@@ -171,7 +139,6 @@ async function importLegacyBlob(): Promise<StudioRecord> {
     cursor = batch.hasMore ? batch.cursor : undefined
     loops++
   } while (cursor && loops < 30)
-<<<<<<< HEAD
 
   // No automatic 'initial' document is published: an empty list can also mean
   // a misconfigured Blob store. Protect the owner's previous changes.
@@ -268,29 +235,6 @@ export async function getStudioContent(): Promise<StudioRecord> {
   await migration
   const persisted = await fromDatabase()
   if (!persisted) throw new StudioRecoveryError('Importation terminée, mais aucune sauvegarde n’a été inscrite dans Neon.')
-=======
-  if (!latest) return defaults()
-  const response = await fetch(latest.url, { cache: 'no-store' })
-  if (!response.ok) throw new Error(`Studio Blob migration unavailable: HTTP ${response.status}`)
-  return mergeWithDefaults(await response.json() as StudioRecord)
-}
-
-let migration: Promise<StudioRecord> | undefined
-export async function getStudioContent(): Promise<StudioRecord> {
-  const existing = await fromDatabase()
-  if (existing) return structuredClone(mergeWithDefaults(existing))
-  // Never silently erase the owner's published changes if Blob is quota-blocked.
-  if (!migration) migration = (async () => {
-    const imported = await importLegacyBlob()
-    await pool.query(`INSERT INTO yruzphoto_studio_content (id,revision,content)
-      VALUES (1,$1,$2::jsonb) ON CONFLICT (id) DO NOTHING`,
-      [imported.revision, JSON.stringify(imported)])
-    return imported
-  })().catch(error => { migration = undefined; throw error })
-  await migration
-  const persisted = await fromDatabase()
-  if (!persisted) throw new Error('Studio migration was not persisted in Neon')
->>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
   return structuredClone(mergeWithDefaults(persisted))
 }
 
