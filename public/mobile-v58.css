@@ -1,0 +1,264 @@
+/* YRUZPHOTO V58 — affinages smartphone UNIQUEMENT.
+   Charge apres mobile-v46.css. Aucun style du bureau n'est modifie. */
+@media screen and (max-width:767px) {
+  /* Accueil : deux CTA sur une ligne, dimensionnee aux petites largeurs. */
+  .hero .hero-inner { max-width:100%; }
+  .hero .hero-actions { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    max-width:390px;width:100%;gap:9px;margin:22px auto 0;flex-wrap:nowrap; }
+  .hero .hero-actions .btn { min-width:0;width:100%;min-height:38px;padding:10px 6px;
+    font-size:clamp(8px,2.45vw,10px);letter-spacing:.35px;line-height:1.25;
+    white-space:nowrap;border-radius:24px; }
+  .hero h1 { margin-bottom:17px; }
+
+  /* Histoire : un chapitre a la fois, balayage tactile horizontal avec snap. */
+  #histoire.story { height:auto!important; min-height:0; }
+  #histoire .story-sticky { position:relative!important; height:auto!important; min-height:0; }
+  #histoire .story-window { display:block; width:100%; overflow-x:auto!important;
+    overflow-y:hidden!important; scroll-snap-type:x mandatory; scroll-behavior:smooth;
+    overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  #histoire .story-window::-webkit-scrollbar { display:none; }
+  #histoire .story-track { display:flex!important; position:relative!important; left:auto!important;
+    top:auto!important; width:max-content; min-width:100%; height:auto!important;
+    align-items:stretch; transform:none!important; will-change:auto; }
+  #histoire .story-panel { flex:0 0 100vw!important; width:100vw!important; min-width:100vw!important;
+    min-height:0!important; height:auto!important; scroll-snap-align:start;
+    scroll-snap-stop:always; padding:26px var(--yruz-mobile-gutter) 28px;
+    display:flex!important;flex-direction:column;justify-content:center;gap:13px; }
+  #histoire .story-photo-tall, #histoire .story-photo-landscape,
+  #histoire .story-photo-small { max-width:100%;width:100%;height:clamp(180px,54vw,275px);
+    min-height:0; margin:0 auto; }
+  #histoire .story-copy { max-width:100%;width:100%; }
+  #histoire .story-copy h2 { font-size:clamp(39px,10vw,59px);margin:7px 0 11px; }
+  #histoire .story-copy p { font-size:12px;line-height:1.6;margin:0; }
+  #histoire .story-copy h2, #histoire .story-copy p, #histoire .story-index,
+  #histoire .story-photo { opacity:1!important;filter:none!important;transform:none!important; }
+  #histoire .story-topline,#histoire .story-bottomline { padding:13px var(--yruz-mobile-gutter); }
+  #histoire .story-progress-label { display:block;font-size:9px;letter-spacing:.7px; }
+  #histoire .story-meter { display:block; }
+
+  /* Respiration autour du carrousel de projets. */
+  .portfolio-v42 { padding-top:86px; padding-bottom:74px; }
+  .portfolio-v42 .home-portfolio-switch { margin-bottom:22px; }
+  .portfolio-v42 .floating-stage { height:415px!important;
+    margin:25px calc(-1 * var(--yruz-mobile-gutter)) 22px!important; }
+  .portfolio-v42 .floating-card { top:26px!important; }
+  .portfolio-v42 .carousel-controls { margin:19px auto 26px!important; }
+  .portfolio-v42 .text-link { margin-top:25px; }
+
+  /* Portfolio : trois projets par rang, titres gardes lisibles en 3 colonnes. */
+  .catalog-grid { display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:clamp(5px,1.7vw,10px)!important; }
+  .catalog-card { min-width:0;min-height:0!important;aspect-ratio: .64!important;
+    border-radius:9px!important; }
+  .catalog-meta { min-height:0!important;padding:25px 6px 9px!important; }
+  .catalog-title { font-size:clamp(12px,3.4vw,19px)!important;
+    line-height:1.05!important;overflow-wrap:anywhere; }
+  .catalog-card .catalog-tag,.catalog-card .catalog-category,
+  .catalog-card .catalog-kicker { font-size:7px!important;letter-spacing:.25px!important; }
+  .catalog-arrow { width:23px!important;height:23px!important;bottom:7px!important;
+    right:6px!important;font-size:12px!important; }
+
+  /* Services : les trois univers cote a cote (Accueil ET page Services). */
+  #services .services-board,.services-page .services-board { display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:clamp(7px,2vw,13px)!important;align-items:stretch; }
+  #services .service-column,.services-page .service-column { min-width:0;padding:0 0 12px; }
+  #services .service-column-head,.services-page .service-column-head { gap:7px;margin-bottom:10px; }
+  #services .service-column-head h2,.services-page .service-column-head h2 { font-size:clamp(23px,6.7vw,35px)!important; }
+  #services .service-visual,.services-page .service-visual { aspect-ratio: .92;max-width:100%;border-radius:6px; }
+  #services .service-caption,.services-page .service-caption { margin-top:9px;font-size:clamp(8px,2vw,10px);line-height:1.4; }
+  #services .service-column ul,.services-page .service-column ul { padding-left:12px;margin-top:9px;
+    gap:5px;font-size:clamp(8px,2vw,10px);line-height:1.4; }
+  #services .service-link,.services-page .service-link { display:inline-block;margin-top:13px;
+    padding-bottom:6px;font-size:clamp(7px,1.8vw,9px);letter-spacing:.1px;line-height:1.3; }
+  .services-page .services-hero { margin-bottom:25px; }
+
+  /* Equipement : filtres alignes sur une ligne, trois objets par rangee. */
+  .equip-filters { display:flex!important;flex-wrap:nowrap!important;gap:4px!important;
+    width:100%;padding:14px 0!important;overflow-x:auto;scrollbar-width:none; }
+  .equip-filters::-webkit-scrollbar { display:none; }
+  .equip-filters button { flex:1 0 auto;white-space:nowrap;min-height:36px!important;
+    padding:7px 5px!important;font-size:clamp(8px,2vw,10px)!important;letter-spacing:0!important; }
+  .equip-grid { display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:clamp(5px,1.7vw,10px)!important; }
+  .equip-inventory { padding:10px!important; }
+  .equip-item { min-width:0;min-height:135px!important;padding:8px!important; }
+  .equip-item .gear-glyph { height:59px!important;font-size:34px!important; }
+  .equip-item .gear-glyph img { max-height:59px;object-fit:contain; }
+  .equip-item strong { font-size:clamp(12px,3.4vw,17px)!important;line-height:1.08!important;
+    overflow-wrap:anywhere;margin:5px 0!important; }
+  .equip-item small,.equip-item .item-tag { font-size:7px!important;letter-spacing:.15px!important; }
+  .equip-item .item-status { top:4px;right:4px;font-size:9px; }
+}
+@media screen and (max-width:359px) {
+  .hero .hero-actions .btn { font-size:8px;letter-spacing:0;padding:9px 3px; }
+  .catalog-title { font-size:11px!important; }
+  .equip-item { min-height:127px!important; }
+}
+@media screen and (max-width:767px) and (prefers-reduced-motion:reduce) {
+  #histoire .story-window { scroll-behavior:auto; }
+}
+/* Suppression de la section de temoignages sur ordinateur et mobile.
+   Protection pour les sections eventuellement reinserees via le CMS. */
+.testimonials,section#avis { display:none!important; }
+
+/* V59 — smartphone portfolio: 3 columns retained, calmer text and useful CTA.
+   Hide the global photo-enlarge overlay ONLY on project-list cards.
+   The bottom-right arrow opens the project (and its gallery) directly. */
+@media screen and (max-width:767px) {
+ body[data-page="catalog"] .catalog-grid,
+ body[data-page="project"] .project-next .catalog-grid {
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:clamp(8px,2.3vw,12px)!important;
+ }
+ body[data-page="catalog"] .catalog-card,
+ body[data-page="project"] .project-next .catalog-card {
+   aspect-ratio:.53!important;min-height:0!important;overflow:hidden;border-radius:11px!important;
+ }
+ body[data-page="catalog"] .catalog-card .yruz-photo-enlarge,
+ body[data-page="project"] .project-next .catalog-card .yruz-photo-enlarge {display:none!important}
+ body[data-page="catalog"] .catalog-card .catalog-image::after,
+ body[data-page="project"] .project-next .catalog-card .catalog-image::after {
+   background:linear-gradient(to bottom,transparent 25%,rgba(3,11,21,.14) 42%,rgba(2,10,19,.95) 78%,#020a14 100%);
+ }
+ body[data-page="catalog"] .catalog-card .catalog-meta,
+ body[data-page="project"] .project-next .catalog-card .catalog-meta {
+   inset:auto 0 0;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;
+   gap:6px;min-height:0!important;height:auto;padding:0 8px 37px!important;transform:none!important;
+ }
+ body[data-page="catalog"] .catalog-card .catalog-kind,
+ body[data-page="project"] .project-next .catalog-card .catalog-kind {
+   font-size:7px!important;line-height:1.3;letter-spacing:0!important;margin:0!important;
+   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;
+ }
+ body[data-page="catalog"] .catalog-card .catalog-title,
+ body[data-page="project"] .project-next .catalog-card .catalog-title {
+   font-size:clamp(12px,3.4vw,16px)!important;line-height:1.13!important;letter-spacing:0!important;
+   overflow-wrap:break-word;word-break:normal;hyphens:auto;margin:0!important;
+   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;
+ }
+ body[data-page="catalog"] .catalog-card .catalog-arrow,
+ body[data-page="project"] .project-next .catalog-card .catalog-arrow {
+   display:grid!important;position:absolute;right:8px!important;bottom:7px!important;
+   width:25px!important;height:25px!important;border-radius:50%;font-size:14px!important;
+   background:rgba(6,24,38,.7);border:1px solid rgba(242,248,255,.8);
+ }
+}
+
+/* V63 — Portfolio smartphone : une vraie zone de lecture sous la photographie.
+   La carte reste entierement cliquable, la fleche remplace le bouton Agrandir.
+   Ne concerne pas le lecteur de projet ni la version ordinateur. */
+@media screen and (max-width:767px) {
+  body[data-page="catalog"] .catalog-grid,
+  body[data-page="project"] .project-next .catalog-grid {
+    gap:clamp(9px,2.55vw,13px)!important;
+    align-items:stretch;
+  }
+  body[data-page="catalog"] .catalog-card,
+  body[data-page="project"] .project-next .catalog-card {
+    aspect-ratio:.50!important;
+    background:#081a28!important;
+    border-color:rgba(148,181,204,.42);
+  }
+  body[data-page="catalog"] .catalog-card .catalog-image,
+  body[data-page="project"] .project-next .catalog-card .catalog-image {
+    inset:0 0 77px 0!important;
+    border-radius:9px 9px 0 0;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-image::after,
+  body[data-page="project"] .project-next .catalog-card .catalog-image::after {
+    background:linear-gradient(180deg,transparent 65%,rgba(5,18,29,.25) 100%)!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-meta,
+  body[data-page="project"] .project-next .catalog-card .catalog-meta {
+    bottom:0!important;left:0!important;right:0!important;
+    padding:9px 7px 30px!important;
+    height:77px!important;min-height:77px!important;
+    display:flex!important;justify-content:flex-start!important;align-items:flex-start!important;
+    gap:5px!important;background:#081a28;
+    border-top:1px solid rgba(151,185,207,.17);
+  }
+  body[data-page="catalog"] .catalog-card .catalog-kind,
+  body[data-page="project"] .project-next .catalog-card .catalog-kind {
+    font-size:7px!important;line-height:1.25!important;
+    color:#bbd0dc;max-width:100%;
+    white-space:nowrap;text-overflow:ellipsis;overflow:hidden;
+    display:block!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-title,
+  body[data-page="project"] .project-next .catalog-card .catalog-title {
+    font-size:clamp(12px,3.55vw,16px)!important;
+    line-height:1.12!important;letter-spacing:.05px!important;
+    max-width:100%;width:100%;
+    display:-webkit-box!important;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2!important;overflow:hidden;
+    word-break:normal;overflow-wrap:anywhere;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-arrow,
+  body[data-page="project"] .project-next .catalog-card .catalog-arrow {
+    position:absolute!important;bottom:6px!important;right:7px!important;
+    width:23px!important;height:23px!important;min-width:23px;
+    font-size:12px!important;z-index:4;
+    background:rgba(20,49,67,.84)!important;
+    border-color:rgba(210,229,239,.7)!important;
+  }
+  body[data-page="catalog"] .catalog-card .yruz-photo-enlarge,
+  body[data-page="project"] .project-next .catalog-card .yruz-photo-enlarge {
+    display:none!important;
+  }
+}
+
+/* V64 : portfolio telephone - titres non coupes, photos non assombries. */
+@media screen and (max-width:767px){
+  body[data-page="catalog"] .catalog-card,
+  body[data-page="project"] .project-next .catalog-card {
+    aspect-ratio:auto!important;
+    height:auto!important;
+    min-height:clamp(227px,64vw,300px)!important;
+    overflow:hidden!important;
+    background:#102536!important;
+    border-color:rgba(152,195,217,.50)!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-image,
+  body[data-page="project"] .project-next .catalog-card .catalog-image {
+    inset:0 0 108px 0!important;
+    background:#142d40!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-image img,
+  body[data-page="project"] .project-next .catalog-card .catalog-image img {
+    filter:none!important;opacity:1!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-image::after,
+  body[data-page="project"] .project-next .catalog-card .catalog-image::after {
+    background:linear-gradient(180deg,transparent 85%,rgba(5,19,30,.06))!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-meta,
+  body[data-page="project"] .project-next .catalog-card .catalog-meta {
+    height:108px!important;min-height:108px!important;
+    padding:10px 7px 29px!important;gap:6px!important;
+    display:flex!important;flex-direction:column!important;
+    background:#102536!important;justify-content:flex-start!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-kind,
+  body[data-page="project"] .project-next .catalog-card .catalog-kind {
+    white-space:normal!important;overflow:visible!important;
+    font-size:7px!important;line-height:1.3!important;
+    max-height:20px;display:block!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-title,
+  body[data-page="project"] .project-next .catalog-card .catalog-title {
+    display:block!important;-webkit-line-clamp:unset!important;
+    overflow:visible!important;text-overflow:clip!important;
+    white-space:normal!important;
+    font-size:clamp(10px,3vw,13px)!important;
+    line-height:1.10!important;letter-spacing:0!important;
+    width:100%!important;max-height:none!important;
+    overflow-wrap:anywhere!important;
+  }
+  body[data-page="catalog"] .catalog-card .catalog-arrow,
+  body[data-page="project"] .project-next .catalog-card .catalog-arrow {
+    bottom:7px!important;right:7px!important;
+    width:24px!important;height:24px!important;
+  }
+  body[data-page="catalog"] .catalog-card .yruz-photo-enlarge,
+  body[data-page="project"] .project-next .catalog-card .yruz-photo-enlarge {display:none!important}
+}

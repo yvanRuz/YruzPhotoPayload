@@ -1,0 +1,5 @@
+/* Pokédex Easter egg: this is the ONLY public entry point. Existing page styles untouched. */
+body:not(.subpage) > .footer{position:relative}
+body:not(.subpage) .pokedex-secret-trigger{position:absolute;bottom:calc(100% + 9px);left:18px;z-index:9;width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(159,205,236,.32);border-radius:50%;background:#061c2c;color:#a6c6d8;box-shadow:0 8px 22px #0006;opacity:.57;transition:opacity .22s,transform .22s,border-color .22s,box-shadow .22s}
+body:not(.subpage) .pokedex-secret-trigger:hover,body:not(.subpage) .pokedex-secret-trigger:focus-visible{opacity:1;transform:scale(1.07);border-color:#b9ddf4;box-shadow:0 0 25px #72a6cf50;outline:none}
+@media(max-width:767px){body:not(.subpage) .pokedex-secret-trigger{left:13px;bottom:calc(100% + 6px);width:44px;height:44px;opacity:.82}}

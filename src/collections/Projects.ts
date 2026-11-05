@@ -18,7 +18,7 @@ export const Projects: CollectionConfig = {
         validate: (value: any) => typeof value === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) || 'Utiliser uniquement a-z, chiffres et tirets.' },
       { name: 'mode', type: 'select', label: 'Type', defaultValue: 'photo', required: true,
         options: [{ label: 'Photographie', value: 'photo' }, { label: 'Vidéo', value: 'video' }] },
-      { name: 'category', type: 'text', label: 'Catégorie' },
+      { name: 'category', type: 'text', label: 'Discipline / catégorie', admin: { description: 'Pour afficher un projet dans l’onglet GRAPHISME : choisissez Photographie comme type, puis renseignez ici GRAPHISME. Aucun changement de base de donnees necessaire.' } },
     ] },
     { label: '02 - Photos et vidéos', fields: [
       { name: 'cover', type: 'upload', relationTo: 'media', label: 'Photo de couverture' },

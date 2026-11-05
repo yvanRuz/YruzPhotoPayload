@@ -1,0 +1,34 @@
+/* V70 - language selector: a single compact control beside the mobile menu. */
+.yruz-lang-switch{position:relative;z-index:1205;flex:0 0 auto;margin-left:12px;white-space:nowrap;font-family:Inter,Arial,sans-serif}
+.yruz-lang-switch button{font-family:inherit!important;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.yruz-lang-switch .yruz-lang-trigger{display:flex;align-items:center;justify-content:center;gap:7px;min-width:75px;height:38px;padding:0 11px;border:1px solid rgba(180,218,238,.28);border-radius:12px;background:rgba(10,34,51,.82);color:#f2f8ff;font-size:11px!important;font-weight:700;letter-spacing:.055em;line-height:1;box-shadow:0 5px 18px rgba(0,0,0,.12);transition:background .18s,border-color .18s}
+.yruz-lang-switch .yruz-lang-trigger:hover,.yruz-lang-switch.is-open .yruz-lang-trigger{background:#173c54;border-color:rgba(181,224,248,.58)}
+.yruz-lang-current-flag,.yruz-lang-flag{font-size:17px;line-height:1;letter-spacing:normal}
+.yruz-lang-chevron{opacity:.72;transition:transform .18s}
+.yruz-lang-switch.is-open .yruz-lang-chevron{transform:rotate(180deg)}
+.yruz-lang-options{display:none;position:absolute;right:0;top:calc(100% + 9px);width:218px;padding:7px;border:1px solid rgba(183,216,234,.24);border-radius:15px;background:#0a2233;box-shadow:0 18px 42px rgba(0,5,14,.38);z-index:1250}
+.yruz-lang-switch.is-open .yruz-lang-options{display:grid;gap:3px}
+.yruz-lang-options button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:9px 10px;text-align:left;color:#c9dce8;background:transparent;border:0;border-radius:9px;font-size:12px!important;line-height:1.2;transition:background .18s}
+.yruz-lang-options button:hover,.yruz-lang-options button.is-active{background:rgba(158,207,233,.13);color:#fff}
+.yruz-lang-name{flex:1}
+.yruz-lang-check{opacity:0;color:#a8ddef;font-weight:800}
+.yruz-lang-options button.is-active .yruz-lang-check{opacity:1}
+.yruz-lang-switch button:focus-visible{outline:2px solid #a8ddef;outline-offset:3px}
+#header>.yruz-lang-switch{margin-left:10px}
+.pd-nav>.yruz-lang-switch{margin-left:12px}
+@media(max-width:850px){
+  #header>.yruz-lang-switch{position:absolute;right:79px;top:50%;transform:translateY(-50%);margin:0}
+  #header>.yruz-lang-switch .yruz-lang-trigger{height:36px;min-width:68px;padding:0 8px;gap:5px}
+  #header>.yruz-lang-switch .yruz-lang-options{right:0}
+}
+@media(max-width:380px){
+  #header>.yruz-lang-switch{right:70px}
+  #header>.yruz-lang-switch .yruz-lang-trigger{min-width:58px;gap:4px;padding:0 6px}
+  #header>.yruz-lang-switch .yruz-lang-current-code{font-size:10px}
+}
+@media(max-width:520px){.pd-nav>.yruz-lang-switch{margin-left:auto;margin-right:6px}.pd-nav .yruz-lang-trigger{min-width:66px}}
+
+/* V74: flag artwork, independent of platform emoji fonts. */
+.yruz-lang-current-flag,.yruz-lang-flag{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:22px;height:16px;overflow:hidden;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.2);font-size:0}
+.yruz-lang-current-flag svg,.yruz-lang-flag svg{display:block;width:100%;height:100%}
+@media(max-width:380px){#header>.yruz-lang-switch .yruz-lang-current-flag{width:20px;height:14px}}

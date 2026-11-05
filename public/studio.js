@@ -644,6 +644,7 @@ async function importPhotos(files){
 }
 
 async function refreshMedia(){if($('#mediaModal').open)await showMedia(pickerPage);if(selection==='media')await loadLibrary(library.page);message('Médiathèque actualisée')}
+<<<<<<< HEAD
 async function initialLoad(){
  try{
   const r=await fetch('/studio-api',{cache:'no-store',credentials:'same-origin'});
@@ -674,6 +675,9 @@ async function retryStudioMigration(){
  }catch(error){message('Erreur pendant la récupération',true);await initialLoad()}
 }
 
+=======
+async function initialLoad(){try{const r=await fetch('/studio-api',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const data=await r.json();state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;$('#saveBtn').disabled=false;setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render();loadProjectDocs()}catch(error){console.error(error);setStatus('Connexion impossible',true);$('#editor').innerHTML='<div class="danger-message">Impossible de charger le Studio. Vérifiez votre connexion Payload et la variable BLOB_READ_WRITE_TOKEN dans Vercel.</div>';message('Chargement impossible',true)}}
+>>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
 async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;$('#saveBtn').hidden=selection==='media'||selection==='projects';setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
 function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset.index),i=Number(btn.dataset.item),dir=Number(btn.dataset.dir);
  const root=currentRoot(),sections=sectionList();
@@ -743,7 +747,10 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='toggle-project'){const b=sections[index];const sl=btn.dataset.slug;const set=new Set(b.chosenSlugs||[]);btn.checked?set.add(sl):set.delete(sl);b.chosenSlugs=[...set];markDirty();return}
 }
 document.addEventListener('click',event=>{
+<<<<<<< HEAD
  if(event.target.closest('#studioMigrationRetry')){retryStudioMigration();return}
+=======
+>>>>>>> 8d62acb33eea76d1beda5229cfec80667c0afe65
  const mediaAction=event.target.closest('[data-library-action]');if(mediaAction){handleLibraryAction(mediaAction);return}
  if(event.target.closest('#libraryDropzone')){uploadTarget=null;$('#directUploadInput').click();return}
  const featuredTab=event.target.closest('[data-featured-universe]');if(featuredTab){featuredUniverse=featuredTab.dataset.featuredUniverse;render();return}

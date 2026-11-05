@@ -162,3 +162,66 @@ export async function DELETE(request: Request) {
     return Response.json({error:'Suppression impossible. Vérifie les références de cette photo dans Payload.'},{status:500,headers})
   }
 }
+
+// Rename only the editable media title (alt); the original filename and Blob URL
+// remain unchanged, so existing galleries and Pokédex cards do not break.
+export async function PATCH(request: Request) {
+  try {
+    const origin = request.headers.get('origin')
+    if (!origin || new URL(origin).host !== new URL(request.url).host)
+      return Response.json({ error: 'Origine de la requête invalide' }, { status: 403, headers })
+    if (!request.headers.get('content-type')?.includes('application/json'))
+      return Response.json({ error: 'Format JSON attendu' }, { status: 415, headers })
+    const { payload, user } = await authenticated(request)
+    if (!user) return Response.json({ error: 'Connexion requise' }, { status: 401, headers })
+    const body = await request.json()
+    if (body?.action !== 'rename-media') return Response.json({ error: 'Opération inconnue' }, { status: 400, headers })
+    const id = String(body?.id ?? '')
+    const name = typeof body?.name === 'string' ? body.name.trim() : ''
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id) || !name || name.length > 160 || /[<>\x00-\x1f]/.test(name))
+      return Response.json({ error: 'Identifiant ou nom invalide (160 caractères max.)' }, { status: 400, headers })
+    const updated = await payload.update({ collection: 'media', id: /^\d+$/.test(id) ? Number(id) : id, data: { alt: name }, overrideAccess: true })
+    return Response.json({ id: updated.id, alt: updated.alt, filename: updated.filename || '', url: updated.url || '' }, { headers })
+  } catch (error) {
+    console.error('Studio media rename error:', error)
+    return Response.json({ error: 'Impossible de renommer cette photographie.' }, { status: 500, headers })
+  }
+}
+
+// Remove a media file from Payload/Blob only if it is no longer referenced by
+// the live Studio pages or project covers/galleries. Never cascade a delete.
+export async function DELETE(request: Request) {
+  try {
+    const origin = request.headers.get('origin')
+    if (!origin || new URL(origin).host !== new URL(request.url).host)
+      return Response.json({error:'Origine invalide'}, {status:403,headers})
+    const {payload,user} = await authenticated(request)
+    if (!user) return Response.json({error:'Connexion requise'}, {status:401,headers})
+    const id = new URL(request.url).searchParams.get('id') || ''
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(id)) return Response.json({error:'Identifiant invalide'}, {status:400,headers})
+    const mediaId = /^\d+$/.test(id)?Number(id):id
+    const original: any = await payload.findByID({collection:'media',id:mediaId,overrideAccess:true,depth:0})
+    const content = await getStudioContent()
+    // Public Studio images reference their Blob URL; multiple uses remain safe.
+    if (original.url && JSON.stringify(content.pages).includes(JSON.stringify(original.url)))
+      return Response.json({error:'Cette photo est utilisée sur le site ou dans le Pokédex. Retire-la de ces pages, publie, puis supprime-la.'},{status:409,headers})
+    let referenced = false, moreProjects = true, page = 1
+    while (moreProjects && page <= 25 && !referenced) {
+      const result = await payload.find({collection:'projects',limit:100,page,depth:0,overrideAccess:true})
+      referenced = result.docs.some((p:any)=>{
+        const same = (value:any)=>String(value?.id ?? value ?? '')===id
+        const sameUrl = (value:any)=>Boolean(original.url && value === original.url)
+        return same(p.cover) || sameUrl(p.legacyCover) || (p.gallery || []).some((g:any)=>same(g.photo)||sameUrl(g.legacyUrl))
+      })
+      moreProjects = result.hasNextPage
+      page++
+    }
+    if (referenced || moreProjects)
+      return Response.json({error:'Cette photo est utilisée dans un projet (ou il y a trop de projets pour garantir une suppression sans risque). Retire-la des projets avant de la supprimer.'},{status:409,headers})
+    await payload.delete({collection:'media',id:mediaId,overrideAccess:true})
+    return Response.json({deleted:true,id},{headers})
+  } catch(error) {
+    console.error('Studio media delete error:',error)
+    return Response.json({error:'Suppression impossible. Vérifie les références de cette photo dans Payload.'},{status:500,headers})
+  }
+}

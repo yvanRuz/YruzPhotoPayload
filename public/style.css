@@ -126,10 +126,8 @@
 .catalog-toolbar>span{font-size:10px;letter-spacing:1.3px;color:#b4c2c9}
 .catalog-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .catalog-card{display:block;min-width:0;position:relative;aspect-ratio:1.17;background:linear-gradient(180deg,#0f1a22,#0a1118);border:1px solid #ffffff3a;border-radius:18px;overflow:hidden;transition:border-color .35s,box-shadow .35s,transform .62s cubic-bezier(.2,1,.3,1),filter .35s;isolation:isolate}
-.catalog-card::before{content:'';position:absolute;top:0;left:18px;width:96px;height:18px;border:1px solid #ffffff30;border-bottom:none;border-radius:0 0 12px 12px;background:linear-gradient(180deg,#1b2b39,#111c26);z-index:2;transform-origin:top center;transition:transform .55s cubic-bezier(.2,1,.3,1),background .35s,border-color .35s,box-shadow .35s}
 .catalog-card::after{content:'';position:absolute;inset:-20%;background:radial-gradient(circle at 50% -10%,rgba(255,255,255,.15),transparent 32%),linear-gradient(125deg,transparent 35%,rgba(255,255,255,.10) 50%,transparent 65%);opacity:.0;transform:translateX(-18%) rotate(-6deg);transition:opacity .45s ease,transform .75s cubic-bezier(.2,1,.3,1);pointer-events:none;z-index:1}
 .catalog-card:hover,.catalog-card:focus-visible{border-color:#ecf6ff;transform:translateY(-9px) scale(1.012);box-shadow:0 20px 48px #000a,0 0 28px #c5e6fa1e;filter:saturate(1.04)}
-.catalog-card:hover::before,.catalog-card:focus-visible::before{transform:translateY(-2px) scale(1.03);background:linear-gradient(180deg,#223547,#131f2a);border-color:#ffffff52;box-shadow:0 8px 18px rgba(0,0,0,.24)}
 .catalog-card:hover::after,.catalog-card:focus-visible::after{opacity:1;transform:translateX(10%) rotate(-6deg)}
 .catalog-image{position:absolute;inset:0;overflow:hidden}
 .catalog-image::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 26%,#03090de8 100%);pointer-events:none}
@@ -768,3 +766,114 @@ body:not(.subpage).yruz-motion-ready .yruz-text-reveal.yruz-text-visible::after{
 .mans-thumb img{width:100%;height:100%;object-fit:cover;display:block}.mans-thumb[aria-current="true"]{opacity:1;border-color:#e4f5ff;transform:translateY(-2px)}.mans-thumb:hover{opacity:1}
 @media(max-width:650px){.mans-carousel-view{height:480px;border-radius:12px}.mans-arrow{width:34px;height:34px;font-size:19px}.mans-arrow-prev{left:7px}.mans-arrow-next{right:7px}.mans-open{font-size:9px;top:9px;right:9px}.mans-thumb{flex-basis:72px;height:60px}.mans-carousel-label{display:none}}
 @media(prefers-reduced-motion:reduce){.mans-main-image,.mans-progress span,.mans-thumb{transition:none!important}}
+
+
+/* V42 — Carousel photo/video/graphisme, inspired by cinematic 3D gallery composition.
+   Palette and typography remain YRUZPHOTO; no assets from the reference image. */
+.portfolio-v42{
+  min-height:750px;
+  background:radial-gradient(ellipse 58% 50% at 50% 38%,rgba(28,76,106,.36),transparent 75%),
+    linear-gradient(145deg,#06121f 10%,#0c283b 46%,#040f1b 100%)!important;
+}
+.portfolio-v42::before{
+  background-image:linear-gradient(90deg,#04131d99,#061c2a88),url('assets/projects/mans-nuit/lemans-2026-02.webp')!important;
+  background-position:center 52%!important;background-size:cover!important;
+  opacity:.13!important;filter:blur(8px) saturate(.55)!important;
+}
+.portfolio-v42 .section-top{margin-bottom:24px}
+.portfolio-v42 .home-portfolio-switch{position:relative;z-index:5}
+.portfolio-v42 .mode-switch{flex-wrap:wrap}
+.portfolio-v42 .floating-stage{
+  height:510px!important;max-width:1450px!important;
+  perspective:1520px!important;perspective-origin:50% 47%!important;
+  overflow:hidden!important;margin:8px auto 0!important;
+}
+.portfolio-v42 .floating-stage::before{inset:auto 5% 19px!important;height:105px!important;background:radial-gradient(ellipse,rgba(98,155,185,.20),transparent 66%)!important}
+.portfolio-v42 .floating-stage::after{bottom:17px!important;opacity:.4}
+.portfolio-v42 .floating-card{
+  top:24px!important;width:clamp(238px,25vw,342px)!important;height:clamp(350px,34vw,432px)!important;
+  transition:transform .25s cubic-bezier(.22,.8,.28,1),opacity .28s ease,filter .28s ease!important;
+}
+.portfolio-v42 .floating-card .card-shell{
+  border-radius:13px!important;
+  border:1px solid rgba(177,208,228,.48)!important;
+  background:#112b40;
+  box-shadow:0 25px 68px #010812aa,0 2px 12px rgba(181,220,243,.09) inset!important;
+}
+.portfolio-v42 .floating-card .card-shell::after{
+  background:linear-gradient(to bottom,rgba(2,12,21,.16),transparent 35%,rgba(2,10,20,.13) 55%,rgba(0,6,15,.90))!important;
+}
+.portfolio-v42 .floating-card .card-reflection{display:none!important}
+.portfolio-v42 .floating-card.is-current .card-shell{
+  border-color:rgba(224,242,253,.85)!important;
+  box-shadow:0 30px 95px rgba(0,5,13,.83),0 0 27px rgba(149,204,237,.14)!important;
+}
+.portfolio-v42 .floating-card.is-neighbour .card-shell{border-color:rgba(189,222,240,.40)!important}
+.portfolio-v42 .floating-card.is-backrow .card-shell{border-color:rgba(171,215,239,.22)!important}
+.portfolio-v42 .floating-card .card-category{text-transform:uppercase;letter-spacing:1.7px;font-size:9px}
+.portfolio-v42 .floating-card .card-title{font-size:clamp(22px,2.15vw,30px)!important;font-weight:900!important;letter-spacing:.012em}
+.portfolio-v42 .floating-card .card-text{bottom:27px;left:22px;right:61px}
+.portfolio-v42 .floating-card .card-go{width:38px;height:38px;border-color:#d6eff7aa;background:#04152266;bottom:22px;right:18px}
+.portfolio-v42 .carousel-controls{max-width:1050px!important;justify-content:space-between;margin:0 auto 16px!important}
+.portfolio-v42 .rotation-dial{min-width:120px!important;max-width:300px!important}
+.portfolio-v42 .rotation-dial .rotation-track{height:2px!important;background:#b6d7e34d!important;box-shadow:none!important}
+.portfolio-v42 .rotation-dial #carouselProgress{height:2px!important;background:#e3f7ff!important;box-shadow:0 0 6px #cbe6ff55!important}
+.portfolio-v42 .rotation-dial .rotation-knob{height:16px!important;width:16px!important;background:#cce8f7!important;box-shadow:0 0 0 5px #c3dce921!important;border:1px solid #ecf9ff!important}
+.portfolio-v42 .rotation-knob i{display:none}
+.portfolio-v42 .carousel-controls>button{width:42px;height:42px;border-color:#c6e0f177}
+.portfolio-v42 .carousel-controls>button:disabled{opacity:.2;cursor:not-allowed}
+.portfolio-v42 .scroll-label{letter-spacing:2.5px;font-size:9px}
+.portfolio-empty-v42{position:absolute;z-index:4;top:48%;left:50%;transform:translate(-50%,-50%);width:min(480px,90%);text-align:center;padding:28px 22px}
+.portfolio-empty-kicker{font-size:10px;letter-spacing:3px;color:#a9cee4;display:block;margin-bottom:16px}
+.portfolio-empty-v42 strong{font:800 clamp(35px,5vw,60px)/.98 'Barlow Condensed',Impact,sans-serif;display:block}
+.portfolio-empty-v42 p{font-size:12px;line-height:1.75;color:#b4cddd;margin:17px 0}
+.portfolio-empty-v42 a{display:inline-block;border-bottom:1px solid #99c4df;padding-bottom:8px;font-size:10px;letter-spacing:2px}
+.catalog-empty-v42{grid-column:1/-1;text-align:center;min-height:260px;padding:55px 25px;background:linear-gradient(145deg,#071a29,#0c2737);border:1px solid #9bc0d134}
+.catalog-empty-v42 span{color:#a5c8da;font-size:10px;letter-spacing:2px}
+.catalog-empty-v42 h2{font:800 clamp(30px,4vw,54px) 'Barlow Condensed',Impact,sans-serif;margin:15px 0 10px}
+.catalog-empty-v42 p{color:#bed4df;font-size:13px}
+@media(max-width:1100px){.portfolio-v42 .floating-stage{height:470px!important}.portfolio-v42 .floating-card{height:390px!important;width:275px!important}}
+@media(max-width:650px){
+ .portfolio-v42{padding-top:74px;min-height:690px}
+ .portfolio-v42 .floating-stage{height:370px!important;margin-left:-5vw!important;margin-right:-5vw!important}
+ .portfolio-v42 .floating-card{top:22px!important;width:210px!important;height:315px!important}
+ .portfolio-v42 .floating-card .card-title{font-size:19px!important}
+ .portfolio-v42 .floating-card .card-text{bottom:20px;left:15px;right:50px}
+ .portfolio-v42 .floating-card .card-go{width:32px;height:32px;right:10px;bottom:14px}
+ .portfolio-v42 .carousel-controls{gap:8px!important}
+ .portfolio-v42 .rotation-dial{min-width:75px!important;max-width:170px!important}
+ .portfolio-v42 .scroll-label{letter-spacing:1px;font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){.portfolio-v42 .floating-card{transition:none!important}}
+
+/* V44 — vidéos intégrées dans les fiches portfolio */
+.project-video-embed{display:block;width:100%;max-width:1250px;aspect-ratio:16/9;border:0;border-radius:13px;margin:18px auto 38px;background:#061524}
+
+/* V64 : molette de navigation toujours entiere (premiere et derniere position), ordinateur et telephone. */
+.portfolio-section .carousel-controls {overflow:visible!important;padding-inline:13px!important;min-height:52px!important}
+.portfolio-section .rotation-dial {overflow:visible!important;min-height:46px!important}
+.portfolio-section .rotation-dial .rotation-knob {
+  left:clamp(9px,var(--dial-position,0%),calc(100% - 9px))!important;
+}
+@media screen and (max-width:767px){
+  .portfolio-section .carousel-controls {padding-inline:17px!important;margin-bottom:25px!important}
+  .portfolio-section .rotation-dial .rotation-knob {
+    left:clamp(9px,var(--dial-position,0%),calc(100% - 9px))!important;
+  }
+}
+
+/* V68: transform positions are interpolated by requestAnimationFrame already.
+   CSS transform/filter transitions caused the cards to lag behind the dial. */
+.portfolio-v42 .floating-card {
+  transition: none !important;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* V75: discreet return-to-home control, maintaining YRUZPHOTO's dark visual identity */
+.footer .footer-home-return{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:42px;padding:7px 15px 7px 8px;border:1px solid rgba(173,205,225,.32);border-radius:999px;background:rgba(18,48,67,.36);font-size:10px;font-weight:700;letter-spacing:.08em;color:#e9f4fa;transition:background .25s ease,border-color .25s ease,transform .25s ease,box-shadow .25s ease}
+.footer .footer-home-return-icon{display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;border-radius:50%;background:rgba(231,244,255,.11);font-size:17px;line-height:1;transition:transform .25s ease,background .25s ease}
+.footer .footer-home-return:hover{background:rgba(36,77,99,.56);border-color:rgba(209,233,247,.7);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.footer .footer-home-return:hover .footer-home-return-icon{transform:translateY(-3px);background:rgba(231,244,255,.18)}
+.footer .footer-home-return:focus-visible{outline:2px solid #bde4fc;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){.footer .footer-home-return,.footer .footer-home-return-icon{transition:none!important}}

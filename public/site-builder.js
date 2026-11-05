@@ -1,5 +1,33 @@
 /* YRUZPHOTO Site Builder: renders published Payload sections on the existing site. */
 (() => {
+  const activeLanguage = () => window.YRUZ_LANG?.current?.() || (() => { try { return localStorage.getItem('yruzphoto-language') || 'fr'; } catch { return 'fr'; } })();
+  const localeKey = () => activeLanguage() === 'pt-BR' ? 'ptBr' : activeLanguage() === 'en' ? 'en' : null;
+  const chooseText = (fr, en, ptBr) => {
+    const candidate = localeKey() === 'ptBr' ? ptBr : localeKey() === 'en' ? en : null;
+    return typeof candidate === 'string' && candidate.trim() ? candidate : fr;
+  };
+  const localFields = (source, locale) => Object.fromEntries(Object.entries(source?.[locale] || {}).filter(([,v]) => typeof v === 'string' && v.trim()));
+  const translateBlock = block => {
+    const locale=localeKey();if(!locale || !block)return block;
+    const translated={...block,...localFields(block,locale)};
+    const suffix=locale === 'en' ? 'En' : 'PtBr';
+    if(Array.isArray(block.slides))translated.slides=block.slides.map(slide=>({...slide,caption:chooseText(slide.caption,slide.captionEn,slide.captionPtBr)}));
+    if(Array.isArray(block.photos))translated.photos=block.photos.map(photo=>({...photo,caption:chooseText(photo.caption,photo.captionEn,photo.captionPtBr)}));
+    if(Array.isArray(block.buttons))translated.buttons=block.buttons.map(btn=>({...btn,label:chooseText(btn.label,btn.labelEn,btn.labelPtBr)}));
+    return translated;
+  };
+  const translatePage = original => {
+    const locale=localeKey();if(!original||!locale)return original;
+    const translated={...original,...localFields(original,locale)};
+    translated.textOverrides={...original.textOverrides,...(original[locale]?.textOverrides||{})};
+    translated.storyCards=(original.storyCards||[]).map(card=>({...card,...localFields(card,locale)}));
+    translated.serviceCards=(original.serviceCards||[]).map(card=>({...card,...localFields(card,locale)}));
+    translated.sections=(original.sections||[]).map(translateBlock);
+    if(original.universeSections)translated.universeSections=Object.fromEntries(Object.entries(original.universeSections).map(([kind,items])=>[kind,(items||[]).map(translateBlock)]));
+    if(original.featuredCards)translated.featuredCards=Object.fromEntries(Object.entries(original.featuredCards).map(([mode,items])=>[mode,Array.isArray(items)?items.map(card=>({...card,title:chooseText(card.title,card.titleEn,card.titlePtBr),category:chooseText(card.category,card.categoryEn,card.categoryPtBr)})):items]));
+    if(original.equipmentItems)translated.equipmentItems=original.equipmentItems.map(item=>({...item,...localFields(item,locale)}));
+    return translated;
+  };
   const escapeHtml = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
   const safeLink = (input) => {
     const url = String(input || '').trim();
@@ -23,6 +51,7 @@
     return `<a class="cms-cta ${secondary ? 'cms-cta-secondary' : ''}" href="${escapeHtml(url)}"${ext ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)} <span aria-hidden="true">\u2197</span></a>`;
   };
   const renderSection = (section, projects) => {
+    section = translateBlock(section);
     switch (section.type) {
       case 'texte': return `<section class="cms-block cms-block-text cms-align-${section.align === 'center' ? 'center' : 'left'}">${section.eyebrow ? `<span class="cms-eyebrow">${escapeHtml(section.eyebrow)}</span>` : ''}${heading(section.title, section.body)}${button(section.buttonLabel, section.buttonUrl)}</section>`;
       case 'photoTexte': {
@@ -41,7 +70,11 @@
         return `<section class="cms-block cms-grid-block">${heading(section.title)}<div class="cms-photo-grid" style="--cms-cols:${cols}">${photos.map(item => `<a class="cms-photo-grid-item" href="${escapeHtml(safeImage(item.image.url))}" target="_blank" rel="noopener noreferrer">${img(item.image, item.caption)}${item.caption ? `<span>${escapeHtml(item.caption)}</span>` : ''}</a>`).join('')}</div></section>`;
       }
       case 'carrouselProjets': {
-        let selected = (projects || []).filter(p => p && (section.mode === 'all' || p.mode === section.mode));
+        let selected = (projects || []).filter(p => {
+          if (!p) return false;
+          const graphic = p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
+          return section.mode === 'all' || (section.mode === 'graphisme' ? graphic : section.mode === 'photo' ? p.mode === 'photo' && !graphic : p.mode === 'video');
+        });
         if (section.selection === 'manual') {
           const ids = section.chosenSlugs || [];
           selected = ids.map(id => selected.find(p => p.id === id)).filter(Boolean);
@@ -93,10 +126,32 @@
     anchor.insertAdjacentElement(method, wrapper);
     return wrapper;
   };
-  const applyPage = (key, data, projects) => {
-    if (!data) return;
+  // Text slots are bound to fixed public elements, never to user-defined selectors.
+  const textSlots = {
+    accueil:{heroKicker:'.hero-inner .eyebrow',homeWorksKicker:'#portfolio .section-top .eyebrow',homeWorksTitle:'#portfolio .section-top h2',homeWorksIntro:'#portfolio .section-top p',homeServiceKicker:'#services .section-top .eyebrow',homeServiceTitle:'#services .section-top h2',homeServiceIntro:'#services .section-top p',followKicker:'#me-suivre .eyebrow',followTitle:'#me-suivre h2',followIntro:'#me-suivre p',followButton:'#me-suivre .follow-action'},
+    portfolio:{portfolioKicker:'.catalog-heading .eyebrow',portfolioIntro:'.catalog-heading p'},
+    services:{servicesKicker:'.services-heading .eyebrow',servicesIntro:'.services-heading p'},
+    equipement:{equipmentKicker:'.equip-kicker',equipmentIntro:'.equip-intro p'},
+    contact:{contactKicker:'.contact-page-intro .eyebrow',contactIntro:'.contact-page-intro p'},
+    histoire:{storyTopLeft:'.story-topline > span:nth-child(1)',storyTopCenter:'.story-topline > span:nth-child(2)',storyHint:'.story-progress-label',storyBottomLeft:'.story-bottomline > span:first-child'},
+  };
+  const applyTextSlots = (key, values) => {
+    const allowed=textSlots[key]||{};
+    if(!values || typeof values!=='object')return;
+    Object.entries(allowed).forEach(([name,selector])=>replaceText(selector,values[name]));
+  };
+  const applyPage = (key, rawData, projects) => {
+    if (!rawData) return;
+    const data = translatePage(rawData);
     const selectors = pageMap[key];
-    if (selectors) { replaceText(selectors.title, data.heading); replaceText(selectors.intro, data.intro); }
+    if (selectors) {
+      // Accueil: le titre principal est la signature graphique YRUZPHOTO.
+      // Les traductions du Studio restent appliquees aux autres textes, mais ne
+      // remplacent jamais ce logotype par une longue description multiligne.
+      if (key === 'accueil') replaceText(selectors.title, 'YRUZPHOTO');
+      else replaceText(selectors.title, data.heading);
+      replaceText(selectors.intro, data.intro);
+    }
     const bottomSelector = { portfolio: '.catalog-bottom a', services: '.services-cta a', equipement: '.equip-bottom a' }[key];
     if (bottomSelector) updateButton(bottomSelector, data.bottomButtonLabel, data.bottomButtonUrl);
     if (key === 'accueil') {
@@ -104,31 +159,60 @@
       updateButton('.hero-actions .btn.outline', data.secondButtonLabel, data.secondButtonUrl);
       const urls = (data.heroImages || []).map(item => safeImage(item?.url)).filter(Boolean);
       if (urls.length && typeof window.yruzSetHeroImages === 'function') window.yruzSetHeroImages(urls);
+      if (typeof window.yruzSetCarouselCards === 'function') window.yruzSetCarouselCards(data.featuredCards || {});
     }
     if (key === 'services') {
       (data.serviceCards || []).forEach((item, index) => {
         const scope = `.services-board .service-column:nth-child(${index + 1})`;
         const photo = safeImage(item?.image?.url);
         const img = document.querySelector(`${scope} .service-visual img`);
-        if (img && photo) { img.src = photo; img.alt = item.image.alt || img.alt; }
+        if (img && photo) { if (img.getAttribute('src') !== photo && img.src !== photo) img.src = photo; img.alt = item.image.alt || img.alt; }
         replaceText(`${scope} .service-caption`, item.caption);
         updateButton(`${scope} .service-link`, item.buttonLabel, item.buttonUrl);
       });
     }
+    applyTextSlots(key, data.textOverrides);
     if (key === 'histoire') {
       (data.storyCards || []).forEach((item, index) => {
         const scope = `.story-panel:nth-child(${index + 1})`;
         const photo = safeImage(item?.image?.url);
         const img = document.querySelector(`${scope} .story-photo img`);
-        if (img && photo) { img.src = photo; img.alt = item.image.alt || img.alt; }
+        if (img && photo) { if (img.getAttribute('src') !== photo && img.src !== photo) img.src = photo; img.alt = item.image.alt || img.alt; }
         replaceText(`${scope} .story-copy h2`, item.title);
         replaceText(`${scope} .story-copy p`, item.body);
+        replaceText(`${scope} .story-kicker`, item.kicker);
+        replaceText(`${scope} .story-index`, item.indexLabel);
+        replaceText(`${scope} .story-photo span`, item.caption);
+        replaceText(`${scope} .story-small-note`, item.note);
+        if(index === 2)updateButton(`${scope} .story-cta`,item.buttonLabel,item.buttonUrl);
       });
     }
     const html = (data.sections || []).map(section => renderSection(section, projects)).join('');
-    if (!html) return;
-    const wrapper = mount(key);
+    const wrapper = html ? mount(key) : null;
     if (wrapper) { wrapper.innerHTML = html; wrapper.querySelectorAll('[data-cms-carousel]').forEach(initCarousel); wrapper.querySelectorAll('.cms-projects-block').forEach(initProjectCarousel); }
+    if (key === 'portfolio') {
+      const grid = document.getElementById('catalogGrid');
+      if (grid && data.universeSections) {
+        ['photo','video','graphisme'].forEach(kind => {
+          let zone = document.querySelector(`[data-cms-portfolio-kind="${kind}"]`);
+          if (!zone) {
+            zone = document.createElement('div');zone.className='cms-sections cms-portfolio-kind';
+            zone.dataset.cmsPortfolioKind=kind;
+            grid.insertAdjacentElement('afterend', zone);
+          }
+          zone.innerHTML = (data.universeSections[kind] || []).map(block=>renderSection(block,projects)).join('');
+          zone.querySelectorAll('[data-cms-carousel]').forEach(initCarousel);
+          zone.querySelectorAll('.cms-projects-block').forEach(initProjectCarousel);
+        });
+        const sync = () => {
+          const kind = new URLSearchParams(location.search).get('type') || 'photo';
+          document.querySelectorAll('[data-cms-portfolio-kind]').forEach(el => {el.hidden = el.dataset.cmsPortfolioKind !== kind;});
+        };
+        document.querySelectorAll('[data-filter]').forEach(btn => btn.addEventListener('click',()=>setTimeout(sync,0)));
+        window.addEventListener('popstate',sync);
+        sync();
+      }
+    }
   };
   const initCarousel = root => {
     const thumbs = [...root.querySelectorAll('[data-cms-slide]')];
@@ -178,7 +262,7 @@
       const currentPath = location.pathname.split('/').pop() || 'index.html';
       nav.links.forEach(item => {
         const href = safeLink(item.url); if (!href || !item.label) return;
-        const a = document.createElement('a'); a.href = href; a.textContent = item.label;
+        const a = document.createElement('a'); a.href = href; a.textContent = chooseText(item.label,item.labelEn,item.labelPtBr);
         if (href.split(/[?#]/)[0] === currentPath || (currentPath === 'index.html' && href === 'index.html#accueil')) a.classList.add('active');
         if (item.newTab) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
         fragment.append(a);
@@ -186,22 +270,81 @@
       root.insertBefore(fragment, before);
       old.forEach(a => a.remove());
     }
-    updateButton('header nav .nav-cta', nav.ctaLabel, nav.ctaUrl);
-    updateButton('footer .footer-contact', nav.footerContactLabel, nav.footerContactUrl);
+    updateButton('header nav .nav-cta', chooseText(nav.ctaLabel,nav.ctaLabelEn,nav.ctaLabelPtBr), nav.ctaUrl);
+    updateButton('footer .footer-contact', chooseText(nav.footerContactLabel,nav.footerContactLabelEn,nav.footerContactLabelPtBr), nav.footerContactUrl);
     const instagram = safeLink(nav.instagramUrl);
     if (instagram) document.querySelectorAll('a[href*="instagram.com/"]').forEach(a => { a.href = instagram; });
   };
   const currentFile = location.pathname.split('/').pop() || 'index.html';
   const currentPage = ({ 'index.html': 'accueil', 'portfolio.html': 'portfolio', 'tarifs.html': 'services', 'contact.html': 'contact', 'equipement.html': 'equipement' })[currentFile];
   const pages = currentPage === 'accueil' ? ['accueil', 'histoire', 'services'] : currentPage ? [currentPage] : ['portfolio'];
+  const cache=new Map();
+  let navigationCache=null;
+  const reapply=()=>{
+    if(navigationCache)applyNavigation(navigationCache);
+    for(const [key,data] of cache)applyPage(key,data.page,data.projects);
+    window.YRUZ_LANG?.refresh?.();
+  };
+  window.YRUZ_REAPPLY_CONTENT=reapply;
   const load = async (key, first) => {
     try {
       const response = await fetch(`/cms-content?page=${encodeURIComponent(key)}`, { cache: 'no-store' });
       if (!response.ok) return;
       const data = await response.json();
+      cache.set(key,{page:data.page,projects:data.projects||[]});
+      if (first)navigationCache=data.navigation;
       if (first) applyNavigation(data.navigation);
       applyPage(key, data.page, data.projects || []);
+      window.YRUZ_LANG?.refresh?.();
     } catch (error) { console.warn('YRUZPHOTO: sections CMS non disponibles', error); }
   };
-  pages.forEach((page, index) => load(page, index === 0));
+  // Server-embedded content is available immediately: no temporary stock pictures.
+  // Other pages keep the existing asynchronous workflow for project collections.
+  const initial = window.YRUZ_INITIAL_PAGE;
+  if (initial && initial.key === currentPage && Object.prototype.hasOwnProperty.call(initial, 'page')
+      && (currentPage === 'accueil' || currentPage === 'services')) {
+    navigationCache = initial.navigation;
+    applyNavigation(initial.navigation);
+    cache.set(currentPage, {page: initial.page, projects: []});
+    applyPage(currentPage, initial.page, []);
+    // Projects in dynamic CMS sections still need their catalog, if configured.
+    const needsProjects = (initial.page?.sections || []).some(section => section.type === 'carrouselProjets');
+    if (needsProjects) load(currentPage, true);
+    if (currentPage === 'accueil') {
+      for (const relatedKey of ['histoire', 'services']) {
+        if (Object.prototype.hasOwnProperty.call(initial.related || {}, relatedKey)) {
+          const relatedPage = initial.related[relatedKey];
+          cache.set(relatedKey, {page: relatedPage, projects: []});
+          applyPage(relatedKey, relatedPage, []);
+        } else load(relatedKey, false);
+      }
+    }
+  } else {
+    pages.forEach((page, index) => load(page, index === 0));
+  }
+})();
+
+/* V75: smooth return button, active on every page (including server-rendered home). */
+(() => {
+  const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('a.footer-home-return').forEach(link => {
+    link.addEventListener('click', event => {
+      const target = document.getElementById('accueil');
+      if (target) {
+        event.preventDefault();
+        target.scrollIntoView({ behavior: motionOK ? 'smooth' : 'instant', block: 'start' });
+        if (history.replaceState) history.replaceState(null, '', '#accueil');
+      } else {
+        try { sessionStorage.setItem('yruz-return-home', '1'); } catch {}
+      }
+    });
+  });
+  if (document.getElementById('accueil')) {
+    let returning = false;
+    try { returning = sessionStorage.getItem('yruz-return-home') === '1'; sessionStorage.removeItem('yruz-return-home'); } catch {}
+    if (returning) {
+      // On another page, navigate home first; the destination scrolls gently to its top.
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: motionOK ? 'smooth' : 'instant' })));
+    }
+  }
 })();

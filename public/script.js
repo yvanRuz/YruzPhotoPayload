@@ -1,17 +1,47 @@
 // YRUZPHOTO V26 — carrousel triptyque miroir, synchronisé avec le cadran.
-let photos = window.YRUZ_PROJECTS.filter(p=>p.mode==='photo');
+// Les creations graphiques sont des projets photo avec la categorie GRAPHISME.
+// Pas de nouvelle colonne PostgreSQL : publication directe depuis Payload.
+const isGraphicProject = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
+const projectsForMode = selected => (window.YRUZ_PROJECTS || []).filter(p => selected === 'graphisme' ? isGraphicProject(p) : selected === 'photo' ? p.mode === 'photo' && !isGraphicProject(p) : p.mode === 'video');
+// V44: optional Studio-authored featured cards. Null = original Payload projects.
+const initialHome=window.YRUZ_INITIAL_HOME?.page || null;
+const initialLanguage=(()=>{try{return localStorage.getItem('yruzphoto-language')||'fr'}catch{return 'fr'}})();
+const initialLabel=(item,key)=>{
+  const translated=initialLanguage==='en'?item?.[key+'En']:initialLanguage==='pt-BR'?item?.[key+'PtBr']:null;
+  return typeof translated==='string'&&translated.trim()?translated:item?.[key];
+};
+const normalizeFeaturedCards=(cards,kind)=>Array.isArray(cards?.[kind])?cards[kind].map(c=>({
+  title:String(initialLabel(c,'title')||''),category:String(initialLabel(c,'category')||''),
+  cover:String(c.cover?.url||''),link:String(c.link||''),enabled:c.enabled!==false
+})):null;
+// Studio cards are known before the first paint; never briefly render legacy cards.
+const featuredCards=Object.fromEntries(['photo','video','graphisme'].map(kind=>[kind,normalizeFeaturedCards(initialHome?.featuredCards,kind)]));
+const carouselItems = kind => Array.isArray(featuredCards[kind]) ? featuredCards[kind].filter(c=>c.enabled!==false && c.cover && c.title).map((c,i)=>({
+  id:'studio-'+kind+'-'+i,mode:kind,category:c.category||kind.toUpperCase(),title:c.title,cover:c.cover,
+  gallery:[],url:c.link||'',isStudioCard:true
+})) : projectsForMode(kind);
+let photos = projectsForMode('photo');
 const mansProject = (window.YRUZ_PROJECTS || []).find(p => p.id === 'mans-nuit');
-const heroImages=(window.YRUZ_SITE_CONFIG?.homeImages?.length ? window.YRUZ_SITE_CONFIG.homeImages : [photos[0]?.gallery?.[1]||photos[0]?.cover,photos[0]?.gallery?.[2]||photos[0]?.cover]).filter(Boolean);
+const initialHero=(initialHome?.heroImages||[]).map(item=>item?.url).filter(Boolean);
+const heroImages=(initialHero.length ? initialHero : window.YRUZ_SITE_CONFIG?.homeImages?.length ? window.YRUZ_SITE_CONFIG.homeImages : [photos[0]?.gallery?.[1]||photos[0]?.cover,photos[0]?.gallery?.[2]||photos[0]?.cover]).filter(Boolean);
 let heroIndex=0;
-window.yruzSetHeroImages = function (urls) { if (!Array.isArray(urls) || !urls.length) return; heroImages.splice(0, heroImages.length, ...urls); heroIndex = 0; drawHero(); };
+let heroDrawn=false;
+window.yruzSetHeroImages = function (urls) { if (!Array.isArray(urls) || !urls.length || (urls.length===heroImages.length && urls.every((url,i)=>url===heroImages[i]))) return; heroImages.splice(0, heroImages.length, ...urls); heroIndex = 0; drawHero(); };
 function drawHero(){
   const bg=document.getElementById('heroBg');
   if(!bg||!heroImages.length)return;
-  bg.style.opacity='.5';
-  setTimeout(()=>{
+  // The first CMS image must not be delayed by the old 150 ms crossfade.
+  if(!heroDrawn){
     bg.style.backgroundImage=`url("${heroImages[heroIndex]}")`;
     bg.style.opacity='1';
-  },150);
+    heroDrawn=true;
+  }else{
+    bg.style.opacity='.5';
+    setTimeout(()=>{
+      bg.style.backgroundImage=`url("${heroImages[heroIndex]}")`;
+      bg.style.opacity='1';
+    },150);
+  }
   const counter=document.getElementById('heroCounter');
   if(counter)counter.textContent=`${String(heroIndex+1).padStart(2,'0')} / ${String(heroImages.length).padStart(2,'0')}`;
 }
@@ -25,7 +55,7 @@ document.getElementById('prevHero')?.addEventListener('click',()=>changeHero(-1)
 drawHero();
 
 let mode='photo';
-let projects=window.YRUZ_PROJECTS.filter(p=>p.mode===mode);
+let projects=carouselItems(mode);
 let current=0;
 let activeValue=0;
 let cards=[];
@@ -83,8 +113,8 @@ function renderCarousel(value=activeValue){
   current=selected;
   const narrow=window.innerWidth<650;
   const medium=window.innerWidth<1100;
-  const primaryShift=narrow?126:medium?208:286;
-  const secondaryShift=narrow?205:medium?326:460;
+  const primaryShift=narrow?145:medium?218:284;
+  const secondaryShift=narrow?232:medium?346:470;
   cards.forEach((card,i)=>{
     const d=distanceFromCenter(i,activeValue);
     const mag=Math.abs(d);
@@ -95,11 +125,11 @@ function renderCarousel(value=activeValue){
     if(mag<=1.05){
       const influence=mag;
       x=d*primaryShift;
-      y=mag*32;
-      z=-mag*120;
-      scale=1-(mag*.15);
-      rotateY=-d*28;
-      rotateZ=-d*1.25;
+      y=mag*25;
+      z=-mag*145;
+      scale=1-(mag*.18);
+      rotateY=-d*25;
+      rotateZ=-d*.65;
       opacity=1-(mag*.14);
       blur=mag*.2;
       bright=1-(mag*.1);
@@ -109,12 +139,12 @@ function renderCarousel(value=activeValue){
     } else if(mag<=2.35){
       const extra=mag-1;
       x=side*(secondaryShift+extra*76);
-      y=40+extra*22;
-      z=-220-extra*55;
-      scale=.79-extra*.09;
-      rotateY=-side*(34+extra*4);
-      rotateZ=-side*(1.8+extra*.8);
-      opacity=Math.max(.12,.34-extra*.19);
+      y=42+extra*16;
+      z=-245-extra*68;
+      scale=.77-extra*.09;
+      rotateY=-side*(32+extra*5);
+      rotateZ=-side*.9;
+      opacity=Math.max(.16,.56-extra*.24);
       blur=.35+extra*.55;
       bright=.8-extra*.13;
       sat=.9-extra*.08;
@@ -129,7 +159,11 @@ function renderCarousel(value=activeValue){
     card.style.pointerEvents=visible?'auto':'none';
     card.style.zIndex=String(200-Math.round(mag*40)+(state==='current'?40:state==='neighbour'?18:0));
     card.style.transform=`translate3d(calc(-50% + ${x}px),${y}px,${z}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg) scale(${scale})`;
-    card.style.filter=`brightness(${bright}) saturate(${sat}) blur(${blur}px)`;
+    // Keep tonal depth, but don't recomposite a large blurred bitmap on every frame.
+    const tone = state === 'current' ? 'brightness(1) saturate(1)' :
+      state === 'neighbour' ? 'brightness(.9) saturate(.96)' :
+      'brightness(.74) saturate(.86)';
+    if (card.dataset.tone !== tone) { card.style.filter = tone; card.dataset.tone = tone; }
     card.style.setProperty('--mirror-opacity',String(Math.max(0,mirror)));
     card.style.setProperty('--card-depth',String(1-Math.min(1,mag/3)));
     card.setAttribute('aria-hidden',visible?'false':'true');
@@ -157,9 +191,21 @@ function animateTo(target,{duration}={}){
 }
 function mountCards(){
   if(!stage)return;
-  stage.querySelectorAll('.portfolio-card').forEach(node=>node.remove());
+  stage.querySelectorAll('.portfolio-card,.portfolio-empty-v42').forEach(node=>node.remove());
   if(dots)dots.replaceChildren();
   cards=[];
+  if(prevBtn)prevBtn.disabled=projects.length<2;
+  if(nextBtn)nextBtn.disabled=projects.length<2;
+  if(!projects.length){
+    const empty=document.createElement('div');
+    empty.className='portfolio-empty-v42';
+    empty.innerHTML='<span class="portfolio-empty-kicker">À VENIR / GRAPHISME</span><strong>DE NOUVELLES CRÉATIONS<br>TRÈS BIENTÔT.</strong><p>Les projets graphiques apparaîtront ici dès leur publication dans le back-office.</p><a href="contact.html">PARLONS DE VOTRE PROJET ↗</a>';
+    stage.append(empty);
+    if(progressBar)progressBar.style.width='0%';
+    if(knob)knob.style.setProperty('--dial-position','0%');
+    if(counter)counter.textContent='00 / 00';
+    return;
+  }
   projects.forEach((p,i)=>{
     const card=document.createElement('button');
     card.type='button';
@@ -173,7 +219,11 @@ function mountCards(){
     const image=document.createElement('img');
     image.src=p.cover;
     image.alt=p.title;
-    image.loading='lazy';
+    // Fetch the two neighbouring cards on each side before the first rotation.
+    // This prevents stutters when the back row is brought to the foreground.
+    image.loading=Math.abs(distanceFromCenter(i,0))<=2.35?'eager':'lazy';
+    image.decoding='async';
+    if(image.loading==='eager')image.fetchPriority=i===0?'high':'auto';
     shell.appendChild(image);
 
     const txt=document.createElement('span');
@@ -198,7 +248,7 @@ function mountCards(){
     card.addEventListener('click',()=>{
       if(stage?.dataset.justDragged)return;
       const closeToSelected=Math.round(activeValue)===i && Math.abs(activeValue-i)<.18;
-      if(closeToSelected) location.href=window.yruzProjectUrl(p);
+      if(closeToSelected) location.href=p.isStudioCard ? (p.url || `portfolio.html?type=${mode}`) : window.yruzProjectUrl(p);
       else animateTo(i);
     });
     stage.appendChild(card);
@@ -210,7 +260,7 @@ function mountCards(){
 }
 function applyMode(newMode){
   mode=newMode;
-  projects=window.YRUZ_PROJECTS.filter(p=>p.mode===mode);
+  projects=carouselItems(mode);
   document.querySelectorAll('[data-home-mode]').forEach(btn=>{
     const on=btn.dataset.homeMode===mode;
     btn.classList.toggle('active',on);
@@ -221,6 +271,15 @@ function applyMode(newMode){
 }
 mountCards();
 updateLinks();
+// Site Builder loads asynchronously and calls this when published content arrives.
+window.yruzSetCarouselCards = function (config) {
+  const next=Object.fromEntries(['photo','video','graphisme'].map(kind=>[kind,normalizeFeaturedCards(config,kind)]));
+  // Applying the same Studio cards twice would rebuild the entire carousel,
+  // reset its position and visibly reload the photos.
+  if(JSON.stringify(next)===JSON.stringify(featuredCards))return;
+  for(const kind of ['photo','video','graphisme'])featuredCards[kind]=next[kind];
+  applyMode(mode);
+};
 
 document.querySelectorAll('[data-home-mode]').forEach(btn=>btn.addEventListener('click',()=>applyMode(btn.dataset.homeMode)));
 prevBtn?.addEventListener('click',()=>animateTo(current-1));
@@ -348,6 +407,6 @@ if(contactForm){
     const data=new FormData(e.currentTarget);
     const subject=`Demande de devis — ${data.get('type')}`;
     const body=`Bonjour,\n\nJe m'appelle ${data.get('nom')}.\nMon adresse e-mail : ${data.get('email')}\n\nProjet : ${data.get('type')}\n\n${data.get('message')}\n\nCordialement,\n${data.get('nom')}`;
-    location.href=`mailto:${window.YRUZ_SITE_CONFIG?.contact_email || 'contact@yruzphoto.fr'}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    location.href=`mailto:${window.YRUZ_SITE_CONFIG?.contact_email || 'ruzyvan@gmail.com'}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   });
 }

@@ -3,28 +3,103 @@
  const params=new URLSearchParams(location.search);
  const view=document.body.dataset.page;
  const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let projectEnglish={},projectPortuguese={},refreshProjectUI=()=>{};
+ const localizedProject=p=>{
+   const current=window.YRUZ_LANG?.current?.();
+   const source=current==='en'?projectEnglish:current==='pt-BR'?projectPortuguese:null;
+   if(!source)return p;
+   const translation=source[String(p.slug)]||source[String(p.id)]||{};
+   return {...p,title:translation.title?.trim()||p.title,category:translation.category?.trim()||p.category};
+ };
+ window.addEventListener('yruz:language-change',()=>{refreshProjectUI();window.YRUZ_LANG?.refresh?.()});
+ fetch('/cms-content?page=portfolio',{cache:'no-store'}).then(res=>res.ok?res.json():null).then(data=>{
+   if(data?.page){projectEnglish=data.page.projectEnglish||{};projectPortuguese=data.page.projectPortuguese||{};refreshProjectUI();window.YRUZ_LANG?.refresh?.()}
+ }).catch(()=>{});
  const validMedia = u => {const s=String(u||'').trim();return /^(https?:\/\/|\/api\/media\/|\/assets\/|assets\/|medias\/)/i.test(s)&&!/[<>"'`]/.test(s)?s:''};
  const mediaImg=(url,alt,loading='lazy')=>`<img ${loading==='lazy'?'loading="lazy"':''} src="${escapeHtml(validMedia(url))}" alt="${escapeHtml(alt)}">`;
- const card=p=>`<a class="catalog-card" href="${yruzProjectUrl(p)}" aria-label="Ouvrir ${escapeHtml(p.title)}"><span class="catalog-image">${mediaImg(p.cover,p.title)}</span><span class="catalog-meta"><span class="catalog-kind">${p.mode==='video'?'▶ VIDÉO':'◈ PHOTO'} · ${escapeHtml(p.category)}</span><span class="catalog-title">${escapeHtml(p.title)}</span><span class="catalog-arrow" aria-hidden="true">↗</span></span></a>`;
+
+ // YouTube URLs are transformed into an ID; no third-party script loads until playback.
+ const youtubeInfo = raw => {
+  const value=String(raw||'').trim();
+  if(!/^https:\/\//i.test(value))return null;
+  try{
+   const url=new URL(value),host=url.hostname.toLowerCase().replace(/^www\./,'');
+   let id='',vertical=false;
+   if(host==='youtu.be')id=url.pathname.split('/')[1]||'';
+   else if(['youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com'].includes(host)){
+    const segments=url.pathname.split('/').filter(Boolean);
+    if(segments[0]==='watch')id=url.searchParams.get('v')||'';
+    else if(['shorts','live','embed','v'].includes(segments[0])){id=segments[1]||'';vertical=segments[0]==='shorts'}
+   }
+   return /^[a-zA-Z0-9_-]{11}$/.test(id)?{id,vertical,thumb:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}:null;
+  }catch{return null}
+ };
+
+ const isGraphic = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
+ const matchesFilter = (p, filter) => filter === 'graphisme' ? isGraphic(p) : filter === 'photo' ? p.mode === 'photo' && !isGraphic(p) : p.mode === 'video';
+ const card=original=>{const p=localizedProject(original);const yt=p.mode==='video'?youtubeInfo(p.video):null;const cover=validMedia(p.cover)||(yt?yt.thumb:'');return `<a class="catalog-card ${yt?'yruz-video-card':''}" href="${yruzProjectUrl(p)}" aria-label="Ouvrir ${escapeHtml(p.title)}"><span class="catalog-image">${cover?mediaImg(cover,p.title):'<span class="yruz-video-missing-cover">YRUZPHOTO / VIDÉO</span>'}${yt?'<span class="yruz-video-card-play" aria-hidden="true">▶</span>':''}</span><span class="catalog-meta"><span class="catalog-kind">${p.mode==='video'?'▶ VIDÉO':isGraphic(p)?'✦ GRAPHISME':'◈ PHOTO'} · ${escapeHtml(p.category)}</span><span class="catalog-title">${escapeHtml(p.title)}</span><span class="catalog-arrow" aria-hidden="true">↗</span></span></a>`};
  if(view==='catalog'){
   const grid=document.getElementById('catalogGrid'),tabs=[...document.querySelectorAll('[data-filter]')];
-  let filter=params.get('type')==='video'?'video':'photo';
-  function render(){tabs.forEach(el=>{const selected=el.dataset.filter===filter;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',String(selected))});const subset=items.filter(p=>p.mode===filter);grid.innerHTML=subset.map(card).join('');document.getElementById('projectCount').textContent=`${String(subset.length).padStart(2,'0')} PROJETS`;const url=new URL(location.href);url.searchParams.set('type',filter);history.replaceState(null,'',url)}
-  tabs.forEach(el=>el.addEventListener('click',()=>{filter=el.dataset.filter;render()}));render();
+  let filter=['photo','video','graphisme'].includes(params.get('type'))?params.get('type'):'photo';
+  function render(){tabs.forEach(el=>{const selected=el.dataset.filter===filter;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',String(selected))});const subset=items.filter(p=>matchesFilter(p,filter));grid.innerHTML=subset.length?subset.map(card).join(''):`<div class="catalog-empty-v42"><span>YRUZPHOTO / ${escapeHtml(filter.toUpperCase())}</span><h2>LES PROJETS ARRIVENT.</h2><p>De nouvelles créations seront visibles ici dès leur mise en ligne.</p></div>`;document.getElementById('projectCount').textContent=`${String(subset.length).padStart(2,'0')} PROJETS`;const url=new URL(location.href);url.searchParams.set('type',filter);history.replaceState(null,'',url)}
+  tabs.forEach(el=>el.addEventListener('click',()=>{filter=el.dataset.filter;render()}));refreshProjectUI=render;render();
  }
  if(view==='project'){
   const p=items.find(x=>x.id===params.get('id'));const content=document.getElementById('projectContent');
   if(!p){content.innerHTML='<h1>PROJET INTROUVABLE</h1><p>Ce dossier n’existe pas dans le catalogue.</p><a class="btn outline" href="portfolio.html">RETOUR AU PORTFOLIO ↗</a>';return}
   document.title=p.title+' — YRUZPHOTO';
-  const related=items.filter(x=>x.mode===p.mode&&x.id!==p.id).slice(0,3);
+  const projectType=isGraphic(p)?'graphisme':p.mode;
+  const related=items.filter(x=>matchesFilter(x,projectType)&&x.id!==p.id).slice(0,3);
+  // V54: The media carousel is the first visual element of every project.
+  // The cover remains on the portfolio thumbnail; it is not repeated above the carousel.
   const gallery=(Array.isArray(p.gallery)?p.gallery:[]).map(validMedia).filter(Boolean);
   const hasVideo=Boolean(validMedia(p.video));
+  // A project with only a cover still gets a one-image viewer, not an empty page.
+  if(!gallery.length && !hasVideo && validMedia(p.cover))gallery.push(validMedia(p.cover));
   const isEmpty=!gallery.length&&!hasVideo;
-  const mansCarousel=p.mode==='photo' && gallery.length>1;
-  const galleryCarouselMarkup=mansCarousel?`<div class="mans-carousel" aria-label="Carrousel du reportage"><div class="mans-carousel-view"><button type="button" class="mans-slide-button" data-gallery-index="0" aria-label="Agrandir la photographie affichée"><img class="mans-main-image" src="${escapeHtml(gallery[0])}" alt="${escapeHtml(p.title)} — photo 1"><span class="mans-open">AGRANDIR ↗</span></button><button type="button" class="mans-arrow mans-arrow-prev" aria-label="Photographie précédente">←</button><button type="button" class="mans-arrow mans-arrow-next" aria-label="Photographie suivante">→</button></div><div class="mans-carousel-footer"><span class="mans-carousel-count">01 / ${String(gallery.length).padStart(2,'0')}</span><div class="mans-progress"><span></span></div><span class="mans-carousel-label">GLISSER OU CLIQUER</span></div><div class="mans-filmstrip" aria-label="Choisir une photographie">${gallery.map((url,i)=>`<button class="mans-thumb" type="button" data-slide-index="${i}" aria-label="Afficher la photo ${i+1}" aria-current="${i===0?'true':'false'}"><img src="${escapeHtml(url)}" alt="" loading="lazy"></button>`).join('')}</div></div>`:'';
+  const mansCarousel=gallery.length>0;
+  const galleryCarouselMarkup=mansCarousel?`<div class="mans-carousel" aria-label="Carrousel du reportage"><div class="mans-carousel-view"><button type="button" class="mans-slide-button" data-gallery-index="0" aria-label="Agrandir la photographie affichée"><img class="mans-main-image" src="${escapeHtml(gallery[0])}" alt="${escapeHtml(p.title)} — photo 1"><span class="mans-open">AGRANDIR ↗</span></button><button type="button" class="mans-arrow mans-arrow-prev" ${gallery.length===1?'hidden':''} aria-label="Photographie précédente">←</button><button type="button" class="mans-arrow mans-arrow-next" ${gallery.length===1?'hidden':''} aria-label="Photographie suivante">→</button></div><div class="mans-carousel-footer"><span class="mans-carousel-count">01 / ${String(gallery.length).padStart(2,'0')}</span><div class="mans-progress"><span></span></div><span class="mans-carousel-label">GLISSER OU CLIQUER</span></div><div class="mans-filmstrip" aria-label="Choisir une photographie">${gallery.map((url,i)=>`<button class="mans-thumb" type="button" data-slide-index="${i}" aria-label="Afficher la photo ${i+1}" aria-current="${i===0?'true':'false'}"><img src="${escapeHtml(url)}" alt="" loading="lazy"></button>`).join('')}</div></div>`:'';
   const galleryMarkup=gallery.length?`<div class="gallery-heading"><div><span class="eyebrow">${p.demoGallery?'PHOTOS DE DÉMONSTRATION':'GALERIE DU PROJET'}</span><h2>LES IMAGES</h2></div><span>${String(gallery.length).padStart(2,'0')} VISUELS · CLIQUEZ POUR AGRANDIR</span></div><div class="project-gallery">${gallery.map((url,i)=>`<button class="gallery-image" type="button" data-gallery-index="${i}" aria-label="Agrandir la photo ${i+1} sur ${gallery.length}">${mediaImg(url,`${p.title} — photo ${i+1}`)}<span class="gallery-zoom">↗</span></button>`).join('')}</div>`:'<div class="gallery-empty">Les médias de ce projet seront ajoutés prochainement.</div>';
-  const videoMarkup=hasVideo?`<div class="gallery-heading"><div><span class="eyebrow">FILM</span><h2>LA VIDÉO</h2></div></div><video controls playsinline preload="metadata" poster="${escapeHtml(validMedia(p.cover))}" src="${escapeHtml(validMedia(p.video))}">Votre navigateur ne prend pas en charge cette vidéo.</video>`:'';
-  content.innerHTML=`<div class="project-overline">${p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'} / ${escapeHtml(p.category)}</div><h1>${escapeHtml(p.title)}</h1><div class="project-actions"><a class="btn outline" href="portfolio.html?type=${p.mode}">← TOUS LES PROJETS</a><span class="project-state">${p.demoGallery?'GALERIE DE DÉMONSTRATION — PHOTOS À REMPLACER':isEmpty?'DOSSIER PRÊT À RECEVOIR VOS FICHIERS':`${gallery.length} PHOTO${gallery.length>1?'S':''}${hasVideo?' · 1 VIDÉO':''}`}</span></div><div class="project-cover">${mediaImg(p.cover,p.title,'eager')}</div>${videoMarkup}${mansCarousel?galleryCarouselMarkup:galleryMarkup}<div class="project-next"><div><span class="eyebrow">POUR ALLER PLUS LOIN</span><h2>À DÉCOUVRIR AUSSI</h2></div><div class="catalog-grid">${related.map(card).join('')}</div></div>`;
+  const videoEmbed=(raw)=>{
+    const src=validMedia(raw);if(!src)return '';
+    const yt=youtubeInfo(src);
+    if(yt){
+      const cover=validMedia(p.cover)||yt.thumb;
+      return `<div class="yruz-youtube-player ${yt.vertical?'yruz-youtube-vertical':''}" data-youtube-player="${yt.id}"><button type="button" class="yruz-youtube-poster" data-youtube-play="${yt.id}" aria-label="Lire la vidéo ${escapeHtml(p.title)}"><img src="${escapeHtml(cover)}" alt="" loading="lazy"><span class="yruz-youtube-shade"></span><span class="yruz-youtube-play-icon" aria-hidden="true">▶</span><span class="yruz-youtube-caption"><small>YRUZPHOTO / VIDÉO</small><strong>REGARDER LE FILM</strong></span></button><noscript><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Regarder sur YouTube</a></noscript></div>`;
+    }
+    // Preserve older Vimeo and self-hosted MP4 projects.
+    try{
+      const u=new URL(src,location.origin),host=u.hostname.toLowerCase().replace(/^www\./,'');
+      if(host==='vimeo.com'||host==='player.vimeo.com'){
+        const id=u.pathname.match(/\d{6,12}/)?.[0];
+        if(id)return `<iframe class="project-video-embed" src="https://player.vimeo.com/video/${id}" title="Vidéo ${escapeHtml(p.title)}" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      }
+      // Only actual video files are passed to HTML5 video, not arbitrary URLs.
+      if(/\.(mp4|webm|ogg)(?:[?#]|$)/i.test(u.pathname))return `<video controls playsinline preload="none" poster="${escapeHtml(validMedia(p.cover))}" src="${escapeHtml(src)}">Votre navigateur ne prend pas en charge cette vidéo.</video>`;
+    }catch{}
+    return '<div class="yruz-video-error">Lien vidéo non reconnu. Ajoute une URL YouTube valide depuis le Studio.</div>';
+  };
+  const videoMarkup=hasVideo?`<div class="gallery-heading"><div><span class="eyebrow">FILM</span><h2>LA VIDÉO</h2></div></div>${videoEmbed(p.video)}`:'';
+  content.innerHTML=`<div class="project-overline">${isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'} / ${escapeHtml(p.category)}</div><h1>${escapeHtml(p.title)}</h1><div class="project-actions"><a class="btn outline" href="portfolio.html?type=${projectType}">← TOUS LES PROJETS</a><span class="project-state">${p.demoGallery?'GALERIE DE DÉMONSTRATION — PHOTOS À REMPLACER':isEmpty?'DOSSIER PRÊT À RECEVOIR VOS FICHIERS':`${gallery.length} PHOTO${gallery.length>1?'S':''}${hasVideo?' · 1 VIDÉO':''}`}</span></div>${videoMarkup}${mansCarousel?galleryCarouselMarkup:(hasVideo?'':galleryMarkup)}<div class="project-next"><div><span class="eyebrow">POUR ALLER PLUS LOIN</span><h2>À DÉCOUVRIR AUSSI</h2></div><div class="catalog-grid">${related.map(card).join('')}</div></div>`;
+  refreshProjectUI=()=>{
+    const translated=localizedProject(p),heading=content.querySelector('h1'),overline=content.querySelector('.project-overline');
+    if(heading)heading.textContent=translated.title;
+    if(overline)overline.textContent=(window.YRUZ_LANG?.current?.()==='pt-BR'?(isGraphic(p)?'DESIGN GRÁFICO':p.mode==='photo'?'FOTOGRAFIA':'VÍDEO'):window.YRUZ_LANG?.current?.()==='en'?(isGraphic(p)?'DESIGN':p.mode==='photo'?'PHOTOGRAPHY':'VIDEO'):(isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'))+' / '+translated.category;
+    document.title=translated.title+' — YRUZPHOTO';
+  };
+  refreshProjectUI();
+  content.querySelectorAll('[data-youtube-play]').forEach(button=>button.addEventListener('click',()=>{
+   const id=button.dataset.youtubePlay;
+   if(!/^[a-zA-Z0-9_-]{11}$/.test(id||''))return;
+   const frame=document.createElement('iframe');
+   frame.className='yruz-youtube-frame';
+   frame.title='Lecture : '+p.title;
+   frame.src=`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
+   frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
+   frame.referrerPolicy='strict-origin-when-cross-origin';
+   frame.allowFullscreen=true;
+   button.replaceWith(frame);
+  }));
   if(gallery.length){
    const overlay=document.createElement('div');overlay.className='yruz-lightbox';overlay.hidden=true;overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Visionneuse de photos');
    overlay.innerHTML='<button class="lb-close" type="button" aria-label="Fermer la visionneuse">✕</button><button class="lb-prev" type="button" aria-label="Photo précédente">←</button><figure><img alt=""><figcaption></figcaption></figure><button class="lb-next" type="button" aria-label="Photo suivante">→</button>';
@@ -54,8 +129,8 @@
       thumbs[slide].scrollIntoView({block:'nearest',inline:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
       requestAnimationFrame(()=>requestAnimationFrame(()=>main.classList.remove('is-changing')));
     }
-    carousel.querySelector('.mans-arrow-prev').addEventListener('click',()=>selectSlide(slide-1));
-    carousel.querySelector('.mans-arrow-next').addEventListener('click',()=>selectSlide(slide+1));
+    carousel.querySelector('.mans-arrow-prev')?.addEventListener('click',()=>selectSlide(slide-1));
+    carousel.querySelector('.mans-arrow-next')?.addEventListener('click',()=>selectSlide(slide+1));
     thumbs.forEach((thumb,i)=>thumb.addEventListener('click',()=>selectSlide(i)));
     const viewport=carousel.querySelector('.mans-carousel-view');
     viewport.addEventListener('pointerdown',e=>{startX=e.clientX});
