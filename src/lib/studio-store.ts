@@ -63,27 +63,48 @@ const defaults = (): StudioRecord => ({
   }])),
 })
 
-// V76: Studio content now lives in Neon, not in a new Blob on every publish.
-// Only a one-time import reads the historical versioned Blob objects.
-// Keeping a single SQL row avoids list() calls on every site visit.
+// V77: Studio pages are stored in Neon. Historical Blob snapshots are read only
+// for their one-time import. No missing or inaccessible snapshot is ever
+// replaced automatically by demo data.
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 3 })
 let initialization: Promise<void> | undefined
+
+export class StudioRecoveryError extends Error {
+  readonly code = 'STUDIO_RECOVERY_PENDING'
+  constructor(message: string, readonly retryAt: string | null = null) {
+    super(message)
+    this.name = 'StudioRecoveryError'
+  }
+}
+
 async function ensureTable(): Promise<void> {
   if (!initialization) {
-    initialization = pool.query(`CREATE TABLE IF NOT EXISTS yruzphoto_studio_content (
-      id integer PRIMARY KEY CHECK (id = 1),
-      revision text NOT NULL,
-      content jsonb NOT NULL,
-      updated_at timestamptz NOT NULL DEFAULT now()
-    )`).then(() => undefined).catch(error => { initialization = undefined; throw error })
+    initialization = Promise.all([
+      pool.query(`CREATE TABLE IF NOT EXISTS yruzphoto_studio_content (
+        id integer PRIMARY KEY CHECK (id = 1),
+        revision text NOT NULL,
+        content jsonb NOT NULL,
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )`),
+      // Shared across Vercel instances: prevents repeated list() calls while
+      // Blob is rate-limited or unavailable. It contains no site content.
+      pool.query(`CREATE TABLE IF NOT EXISTS yruzphoto_studio_migration_control (
+        id integer PRIMARY KEY CHECK (id = 1),
+        retry_at timestamptz NOT NULL DEFAULT to_timestamp(0),
+        manual_retry_at timestamptz NOT NULL DEFAULT to_timestamp(0),
+        last_error text NOT NULL DEFAULT ''
+      )`),
+    ]).then(() => undefined).catch(error => { initialization = undefined; throw error })
   }
   return initialization
 }
+
 async function fromDatabase(): Promise<StudioRecord | null> {
   await ensureTable()
   const result = await pool.query('SELECT content FROM yruzphoto_studio_content WHERE id = 1')
   return result.rows[0]?.content as StudioRecord || null
 }
+
 function mergeWithDefaults(stored: StudioRecord): StudioRecord {
   const initial = defaults()
   return {
@@ -100,14 +121,16 @@ function mergeWithDefaults(stored: StudioRecord): StudioRecord {
     ])),
   }
 }
+
 async function importLegacyBlob(): Promise<StudioRecord> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) throw new Error('BLOB_READ_WRITE_TOKEN missing; cannot migrate Studio')
-  // Imported once. Subsequent reads and saves are entirely Neon-based.
+  const token = process.env.BLOB_READ_WRITE_TOKEN
+  if (!token) throw new Error('Token de lecture Vercel Blob manquant')
+
   let cursor: string | undefined
-  let latest: { pathname: string, url: string } | undefined
+  let latest: { pathname: string; url: string } | undefined
   let loops = 0
   do {
-    const batch = await list({ prefix: PREFIX, limit: 1000, cursor, token: process.env.BLOB_READ_WRITE_TOKEN })
+    const batch = await list({ prefix: PREFIX, limit: 1000, cursor, token })
     for (const blob of batch.blobs) {
       if (blob.pathname.endsWith('.json') && (!latest || blob.pathname > latest.pathname)) {
         latest = { pathname: blob.pathname, url: blob.url }
@@ -116,27 +139,102 @@ async function importLegacyBlob(): Promise<StudioRecord> {
     cursor = batch.hasMore ? batch.cursor : undefined
     loops++
   } while (cursor && loops < 30)
-  if (!latest) return defaults()
-  const response = await fetch(latest.url, { cache: 'no-store' })
-  if (!response.ok) throw new Error(`Studio Blob migration unavailable: HTTP ${response.status}`)
-  return mergeWithDefaults(await response.json() as StudioRecord)
+
+  // No automatic 'initial' document is published: an empty list can also mean
+  // a misconfigured Blob store. Protect the owner's previous changes.
+  if (!latest) throw new Error('Aucune sauvegarde Studio trouvée dans ce Blob Store')
+  if (cursor) throw new Error('La liste des sauvegardes Studio est incomplète')
+
+  const url = new URL(latest.url)
+  // Do not forward the private token to a URL outside the official Blob CDN.
+  if (url.protocol !== 'https:' || !/^[a-z0-9-]+\.(private|public)\.blob\.vercel-storage\.com$/.test(url.hostname)) {
+    throw new Error('Adresse de sauvegarde Blob invalide')
+  }
+  const privateStore = url.hostname.includes('.private.blob.vercel-storage.com')
+  const response = await fetch(url, {
+    cache: 'no-store',
+    // A private Blob URL returns HTTP 403 without an Authorization header.
+    headers: privateStore ? { Authorization: `Bearer ${token}` } : undefined,
+    signal: AbortSignal.timeout(20000),
+  })
+  if (!response.ok) throw new Error(`Lecture de la sauvegarde Blob refusée : HTTP ${response.status}`)
+
+  const stored: unknown = await response.json()
+  if (!stored || typeof stored !== 'object' || !('pages' in stored) ||
+      !stored.pages || typeof stored.pages !== 'object' || !Object.keys(stored.pages).length) {
+    throw new Error('Le fichier de sauvegarde Studio ne contient pas de pages valides')
+  }
+  return mergeWithDefaults(stored as StudioRecord)
 }
 
-let migration: Promise<StudioRecord> | undefined
+async function claimMigration(): Promise<boolean> {
+  const result = await pool.query(`INSERT INTO yruzphoto_studio_migration_control (id, retry_at)
+    VALUES (1, now() + interval '5 minutes')
+    ON CONFLICT (id) DO UPDATE SET retry_at = EXCLUDED.retry_at, last_error = ''
+    WHERE yruzphoto_studio_migration_control.retry_at <= now()
+    RETURNING id`)
+  return Boolean(result.rowCount)
+}
+
+function readableFailure(error: unknown): string {
+  const raw = error instanceof Error ? error.message : ''
+  if (/HTTP 403/.test(raw)) return 'Vercel Blob refuse la lecture de la sauvegarde (HTTP 403). Les données restent protégées.'
+  if (/HTTP 429/.test(raw)) return 'Le quota Vercel Blob est temporairement limité (HTTP 429).'
+  if (/Aucune sauvegarde/.test(raw)) return 'Aucune sauvegarde Studio trouvée. Vérifier le Blob Store connecté, sans le recréer.'
+  if (/Token de lecture/.test(raw)) return 'Token Vercel Blob absent. Vérifier la connexion du stockage à ce projet.'
+  return 'Sauvegarde Studio temporairement inaccessible ; la récupération doit être réessayée.'
+}
+
+async function migrationUnavailable(): Promise<StudioRecoveryError> {
+  const result = await pool.query(`SELECT retry_at, last_error
+    FROM yruzphoto_studio_migration_control WHERE id = 1`)
+  const row = result.rows[0]
+  if (!row) return new StudioRecoveryError('Récupération du Studio en cours.')
+  return new StudioRecoveryError(
+    row.last_error || 'Récupération des données du Studio en cours. Réessaye dans quelques instants.',
+    row.retry_at ? new Date(row.retry_at).toISOString() : null,
+  )
+}
+
+let migration: Promise<void> | undefined
+async function migrateOnce(): Promise<void> {
+  await ensureTable()
+  if (!await claimMigration()) throw await migrationUnavailable()
+  try {
+    const imported = await importLegacyBlob()
+    await pool.query(`INSERT INTO yruzphoto_studio_content (id, revision, content)
+      VALUES (1, $1, $2::jsonb) ON CONFLICT (id) DO NOTHING`,
+      [imported.revision, JSON.stringify(imported)])
+    await pool.query(`UPDATE yruzphoto_studio_migration_control SET last_error = '', retry_at = now()
+      WHERE id = 1`)
+  } catch (error) {
+    const reason = readableFailure(error)
+    const result = await pool.query(`UPDATE yruzphoto_studio_migration_control
+      SET last_error = $1, retry_at = now() + interval '6 hours'
+      WHERE id = 1 RETURNING retry_at`, [reason])
+    throw new StudioRecoveryError(reason, result.rows[0]?.retry_at ? new Date(result.rows[0].retry_at).toISOString() : null)
+  }
+}
+
+export async function requestStudioMigrationRetry(): Promise<boolean> {
+  // Authenticated route only. One manual retry per 10 minutes prevents
+  // repeated paid operations when the quota is already exhausted.
+  if (await fromDatabase()) return true
+  const result = await pool.query(`UPDATE yruzphoto_studio_migration_control
+    SET retry_at = now() - interval '1 second',
+        manual_retry_at = now() + interval '10 minutes', last_error = ''
+    WHERE id = 1 AND last_error <> '' AND manual_retry_at <= now()
+    RETURNING id`)
+  return Boolean(result.rowCount)
+}
+
 export async function getStudioContent(): Promise<StudioRecord> {
   const existing = await fromDatabase()
   if (existing) return structuredClone(mergeWithDefaults(existing))
-  // Never silently erase the owner's published changes if Blob is quota-blocked.
-  if (!migration) migration = (async () => {
-    const imported = await importLegacyBlob()
-    await pool.query(`INSERT INTO yruzphoto_studio_content (id,revision,content)
-      VALUES (1,$1,$2::jsonb) ON CONFLICT (id) DO NOTHING`,
-      [imported.revision, JSON.stringify(imported)])
-    return imported
-  })().catch(error => { migration = undefined; throw error })
+  if (!migration) migration = migrateOnce().finally(() => { migration = undefined })
   await migration
   const persisted = await fromDatabase()
-  if (!persisted) throw new Error('Studio migration was not persisted in Neon')
+  if (!persisted) throw new StudioRecoveryError('Importation terminée, mais aucune sauvegarde n’a été inscrite dans Neon.')
   return structuredClone(mergeWithDefaults(persisted))
 }
 
@@ -276,6 +374,40 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
     mediaFrames[source] = { x:limit(f.x,0,100,50),y:limit(f.y,0,100,50),zoom:limit(f.zoom,1,2,1),fit:f.fit==='contain'?'contain':'cover' }
   }
   return { revision: 'initial', savedAt: '', navigation, pages, libraryFolders:{names,assignments}, mediaFrames }
+}
+
+// V78: owner-initiated recovery from a local JSON backup, not a Blob read.
+// The INSERT is deliberately non-destructive: an existing Neon record wins.
+export async function restoreStudioBackup(raw: unknown): Promise<StudioRecord> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw Object.assign(new Error('Sauvegarde JSON invalide.'), { code: 'INVALID_BACKUP' })
+  }
+  const source = raw as Record<string, unknown>
+  if (!source.navigation || typeof source.navigation !== 'object' ||
+      !source.pages || typeof source.pages !== 'object' || Array.isArray(source.pages) ||
+      !['accueil', 'portfolio', 'services', 'histoire', 'equipement', 'contact', 'pokedex']
+        .every(page => Object.hasOwn(source.pages as object, page)) ||
+      typeof source.revision !== 'string' || !source.revision ||
+      typeof source.savedAt !== 'string' || !Number.isFinite(Date.parse(source.savedAt))) {
+    throw Object.assign(new Error('Sauvegarde incomplète ou incompatible avec YRUZPHOTO.'), { code: 'INVALID_BACKUP' })
+  }
+  await ensureTable()
+  const clean: StudioRecord = {
+    ...sanitizeStudio(source),
+    revision: source.revision.slice(0, 100),
+    savedAt: source.savedAt,
+  }
+  const result = await pool.query(`INSERT INTO yruzphoto_studio_content (id, revision, content)
+    VALUES (1, $1, $2::jsonb) ON CONFLICT (id) DO NOTHING RETURNING id`,
+    [clean.revision, JSON.stringify(clean)])
+  if (!result.rowCount) {
+    throw Object.assign(new Error('Neon contient déjà une sauvegarde. Aucun contenu n’a été écrasé.'), { code: 'RESTORE_EXISTS' })
+  }
+  await pool.query(`UPDATE yruzphoto_studio_migration_control
+    SET last_error = '', retry_at = now() WHERE id = 1`).catch(error => {
+    console.warn('La sauvegarde est restaurée, mais le statut de migration reste inchangé :', error)
+  })
+  return structuredClone(clean)
 }
 
 export async function saveStudioContent(input: unknown, expectedRevision: unknown): Promise<StudioRecord> {
