@@ -1,10 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-<<<<<<< HEAD
 import { getStudioContent, saveStudioContent, restoreStudioBackup, requestStudioMigrationRetry, StudioRecoveryError } from '@/lib/studio-store'
-=======
-import { getStudioContent, saveStudioContent, requestStudioMigrationRetry, StudioRecoveryError } from '@/lib/studio-store'
->>>>>>> 9d8d8dd39f5a1526d43a6faabb567b492061a91b
 
 export const dynamic = 'force-dynamic'
 const headers = { 'Cache-Control': 'no-store' }
@@ -74,7 +70,6 @@ export async function POST(request: Request) {
     if (!origin || new URL(origin).host !== new URL(request.url).host) return Response.json({ error: 'Origine de la requête invalide' }, { status: 403, headers })
     const { user } = await authenticated(request)
     if (!user) return Response.json({ error: 'Connexion requise' }, { status: 401, headers })
-<<<<<<< HEAD
     // Owner-initiated restore: the browser uploads a local JSON backup.
     // Never overwrite a newer or existing Neon configuration.
     if (new URL(request.url).searchParams.get('restoreBackup') === '1') {
@@ -95,8 +90,6 @@ export async function POST(request: Request) {
         throw error
       }
     }
-=======
->>>>>>> 9d8d8dd39f5a1526d43a6faabb567b492061a91b
     if (new URL(request.url).searchParams.get('retryMigration') === '1') {
       if (!await requestStudioMigrationRetry()) {
         return Response.json({ error: 'Nouvel essai déjà effectué récemment. Réessaye dans dix minutes.' }, { status: 429, headers })
