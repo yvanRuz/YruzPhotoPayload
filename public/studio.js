@@ -644,7 +644,6 @@ async function importPhotos(files){
 }
 
 async function refreshMedia(){if($('#mediaModal').open)await showMedia(pickerPage);if(selection==='media')await loadLibrary(library.page);message('Médiathèque actualisée')}
-<<<<<<< HEAD
 // V78: the owner can restore a downloaded Studio JSON without any Blob call.
 function restorePanel(){
  const host=$('#editor');
@@ -670,8 +669,6 @@ function restorePanel(){
   }catch(error){result.textContent='Restauration impossible : '+(error.message||String(error));btn.disabled=false}
  });
 }
-=======
->>>>>>> 9d8d8dd39f5a1526d43a6faabb567b492061a91b
 async function initialLoad(){try{
  const r=await fetch('/studio-api',{cache:'no-store',credentials:'same-origin'});
  const data=await r.json();
@@ -686,19 +683,12 @@ async function initialLoad(){try{
      '<section class="form-panel"><h2>Inventaire des médias Payload (lecture seule)</h2><p>Les fichiers ci-dessous sont référencés dans la base Payload. Leur affichage peut rester bloqué tant que le quota Blob n’est pas rétabli. Ne supprime rien et ne publie pas de nouvelle configuration.</p>'+
      (data.mediaAvailable?'<p>'+media.length+' médias retrouvés parmi les 200 plus récents.</p>':'<p>La liste des médias Payload est momentanément indisponible.</p>')+
      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">'+media.map(m=>'<div style="min-width:0;overflow:hidden"><img loading="lazy" style="width:100%;height:110px;object-fit:cover" src="'+e(validSrc(m.url))+'" alt="'+e(m.alt||m.filename||'Photo')+'"><small style="display:block;overflow-wrap:anywhere">'+e(m.alt||m.filename||'Média')+'</small></div>').join('')+'</div></section>';
-<<<<<<< HEAD
    restorePanel();
-=======
->>>>>>> 9d8d8dd39f5a1526d43a6faabb567b492061a91b
    return;
  }
  state={revision:data.content.revision,content:data.content};media=data.media||[];projects=data.projects||[];dirty=false;$('#saveBtn').disabled=false;
  setStatus(data.content.savedAt?'Enregistré — modifications en ligne':'Prêt à publier');render();loadProjectDocs();
-<<<<<<< HEAD
  }catch(error){console.error(error);setStatus('Connexion impossible',true);$('#saveBtn').disabled=true;$('#editor').innerHTML='<div class="danger-message">'+e(error.message||'Chargement impossible')+'</div>';restorePanel();message('Chargement impossible',true)}}
-=======
- }catch(error){console.error(error);setStatus('Connexion impossible',true);$('#saveBtn').disabled=true;$('#editor').innerHTML='<div class="danger-message">'+e(error.message||'Chargement impossible')+'</div>';message('Chargement impossible',true)}}
->>>>>>> 9d8d8dd39f5a1526d43a6faabb567b492061a91b
 async function save(){if(!state||loading)return;loading=true;$('#saveBtn').disabled=true;setStatus('Publication en cours…');try{const r=await fetch('/studio-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:state.revision,content:state.content}),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Erreur '+r.status);state.revision=data.revision;state.content=data.content;dirty=false;$('#saveBtn').hidden=selection==='media'||selection==='projects';setStatus('Publié — actualise ton site');message('✓ Modifications publiées sur YRUZPHOTO')}catch(error){setStatus('Publication échouée',true);message(error.message||'Erreur pendant la publication',true)}finally{loading=false;$('#saveBtn').disabled=false}}
 function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset.index),i=Number(btn.dataset.item),dir=Number(btn.dataset.dir);
  const root=currentRoot(),sections=sectionList();
