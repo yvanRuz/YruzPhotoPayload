@@ -376,6 +376,40 @@ export function sanitizeStudio(raw: unknown): StudioRecord {
   return { revision: 'initial', savedAt: '', navigation, pages, libraryFolders:{names,assignments}, mediaFrames }
 }
 
+// V78: owner-initiated recovery from a local JSON backup, not a Blob read.
+// The INSERT is deliberately non-destructive: an existing Neon record wins.
+export async function restoreStudioBackup(raw: unknown): Promise<StudioRecord> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw Object.assign(new Error('Sauvegarde JSON invalide.'), { code: 'INVALID_BACKUP' })
+  }
+  const source = raw as Record<string, unknown>
+  if (!source.navigation || typeof source.navigation !== 'object' ||
+      !source.pages || typeof source.pages !== 'object' || Array.isArray(source.pages) ||
+      !['accueil', 'portfolio', 'services', 'histoire', 'equipement', 'contact', 'pokedex']
+        .every(page => Object.hasOwn(source.pages as object, page)) ||
+      typeof source.revision !== 'string' || !source.revision ||
+      typeof source.savedAt !== 'string' || !Number.isFinite(Date.parse(source.savedAt))) {
+    throw Object.assign(new Error('Sauvegarde incomplète ou incompatible avec YRUZPHOTO.'), { code: 'INVALID_BACKUP' })
+  }
+  await ensureTable()
+  const clean: StudioRecord = {
+    ...sanitizeStudio(source),
+    revision: source.revision.slice(0, 100),
+    savedAt: source.savedAt,
+  }
+  const result = await pool.query(`INSERT INTO yruzphoto_studio_content (id, revision, content)
+    VALUES (1, $1, $2::jsonb) ON CONFLICT (id) DO NOTHING RETURNING id`,
+    [clean.revision, JSON.stringify(clean)])
+  if (!result.rowCount) {
+    throw Object.assign(new Error('Neon contient déjà une sauvegarde. Aucun contenu n’a été écrasé.'), { code: 'RESTORE_EXISTS' })
+  }
+  await pool.query(`UPDATE yruzphoto_studio_migration_control
+    SET last_error = '', retry_at = now() WHERE id = 1`).catch(error => {
+    console.warn('La sauvegarde est restaurée, mais le statut de migration reste inchangé :', error)
+  })
+  return structuredClone(clean)
+}
+
 export async function saveStudioContent(input: unknown, expectedRevision: unknown): Promise<StudioRecord> {
   // Ensure migration finishes before accepting any edit; never overwrite an
   // inaccessible historical Studio snapshot with demo/default content.

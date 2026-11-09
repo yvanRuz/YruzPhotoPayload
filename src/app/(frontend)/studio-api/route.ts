@@ -1,6 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { getStudioContent, saveStudioContent, requestStudioMigrationRetry, StudioRecoveryError } from '@/lib/studio-store'
+import { getStudioContent, saveStudioContent, restoreStudioBackup, requestStudioMigrationRetry, StudioRecoveryError } from '@/lib/studio-store'
 
 export const dynamic = 'force-dynamic'
 const headers = { 'Cache-Control': 'no-store' }
@@ -70,6 +70,26 @@ export async function POST(request: Request) {
     if (!origin || new URL(origin).host !== new URL(request.url).host) return Response.json({ error: 'Origine de la requête invalide' }, { status: 403, headers })
     const { user } = await authenticated(request)
     if (!user) return Response.json({ error: 'Connexion requise' }, { status: 401, headers })
+    // Owner-initiated restore: the browser uploads a local JSON backup.
+    // Never overwrite a newer or existing Neon configuration.
+    if (new URL(request.url).searchParams.get('restoreBackup') === '1') {
+      if (!request.headers.get('content-type')?.includes('application/json'))
+        return Response.json({ error: 'Format JSON attendu' }, { status: 415, headers })
+      const raw = await request.text()
+      if (raw.length > 1_000_000)
+        return Response.json({ error: 'Sauvegarde trop volumineuse (maximum 1 Mo).' }, { status: 413, headers })
+      let snapshot: unknown
+      try { snapshot = JSON.parse(raw) }
+      catch { return Response.json({ error: 'Le fichier JSON est invalide.' }, { status: 400, headers }) }
+      try {
+        const content = await restoreStudioBackup(snapshot)
+        return Response.json({ restored: true, revision: content.revision }, { headers })
+      } catch (error: any) {
+        if (error?.code === 'RESTORE_EXISTS') return Response.json({ error: error.message }, { status: 409, headers })
+        if (error?.code === 'INVALID_BACKUP') return Response.json({ error: error.message }, { status: 400, headers })
+        throw error
+      }
+    }
     if (new URL(request.url).searchParams.get('retryMigration') === '1') {
       if (!await requestStudioMigrationRetry()) {
         return Response.json({ error: 'Nouvel essai déjà effectué récemment. Réessaye dans dix minutes.' }, { status: 429, headers })
