@@ -49,6 +49,25 @@ export async function POST(request:Request){
   if(!['photo','video','graphisme'].includes(kind))return Response.json({error:'Rubrique invalide'},{status:400,headers})
   const title=clean(input.title,180),slug=clean(input.slug,120).toLowerCase();
   if(!title||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return Response.json({error:'Titre et identifiant valides requis (lettres minuscules et tirets)'},{status:400,headers})
+  // V80: store up to 12 video URLs in the existing text field (one per line).
+  // Avoid PostgreSQL schema changes and keep old single-video projects readable.
+  const originalVideo=clean(input.video,2000)
+  const videoItems=originalVideo.split(/\r?\n/).map(url=>url.trim()).filter(Boolean)
+  if(videoItems.length>12)return Response.json({error:'12 vidéos maximum par projet'},{status:400,headers})
+  if(kind==='video'){
+   for(const url of videoItems){
+    let accepted=false
+    try{
+     const parsed=new URL(url)
+     const host=parsed.hostname.toLowerCase().replace(/^www\./,'')
+     const youtube=['youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com','youtu.be'].includes(host)
+     const vimeo=['vimeo.com','player.vimeo.com'].includes(host)
+     const file=/\.(mp4|webm|ogg)$/i.test(parsed.pathname)
+     accepted=parsed.protocol==='https:'&&(youtube||vimeo||file)
+    }catch{}
+    if(!accepted)return Response.json({error:'Lien vidéo incorrect. Utiliser YouTube, Vimeo ou un fichier MP4/WebM HTTPS.'},{status:400,headers})
+   }
+  }
   const isStarter=typeof id==='string'&&id.startsWith('starter:')
   if(isStarter){
    // Prevent creating a second card with a new slug while the old starter card remains.
@@ -58,7 +77,7 @@ export async function POST(request:Request){
    if(existing.docs.length)return Response.json({error:'Ce projet existe déjà dans Payload. Actualise le Studio avant de le modifier.'},{status:409,headers})
   }
   const data:any={title,slug,mode:kind==='video'?'video':'photo',category:kind==='graphisme'?'GRAPHISME':clean(input.category,150),
-    video:clean(input.video,2000),order:Math.max(0,Math.min(99999,Math.round(Number(input.order)||0))),published:input.published!==false,
+    video:videoItems.join('\n'),order:Math.max(0,Math.min(99999,Math.round(Number(input.order)||0))),published:input.published!==false,
     cover:uploadId(input.cover),legacyCover:clean(input.legacyCover,2000),
     gallery:(Array.isArray(input.gallery)?input.gallery:[]).slice(0,150).map((row:any)=>({photo:uploadId(row.photo),legacyUrl:clean(row.legacyUrl,2000)}))}
   const result=id&&!isStarter?await payload.update({collection:'projects',id,data,overrideAccess:true}):await payload.create({collection:'projects',data,overrideAccess:true});

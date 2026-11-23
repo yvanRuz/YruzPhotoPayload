@@ -17,3 +17,16 @@
 .yruz-video-error{border:1px dashed #67859f;padding:26px;border-radius:12px;color:#a3c7df;font-size:13px}
 @media(max-width:767px){.yruz-video-card .yruz-video-card-play{width:54px;height:54px;font-size:18px}.yruz-youtube-player{border-radius:10px;margin:15px auto 28px}.yruz-youtube-play-icon{width:58px;height:58px;font-size:20px}.yruz-youtube-caption{left:15px;bottom:15px}.yruz-youtube-caption strong{font-size:24px}}
 @media(prefers-reduced-motion:reduce){.yruz-youtube-play-icon,.yruz-youtube-poster>img,.yruz-video-card .yruz-video-card-play{transition:none}}
+
+
+/* V80 — A video project can contain a collection of independent players. */
+.yruz-video-collection{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin:16px 0 46px}
+.yruz-video-collection.is-multi{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.yruz-video-entry{min-width:0;max-width:100%}
+.yruz-video-entry-label{font-size:10px;letter-spacing:.16em;color:#b7d2e4;margin:4px 0 10px}
+.yruz-video-entry .yruz-youtube-player{width:100%;margin:0;max-width:none;box-shadow:0 16px 40px #0004}
+.yruz-video-collection.is-multi .yruz-youtube-player.yruz-youtube-vertical{max-width:min(360px,100%);margin:0 auto}
+.yruz-video-entry .project-video-embed,.yruz-video-entry video{display:block;width:100%;margin:0;max-width:100%;border-radius:12px}
+.yruz-video-entry video{background:#061524;aspect-ratio:16/9;object-fit:contain}
+@media(max-width:800px){.yruz-video-collection.is-multi{grid-template-columns:minmax(0,1fr);gap:30px}}
+@media(max-width:767px){.yruz-video-entry-label{font-size:9px}.yruz-video-collection{gap:22px;margin-bottom:36px}.yruz-video-entry .yruz-youtube-player{border-radius:10px}}

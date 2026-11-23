@@ -20,7 +20,7 @@ function cardHTML(card,interactive=true){
  const rarity=rarities[card.rarity]?card.rarity:'commun',cover=safeImage(card.cover);
  const photo=cover?`<img src="${escapeHtml(cover)}" alt="${escapeHtml(card.cover?.alt||card.title||'Portrait')}" loading="lazy">`:'';
  const contents=`<span class="pd-card-photo">${photo}</span><span class="pd-corner" aria-hidden="true"></span><span class="pd-card-index">#${numberOf(card)}</span><span class="pd-card-rank" aria-label="${rarities[rarity].label}">${rarities[rarity].symbol}</span><span class="pd-card-meta"><strong>${escapeHtml(card.title||'RENCONTRE')}</strong><small>${escapeHtml(card.subtitle||card.category||rarities[rarity].label)}</small></span>`;
- return interactive?`<button type="button" class="pd-card rarity-${rarity} ${selected===card.id?'is-selected':''}" data-card="${escapeHtml(card.id)}" aria-label="Voir la carte ${escapeHtml(card.title||'sans nom')} (${rarities[rarity].label})">${contents}</button>`:`<div class="pd-card rarity-${rarity}">${contents}</div>`;
+ return interactive?`<button type="button" class="pd-card rarity-${rarity} ${selected===card.id?'is-selected':''}" data-card="${escapeHtml(card.id)}" aria-label="Voir la carte ${escapeHtml(card.title||'sans nom')} (${rarities[rarity].label})" aria-pressed="${selected===card.id}">${contents}</button>`:`<div class="pd-card rarity-${rarity}">${contents}</div>`;
 }
 function leafHTML(items,side){return `<div class="pd-leaf pd-leaf-${side}"><div class="pd-slot-grid">${items.map(c=>cardHTML(c)).join('')}</div></div>`}
 function renderBook(){
@@ -56,14 +56,14 @@ function refreshFilters(){
  $('#pd-filters').querySelectorAll('button').forEach(btn=>{btn.classList.toggle('is-active',btn.dataset.filter===filter);btn.setAttribute('aria-pressed',String(btn.dataset.filter===filter));btn.title=`${counts[btn.dataset.filter]||0} carte(s)`});
 }
 function rerender(keepSelection=true){
- const matches=getFiltered();if(!keepSelection||!matches.some(c=>c.id===selected)){selected=matches[0]?.id||null;chosenPhoto=0}
+ const matches=getFiltered();if(!keepSelection||!matches.some(c=>c.id===selected)){selected=null;chosenPhoto=0}
  renderBook();renderDetails();refreshFilters();
 }
 function turn(direction){
  if(turning)return;
  const max=Math.max(1,Math.ceil(getFiltered().length/perSpread()));const next=page+direction;if(next<0||next>=max)return;
  const book=$('#pd-book'),source=book.querySelector(direction>0?'.pd-leaf-right':'.pd-leaf-left');
- const finish=()=>{page=next;turning=false;renderBook()};
+ const finish=()=>{page=next;turning=false;selected=null;chosenPhoto=0;renderBook();renderDetails()};
  if(!source||matchMedia('(prefers-reduced-motion:reduce)').matches){finish();return}
  turning=true;const layer=document.createElement('div');layer.className='pd-turn-layer '+(direction>0?'next':'previous');layer.innerHTML=source.outerHTML;book.appendChild(layer);
  requestAnimationFrame(()=>requestAnimationFrame(()=>layer.classList.add('go')));

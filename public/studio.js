@@ -9,7 +9,7 @@ const e = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':
 const validSrc = s => { const x=String(s||'').trim(); return /^(https?:\/\/[^\s<>"'`]+|\/api\/media\/[^\s<>"'`]+|\/?assets\/[^\s<>"'`]+)$/i.test(x)?x:'' };
 const clone = x => JSON.parse(JSON.stringify(x));
 let state=null, media=[], projects=[], selection='accueil', dirty=false, loading=false, picker=null, uploadTarget=null, uploading=false;
-let portfolioUniverse='photo', projectUniverse='photo', projectDocs=[], projectDraft=null, savingProject=false;
+let portfolioUniverse='photo', projectUniverse='photo', projectDocs=[], projectDraft=null, savingProject=false, activePokedexCard=null;
 // Editor V65: labeled text positions. Only known UI locations may be changed.
 const textLocations={
  accueil:[['heroKicker','Accueil · au-dessus du grand titre',' .hero-inner .eyebrow'],['homeWorksKicker','Accueil · surtitre du carrousel',' #portfolio .section-top .eyebrow'],['homeWorksTitle','Accueil · titre du carrousel',' #portfolio .section-top h2'],['homeWorksIntro','Accueil · description du carrousel',' #portfolio .section-top p'],['homeServiceKicker','Accueil · surtitre des services',' #services .section-top .eyebrow'],['homeServiceTitle','Accueil · titre des services',' #services .section-top h2'],['homeServiceIntro','Accueil · description des services',' #services .section-top p'],['followKicker','Accueil · surtitre Me suivre',' #me-suivre .eyebrow'],['followTitle','Accueil · titre Me suivre',' #me-suivre h2'],['followIntro','Accueil · description Me suivre',' #me-suivre p'],['followButton','Accueil · bouton Instagram',' #me-suivre .follow-action']],
@@ -32,6 +32,16 @@ function storyEditor(page){
  return `<section class="form-panel v65-story-editor"><div class="panel-eyebrow">MON HISTOIRE / PARCOURS</div><h2>Les 3 chapitres de ton histoire</h2><p>Les chapitres suivent l'ordre de défilement actuel, de 01 à 03. Tu peux modifier chaque texte, sa position identifiée ci-dessous, et sa photographie. Le défilement et la mise en page du site ne changent pas.</p>${page.storyCards.map((chapter,i)=>`<article class="v65-chapter"><div class="v65-chapter-head"><span>CHAPITRE ${String(i+1).padStart(2,'0')}</span><strong>${e(chapter.title||['Tout part d’un regard','Le mouvement. L’émotion.','La suite s’écrit.'][i])}</strong></div><div class="v65-chapter-fields">${mediaField(`storyCards.${i}.image`,chapter.image,`Photo du chapitre ${i+1}`)}${field('Étiquette en haut du chapitre',`storyCards.${i}.kicker`,chapter.kicker||'')}${field('🇬🇧 English · étiquette',`storyCards.${i}.en.kicker`,chapter.en?.kicker||'')}${field('🇧🇷 Português · étiquette',`storyCards.${i}.ptBr.kicker`,chapter.ptBr?.kicker||'')}${field('Numéro et sous-titre du chapitre',`storyCards.${i}.indexLabel`,chapter.indexLabel||'')}${field('🇬🇧 English · numéro et sous-titre',`storyCards.${i}.en.indexLabel`,chapter.en?.indexLabel||'')}${field('🇧🇷 Português · numéro et sous-titre',`storyCards.${i}.ptBr.indexLabel`,chapter.ptBr?.indexLabel||'')}${field('Grand titre',`storyCards.${i}.title`,chapter.title||'')}${field('🇬🇧 English · titre',`storyCards.${i}.en.title`,chapter.en?.title||'')}${field('🇧🇷 Português · titre',`storyCards.${i}.ptBr.title`,chapter.ptBr?.title||'')}${field('Paragraphe',`storyCards.${i}.body`,chapter.body||'','textarea')}${field('🇬🇧 English · paragraphe',`storyCards.${i}.en.body`,chapter.en?.body||'','textarea')}${field('🇧🇷 Português · paragraphe',`storyCards.${i}.ptBr.body`,chapter.ptBr?.body||'','textarea')}${field('Légende sur la photo',`storyCards.${i}.caption`,chapter.caption||'')}${field('🇬🇧 English · légende',`storyCards.${i}.en.caption`,chapter.en?.caption||'')}${field('🇧🇷 Português · légende',`storyCards.${i}.ptBr.caption`,chapter.ptBr?.caption||'')}${i===1?(field('Petite note sous la photo',`storyCards.${i}.note`,chapter.note||'')+field('🇬🇧 Note en anglais',`storyCards.${i}.en.note`,chapter.en?.note||'')+field('🇧🇷 Nota em português',`storyCards.${i}.ptBr.note`,chapter.ptBr?.note||'')):''}${i===2?`<div class="field-row">${field('Texte du bouton final',`storyCards.${i}.buttonLabel`,chapter.buttonLabel||'')}${field('🇬🇧 Bouton anglais',`storyCards.${i}.en.buttonLabel`,chapter.en?.buttonLabel||'')}${field('🇧🇷 Botão em português',`storyCards.${i}.ptBr.buttonLabel`,chapter.ptBr?.buttonLabel||'')}${field('Lien du bouton final',`storyCards.${i}.buttonUrl`,chapter.buttonUrl||'')}</div>`:''}</div></article>`).join('')}</section>`;
 }
 const universeNames={photo:'Photo',video:'Vidéo',graphisme:'Graphisme'};
+// V80: several video links live in the existing Payload `video` text field.
+// One URL per line, backwards compatible with the previous single-video format.
+const projectVideoLines=raw=>String(raw||'').replace(/\r/g,'').split('\n').slice(0,12);
+const projectVideoLinks=raw=>projectVideoLines(raw).map(v=>v.trim()).filter(Boolean);
+const validLegacyVideoLink=raw=>/^https:\/\/(?:www\.)?(?:vimeo\.com|player\.vimeo\.com)\//i.test(raw)||/^https:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(raw);
+function renderVideoEntries(d){
+ const lines=projectVideoLines(d.video);
+ return `<div class="v80-video-entries">${lines.map((link,i)=>`<div class="v80-video-entry"><div class="v80-video-entry-head"><strong>VIDÉO ${String(i+1).padStart(2,'0')}</strong><div class="mini-actions">${action('project-video-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-video-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-video-remove','Retirer',`data-index="${i}"`,true)}</div></div><label class="field"><span>Lien YouTube / Shorts / Vimeo / MP4</span><input type="url" data-project-video-index="${i}" value="${e(link)}" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" inputmode="url"></label><div class="v80-video-entry-preview" data-video-preview-index="${i}">${youtubeStudioPreview({...d,cover:i===0?d.cover:null,legacyCover:i===0?d.legacyCover:'',video:link})}</div></div>`).join('')}</div><div class="add-row">${action('project-video-add','+ Ajouter une vidéo')}${lines.length>=12?'<span>12 vidéos maximum par projet</span>':''}</div>`;
+}
+
 
 // Read the standard YouTube, Shorts, Live and short links without loading YouTube on the editor.
 function youtubeInfo(raw){
@@ -49,7 +59,7 @@ function youtubeInfo(raw){
  }catch{return null}
 }
 function youtubeStudioPreview(d){
- const raw=String(d?.video||'').trim(),yt=youtubeInfo(raw);
+ const raw=projectVideoLinks(d?.video)[0]||'',yt=youtubeInfo(raw);
  if(!raw)return '<div class="v57-video-empty"><span aria-hidden="true">▶</span><p>Colle ton lien YouTube pour afficher ici la miniature et tester la lecture avant publication.</p></div>';
  if(!yt){
   if(/^https:\/\/(?:www\.)?(?:vimeo\.com|player\.vimeo\.com)\//i.test(raw)||/^https:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(raw))
@@ -60,7 +70,7 @@ function youtubeStudioPreview(d){
 }
 function updateYoutubeStudioPreview(){
  const target=$('#v57YoutubePreview');if(!target||!projectDraft)return;
- const next=youtubeInfo(projectDraft.video),current=target.querySelector('[data-youtube-studio]');
+ const next=youtubeInfo(projectVideoLinks(projectDraft.video)[0]),current=target.querySelector('[data-youtube-studio]');
  // Avoid replacing a button between pointer-down and click when the URL input blurs.
  // The current player remains intact until its video URL actually changes.
  if(next&&current&&current.dataset.youtubeStudio===next.id&&current.classList.contains('v57-studio-short')===next.vertical)return;
@@ -155,7 +165,7 @@ let featuredUniverse='photo';
 function portfolioTabs(){return `<section class="form-panel"><div class="panel-eyebrow">PORTFOLIO / RUBRIQUES</div><h2>Choisir la rubrique à modifier</h2><p>Chaque rubrique possède ses propres carrousels et galeries. Les projets sont gérés dans « Photo / Vidéo / Graphisme ».</p><div class="universe-tabs">${['photo','video','graphisme','general'].map(kind=>`<button type="button" data-portfolio-universe="${kind}" class="${portfolioUniverse===kind?'active':''}">${universeNames[kind]||'Commun à toutes'}</button>`).join('')}</div></section>`}
 function projectMedia(photo){const src=validSrc(photo?.url);return src?`<div class="project-thumb"><img src="${e(src)}" alt="${e(photo.alt||'Image')}"></div>`:'<div class="project-thumb">Aucune image</div>'}
 function projectCoverPreview(d){
- const src=validSrc(d.cover?.url||d.legacyCover||(kindOf(d)==='video'?youtubeInfo(d.video)?.thumb:''));
+ const src=validSrc(d.cover?.url||d.legacyCover||(kindOf(d)==='video'?youtubeInfo(projectVideoLinks(d.video)[0])?.thumb:''));
  if(!src)return '<div class="info-strip">Choisis une photographie pour visualiser son cadrage ici, avant publication.</div>';
  const f=photoFrames()[src]||{x:50,y:50,zoom:1,fit:'cover'};
  const style=`object-position:${Number(f.x)||0}% ${Number(f.y)||0}%;object-fit:${f.fit==='contain'?'contain':'cover'};transform:scale(${Math.max(1,Math.min(2,Number(f.zoom)||1))})`;
@@ -164,7 +174,7 @@ function projectCoverPreview(d){
 function renderProjects(){
  const list=projectDocs.filter(p=>kindOf(p)===projectUniverse);
  const tabs=`<div class="universe-tabs">${['photo','video','graphisme'].map(kind=>`<button type="button" class="${projectUniverse===kind?'active':''}" data-project-universe="${kind}">${universeNames[kind]} (${projectDocs.filter(p=>kindOf(p)===kind).length})</button>`).join('')}</div>`;
- const cards=`<div class="project-list">${list.map(p=>`<button type="button" class="project-list-item ${String(projectDraft?.id)===String(p.id)?'active':''}" data-project-open="${e(p.id)}">${projectMedia(p.cover || {url:p.legacyCover||(kindOf(p)==='video'?youtubeInfo(p.video)?.thumb:''),alt:p.title})}<span><strong>${e(p.title)}</strong><small>${p.source==='starter'?'Carte actuelle du site · Prête à personnaliser':(p.published?'Publié':'Masqué')} · ${e(p.slug)}</small></span><span>Modifier ›</span></button>`).join('')||'<div class="empty-state">Aucun projet dans cette rubrique.</div>'}</div>`;
+ const cards=`<div class="project-list">${list.map(p=>`<button type="button" class="project-list-item ${String(projectDraft?.id)===String(p.id)?'active':''}" data-project-open="${e(p.id)}">${projectMedia(p.cover || {url:p.legacyCover||(kindOf(p)==='video'?youtubeInfo(projectVideoLinks(p.video)[0])?.thumb:''),alt:p.title})}<span><strong>${e(p.title)}</strong><small>${p.source==='starter'?'Carte actuelle du site · Prête à personnaliser':(p.published?'Publié':'Masqué')} · ${e(p.slug)}</small></span><span>Modifier ›</span></button>`).join('')||'<div class="empty-state">Aucun projet dans cette rubrique.</div>'}</div>`;
  let editor='';
  if(projectDraft){const d=projectDraft, gallery=d.gallery||[];
    editor=`<section class="form-panel project-editor"><div class="panel-eyebrow">${d.id?'MODIFIER LE PROJET':'NOUVEAU PROJET'} / ${universeNames[projectUniverse].toUpperCase()}</div><h2>${e(d.title||'Nouveau projet')}</h2><p>Cette fiche alimente le Portfolio et les cartes automatiques du carrousel principal.</p>
@@ -173,7 +183,7 @@ function renderProjects(){
      ${projectUniverse!=='graphisme'?field('Catégorie / discipline','project.category',d.category):'<div class="info-strip">Rubrique Graphisme : la catégorie GRAPHISME sera enregistrée automatiquement.</div>'}
      ${field('Ordre dans le Portfolio','project.order',d.order)}
      <h3>Couverture</h3><p>${projectUniverse==='video'?'Facultatif : si tu ne sélectionnes pas de couverture, la miniature YouTube est utilisée. Choisis une photo personnelle pour personnaliser la carte du portfolio.':'Voici le rendu de ton image dans les deux cartes du site, avant publication. Tu peux la déplacer, la zoomer et comparer les cadrages sans modifier le fichier original.'}</p>${projectCoverPreview(d)}<div class="add-row">${action('project-cover-choose','▧ Choisir la couverture')}${action('project-cover-upload','↑ Importer une couverture')}${validSrc(d.cover?.url||d.legacyCover)?action('project-cover-crop','▣ Ajuster le cadrage / prévisualiser'):''}</div>
-     ${projectUniverse==='video'?`<div class="v57-youtube-editor"><div class="panel-eyebrow">LECTEUR VIDÉO / YOUTUBE</div><h3>Ta vidéo directement sur YRUZPHOTO</h3><p>Publie ta vidéo sur YouTube (en mode Public ou Non répertoriée), puis colle son lien ci-dessous. Le lecteur ne se chargera qu'au clic du visiteur. La couverture reste modifiable dans la médiathèque, sinon la miniature YouTube est utilisée.</p>${field('Lien YouTube','project.video',d.video)}<div id="v57YoutubePreview">${youtubeStudioPreview(d)}</div><a class="v57-video-help" href="https://studio.youtube.com/" target="_blank" rel="noopener noreferrer">Ouvrir YouTube Studio ↗</a></div>`:''}
+     ${projectUniverse==='video'?`<div class="v57-youtube-editor"><div class="panel-eyebrow">VIDÉOS DU PROJET / ${projectVideoLinks(d.video).length} ENREGISTRÉE(S)</div><h3>Plusieurs vidéos dans un même projet</h3><p>Ajoute jusqu’à 12 liens (YouTube, Shorts, Vimeo ou MP4), puis réorganise-les avec les flèches. Chaque lecteur apparaît uniquement dans ce projet et se lance au clic. Les liens déjà enregistrés sont conservés.</p>${renderVideoEntries(d)}<a class="v57-video-help" href="https://studio.youtube.com/" target="_blank" rel="noopener noreferrer">Ouvrir YouTube Studio ↗</a></div>`:''}
      <h3>Galerie (${gallery.length} visuel${gallery.length>1?'s':''})</h3><p>Maintiens « Déplacer » et fais glisser la photo directement à sa nouvelle place. La page défile automatiquement, même pour les longues galeries.</p>
      <div class="project-gallery-items">${gallery.map((g,i)=>`<div class="collection-item v50-sortable v56-sortable" data-sort-kind="project-gallery" data-item="${i}" title="Maintiens la poignée pour déplacer cette photo"><button type="button" class="v56-drag-handle" aria-label="Déplacer cette photo : maintenir et glisser, ou utiliser les flèches du clavier" title="Maintenir puis glisser · ↑↓ au clavier"><span aria-hidden="true">⠿</span><span>Déplacer</span></button>${projectMedia(g.photo||{url:g.legacyUrl,alt:''})}<div class="item-fields">${e(g.photo?.alt||g.legacyUrl||'Photographie')}</div><div class="item-actions">${cropButton(g.photo||{url:g.legacyUrl})}${action('project-gallery-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-gallery-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-gallery-remove','✕',`data-index="${i}"`,true)}</div></div>`).join('')}</div>
      <div class="add-row">${action('project-gallery-choose','+ Sélectionner plusieurs photos')}${action('project-gallery-upload','↑ Importer plusieurs photos')}</div>
@@ -188,12 +198,14 @@ async function loadProjectDocs(){
 }
 async function saveProject(){
  if(!projectDraft||savingProject)return;
- const legacyVideoLink=/^https:\/\/(?:www\.)?(?:vimeo\.com|player\.vimeo\.com)\//i.test(projectDraft.video||'')||/^https:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(projectDraft.video||'');
- if(projectUniverse==='video'&&projectDraft.video?.trim()&&!youtubeInfo(projectDraft.video)&&!legacyVideoLink){
-  message('Colle un lien YouTube valide (youtube.com, youtu.be ou Shorts).',true);return;
- }
- if(projectUniverse==='video'&&projectDraft.published&&!youtubeInfo(projectDraft.video)&&!legacyVideoLink){
-  message('Ajoute une vidéo YouTube avant de publier ce projet.',true);return;
+ const links=projectVideoLinks(projectDraft.video);
+ if(projectUniverse==='video'){
+  if(links.length>12){message('12 vidéos maximum par projet.',true);return}
+  const invalid=links.find(url=>!youtubeInfo(url)&&!validLegacyVideoLink(url));
+  if(invalid){message('Lien vidéo non reconnu : utilise YouTube, Shorts, Vimeo ou un MP4 HTTPS.',true);return}
+  if(projectDraft.published&&!links.length){message('Ajoute au moins une vidéo avant de publier ce projet.',true);return}
+  if(links.join('\n').length>2000){message('Liens trop longs : 2 000 caractères maximum au total.',true);return}
+  projectDraft.video=links.join('\n');
  }
  savingProject=true;render();
  try{const payload={...projectDraft,universe:projectUniverse};const r=await fetch('/studio-projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Enregistrement impossible');
@@ -224,7 +236,7 @@ function renderPokedex(){
  <section class="form-panel"><div class="panel-eyebrow">ALBUM / COLLECTION</div><h2>Cartes de tes rencontres (${p.cards.length})</h2>
  <p>Change le nom, les photos et la rareté. En tri automatique, une carte Légendaire remonte immédiatement en tête, puis Rare, Peu commune et Commune. En ordre manuel, utilise les flèches. Publie ensuite tes modifications.</p>
  <div class="pokedex-sort-row">${field('Ordre du classeur','sortMode',p.sortMode||'rarity','select',[['rarity','Automatique : légendaire → rare → peu commune → commune'],['manual','Manuel : utiliser les flèches']])}<div class="pokedex-sort-legend"><span class="pd-rank-gold">★ Légendaire</span><span class="pd-rank-pink">◆ Rare</span><span class="pd-rank-blue">◇ Peu commune</span><span class="pd-rank-green">● Commune</span></div></div>
- ${p.cards.map((c,i)=>`<article class="pokedex-editor rarity-${e(c.rarity||'commun')}">
+ ${p.cards.map((c,i)=>{const key=String(c.id||`card-${i}`),opened=activePokedexCard===key;return `<article class="pokedex-editor rarity-${e(c.rarity||'commun')} ${opened?'v80-open':''}"><button type="button" class="v80-pokedex-toggle" data-action="pokedex-toggle" data-card-key="${e(key)}" aria-expanded="${opened}"><span class="v80-pokedex-avatar">${validSrc(c.cover?.url)?`<img src="${e(validSrc(c.cover.url))}" alt="" loading="lazy">`:'◇'}</span><span class="v80-pokedex-label"><strong>${e(c.title||'Nouvelle rencontre')}</strong><small>${e(rarityLabels[c.rarity]||'Commune')} · ${(c.gallery||[]).length+Number(Boolean(c.cover?.url))} photo(s)</small></span><span class="v80-pokedex-expand">${opened?'Masquer':'Modifier et voir les photos'} <span aria-hidden="true">⌄</span></span></button>${opened?`<div class="v80-pokedex-details">
   <div class="block-top"><span class="block-num">CARTE ${String(i+1).padStart(3,'0')} · ${e(rarityLabels[c.rarity]||'Commun')}</span><div class="mini-actions">
   ${p.sortMode==='manual'?action('pokedex-move','↑',`data-index="${i}" data-dir="-1"`)+action('pokedex-move','↓',`data-index="${i}" data-dir="1"`):''}${action('pokedex-delete','✕',`data-index="${i}"`,true)}</div></div>
   ${mediaField(`cards.${i}.cover`,c.cover,'Portrait principal de la carte')}
@@ -237,7 +249,7 @@ function renderPokedex(){
      <div class="item-actions">${action('pokedex-photo-move','←',`data-index="${i}" data-item="${j}" data-dir="-1"`)}${action('pokedex-photo-move','→',`data-index="${i}" data-item="${j}" data-dir="1"`)}${action('pokedex-photo-remove','✕',`data-index="${i}" data-item="${j}"`,true)}</div></div>`).join('')}</div>
   <div class="add-row">${action('pokedex-photo-add','+ Choisir plusieurs photos',`data-index="${i}"`)}${action('pokedex-photo-upload','↑ Importer plusieurs photos',`data-index="${i}"`)}</div>
   ${field('Afficher cette carte dans le Pokédex',`cards.${i}.published`,c.published,'checkbox')}
- </article>`).join('')||'<div class="empty-state">Ton album est vide. Ajoute ta première personnalité et choisis sa photographie.</div>'}
+ </div>`:''}</article>`}).join('')||'<div class="empty-state">Ton album est vide. Ajoute ta première personnalité et choisis sa photographie.</div>'}
  <div class="add-row">${action('pokedex-add','+ Nouvelle carte de collection')}</div>
  </section>`;
 }
@@ -713,7 +725,8 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  }
  if(selection==='pokedex' && command.startsWith('pokedex-')){
   const cards=root.cards||(root.cards=[]),card=cards[index];
-  if(command==='pokedex-add'){cards.push({id:typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`new-${Date.now()}`,title:'Nouvelle rencontre',subtitle:'',category:'',event:'',date:'',description:'',rarity:'commun',cover:null,gallery:[],published:true});sortPokedexCards(root);markDirty();render();return}
+  if(command==='pokedex-toggle'){const key=btn.dataset.cardKey;activePokedexCard=activePokedexCard===key?null:key;render();return}
+  if(command==='pokedex-add'){const id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`new-${Date.now()}`;cards.push({id,title:'Nouvelle rencontre',subtitle:'',category:'',event:'',date:'',description:'',rarity:'commun',cover:null,gallery:[],published:true});activePokedexCard=id;sortPokedexCards(root);markDirty();render();return}
   if(command==='pokedex-move'){if(move(cards,index,index+dir)){markDirty();render()}return}
   if(command==='pokedex-delete'){if(confirm('Supprimer cette carte du Pokédex ?')){cards.splice(index,1);markDirty();render()}return}
   if(!card)return;
@@ -734,6 +747,19 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='featured-delete'){root.featuredCards[featuredUniverse].splice(index,1);markDirty();render();return}
  if(command==='featured-move'){if(move(root.featuredCards[featuredUniverse],index,index+dir)){markDirty();render()}return}
  if(command==='crop-image'){openCrop(btn.dataset.url);return}
+ if(command==='project-video-add'&&projectDraft){
+  const lines=projectVideoLines(projectDraft.video);
+  if(lines.length>=12){message('12 vidéos maximum par projet.',true);return}
+  projectDraft.video=lines.join('\n')+'\n';render();return;
+ }
+ if(command==='project-video-remove'&&projectDraft){
+  const lines=projectVideoLines(projectDraft.video);lines.splice(index,1);
+  projectDraft.video=lines.join('\n');render();return;
+ }
+ if(command==='project-video-move'&&projectDraft){
+  const lines=projectVideoLines(projectDraft.video);
+  if(move(lines,index,index+dir)){projectDraft.video=lines.join('\n');render()};return;
+ }
  if(command==='project-new'){projectDraft=newProject();render();return}
  if(command==='project-cover-choose'){openPicker(photo=>{projectDraft.cover={id:photo.id,url:photo.url,alt:photo.alt};render();openCrop(photo.url,{project:true})});return}
  if(command==='project-cover-upload'){uploadTarget={kind:'project-cover'};$('#directUploadInput').click();return}
@@ -785,12 +811,16 @@ $('#editor').addEventListener('input',event=>{
   library.search=event.target.value;clearTimeout(librarySearchTimer);
   librarySearchTimer=setTimeout(()=>loadLibrary(1),300);return;
  }
+ const videoInput=event.target.closest('[data-project-video-index]');
+ if(videoInput&&projectDraft){const index=Number(videoInput.dataset.projectVideoIndex),lines=projectVideoLines(projectDraft.video);lines[index]=videoInput.value;projectDraft.video=lines.join('\n');const preview=$(`[data-video-preview-index="${index}"]`);if(preview)preview.innerHTML=youtubeStudioPreview({...projectDraft,cover:index===0?projectDraft.cover:null,legacyCover:index===0?projectDraft.legacyCover:'',video:videoInput.value});return}
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;if(projectInput.dataset.projectField==='video')updateYoutubeStudioPreview();return}
  if(selection==='equipement'&&event.target.matches('[data-equipment-specs]')){const i=Number(event.target.dataset.equipmentSpecs);const item=currentRoot().equipmentItems?.[i];if(item){item.specs=event.target.value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,20);currentRoot().equipmentCustomized=true;markDirty()}return}
  const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;markDirty()});
 $('#editor').addEventListener('change',event=>{
  if(event.target.id==='libraryDestination'){libraryDestination=event.target.value;return}
  if(event.target.id==='libraryUniverse'){libraryUniverse=event.target.value;return}
+ const videoInput=event.target.closest('[data-project-video-index]');
+ if(videoInput&&projectDraft){const index=Number(videoInput.dataset.projectVideoIndex),lines=projectVideoLines(projectDraft.video);lines[index]=videoInput.value;projectDraft.video=lines.join('\n');const preview=$(`[data-video-preview-index="${index}"]`);if(preview)preview.innerHTML=youtubeStudioPreview({...projectDraft,cover:index===0?projectDraft.cover:null,legacyCover:index===0?projectDraft.legacyCover:'',video:videoInput.value});return}
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;if(projectInput.dataset.projectField==='video')updateYoutubeStudioPreview();return}
  const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;if(selection==='pokedex'&&(input.dataset.field==='sortMode'||/^cards\.\d+\.rarity$/.test(input.dataset.field)))sortPokedexCards(currentRoot());markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity')||input.dataset.field==='sortMode')render()});
 $('#saveBtn').addEventListener('click',save);

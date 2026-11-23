@@ -7,9 +7,10 @@ const mediaValue=(m:any,fallbackValue='')=>mediaUrl(m)||fallbackValue
 
 // Reuse a YouTube thumbnail if the video project has no custom cover.
 const youtubeCover=(raw:unknown):string=>{
- if(typeof raw!=='string'||!/^https:\/\//i.test(raw))return ''
+ const first=typeof raw==='string'?raw.split(/\r?\n/).map(value=>value.trim()).find(Boolean)||'':''
+ if(!/^https:\/\//i.test(first))return ''
  try{
-  const u=new URL(raw),h=u.hostname.toLowerCase().replace(/^www\./,'')
+  const u=new URL(first),h=u.hostname.toLowerCase().replace(/^www\./,'')
   let id=''
   if(h==='youtu.be')id=u.pathname.split('/')[1]||''
   else if(['youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com'].includes(h)){

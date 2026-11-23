@@ -270,3 +270,19 @@
   .pd-book .pd-spine {z-index:5}
   .pd-detail {scroll-margin-top:14px}
 }
+
+
+/* V80 — selected-card-only gallery with comfortable mobile targets. */
+.pd-detail-gallery{scroll-snap-type:x proximity;overscroll-behavior-x:contain}
+.pd-gallery-photo{scroll-snap-align:start;flex-shrink:0}
+.pd-card[aria-pressed="true"]{outline:2px solid #e5f4ff;outline-offset:1px}
+@media screen and (max-width:760px){
+ .pd-detail{min-width:0;overflow:visible;scroll-margin-top:16px}
+ .pd-detail-body{min-width:0;max-width:100%}
+ .pd-detail-gallery{padding:3px 1px 10px;gap:10px;max-width:100%}
+ .pd-gallery-photo{flex-basis:60px;min-width:60px;height:60px}
+ .pd-detail-line{flex-wrap:wrap;gap:9px}
+ .pd-fact span{min-width:0;overflow-wrap:anywhere}
+ .pd-detail-card{max-width:100%}
+ .pd-page-controls button{min-width:44px;min-height:44px}
+}

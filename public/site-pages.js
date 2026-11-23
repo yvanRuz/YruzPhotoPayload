@@ -35,9 +35,11 @@
   }catch{return null}
  };
 
+ const projectVideoLinks=p=>{const sources=Array.isArray(p.videos)?p.videos:String(p.video||'').split(/\r?\n/);return sources.map(v=>validMedia(v)).filter(Boolean).slice(0,12)};
+
  const isGraphic = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
  const matchesFilter = (p, filter) => filter === 'graphisme' ? isGraphic(p) : filter === 'photo' ? p.mode === 'photo' && !isGraphic(p) : p.mode === 'video';
- const card=original=>{const p=localizedProject(original);const yt=p.mode==='video'?youtubeInfo(p.video):null;const cover=validMedia(p.cover)||(yt?yt.thumb:'');return `<a class="catalog-card ${yt?'yruz-video-card':''}" href="${yruzProjectUrl(p)}" aria-label="Ouvrir ${escapeHtml(p.title)}"><span class="catalog-image">${cover?mediaImg(cover,p.title):'<span class="yruz-video-missing-cover">YRUZPHOTO / VIDÉO</span>'}${yt?'<span class="yruz-video-card-play" aria-hidden="true">▶</span>':''}</span><span class="catalog-meta"><span class="catalog-kind">${p.mode==='video'?'▶ VIDÉO':isGraphic(p)?'✦ GRAPHISME':'◈ PHOTO'} · ${escapeHtml(p.category)}</span><span class="catalog-title">${escapeHtml(p.title)}</span><span class="catalog-arrow" aria-hidden="true">↗</span></span></a>`};
+ const card=original=>{const p=localizedProject(original);const yt=p.mode==='video'?youtubeInfo(projectVideoLinks(p)[0]):null;const cover=validMedia(p.cover)||(yt?yt.thumb:'');return `<a class="catalog-card ${yt?'yruz-video-card':''}" href="${yruzProjectUrl(p)}" aria-label="Ouvrir ${escapeHtml(p.title)}"><span class="catalog-image">${cover?mediaImg(cover,p.title):'<span class="yruz-video-missing-cover">YRUZPHOTO / VIDÉO</span>'}${yt?'<span class="yruz-video-card-play" aria-hidden="true">▶</span>':''}</span><span class="catalog-meta"><span class="catalog-kind">${p.mode==='video'?'▶ VIDÉO':isGraphic(p)?'✦ GRAPHISME':'◈ PHOTO'} · ${escapeHtml(p.category)}</span><span class="catalog-title">${escapeHtml(p.title)}</span><span class="catalog-arrow" aria-hidden="true">↗</span></span></a>`};
  if(view==='catalog'){
   const grid=document.getElementById('catalogGrid'),tabs=[...document.querySelectorAll('[data-filter]')];
   let filter=['photo','video','graphisme'].includes(params.get('type'))?params.get('type'):'photo';
@@ -53,18 +55,19 @@
   // V54: The media carousel is the first visual element of every project.
   // The cover remains on the portfolio thumbnail; it is not repeated above the carousel.
   const gallery=(Array.isArray(p.gallery)?p.gallery:[]).map(validMedia).filter(Boolean);
-  const hasVideo=Boolean(validMedia(p.video));
+  const videos=projectVideoLinks(p);
+  const hasVideo=videos.length>0;
   // A project with only a cover still gets a one-image viewer, not an empty page.
   if(!gallery.length && !hasVideo && validMedia(p.cover))gallery.push(validMedia(p.cover));
   const isEmpty=!gallery.length&&!hasVideo;
   const mansCarousel=gallery.length>0;
   const galleryCarouselMarkup=mansCarousel?`<div class="mans-carousel" aria-label="Carrousel du reportage"><div class="mans-carousel-view"><button type="button" class="mans-slide-button" data-gallery-index="0" aria-label="Agrandir la photographie affichée"><img class="mans-main-image" src="${escapeHtml(gallery[0])}" alt="${escapeHtml(p.title)} — photo 1"><span class="mans-open">AGRANDIR ↗</span></button><button type="button" class="mans-arrow mans-arrow-prev" ${gallery.length===1?'hidden':''} aria-label="Photographie précédente">←</button><button type="button" class="mans-arrow mans-arrow-next" ${gallery.length===1?'hidden':''} aria-label="Photographie suivante">→</button></div><div class="mans-carousel-footer"><span class="mans-carousel-count">01 / ${String(gallery.length).padStart(2,'0')}</span><div class="mans-progress"><span></span></div><span class="mans-carousel-label">GLISSER OU CLIQUER</span></div><div class="mans-filmstrip" aria-label="Choisir une photographie">${gallery.map((url,i)=>`<button class="mans-thumb" type="button" data-slide-index="${i}" aria-label="Afficher la photo ${i+1}" aria-current="${i===0?'true':'false'}"><img src="${escapeHtml(url)}" alt="" loading="lazy"></button>`).join('')}</div></div>`:'';
   const galleryMarkup=gallery.length?`<div class="gallery-heading"><div><span class="eyebrow">${p.demoGallery?'PHOTOS DE DÉMONSTRATION':'GALERIE DU PROJET'}</span><h2>LES IMAGES</h2></div><span>${String(gallery.length).padStart(2,'0')} VISUELS · CLIQUEZ POUR AGRANDIR</span></div><div class="project-gallery">${gallery.map((url,i)=>`<button class="gallery-image" type="button" data-gallery-index="${i}" aria-label="Agrandir la photo ${i+1} sur ${gallery.length}">${mediaImg(url,`${p.title} — photo ${i+1}`)}<span class="gallery-zoom">↗</span></button>`).join('')}</div>`:'<div class="gallery-empty">Les médias de ce projet seront ajoutés prochainement.</div>';
-  const videoEmbed=(raw)=>{
+  const videoEmbed=(raw,position)=>{
     const src=validMedia(raw);if(!src)return '';
     const yt=youtubeInfo(src);
     if(yt){
-      const cover=validMedia(p.cover)||yt.thumb;
+      const cover=(position===0?validMedia(p.cover):'')||yt.thumb;
       return `<div class="yruz-youtube-player ${yt.vertical?'yruz-youtube-vertical':''}" data-youtube-player="${yt.id}"><button type="button" class="yruz-youtube-poster" data-youtube-play="${yt.id}" aria-label="Lire la vidéo ${escapeHtml(p.title)}"><img src="${escapeHtml(cover)}" alt="" loading="lazy"><span class="yruz-youtube-shade"></span><span class="yruz-youtube-play-icon" aria-hidden="true">▶</span><span class="yruz-youtube-caption"><small>YRUZPHOTO / VIDÉO</small><strong>REGARDER LE FILM</strong></span></button><noscript><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Regarder sur YouTube</a></noscript></div>`;
     }
     // Preserve older Vimeo and self-hosted MP4 projects.
@@ -79,8 +82,8 @@
     }catch{}
     return '<div class="yruz-video-error">Lien vidéo non reconnu. Ajoute une URL YouTube valide depuis le Studio.</div>';
   };
-  const videoMarkup=hasVideo?`<div class="gallery-heading"><div><span class="eyebrow">FILM</span><h2>LA VIDÉO</h2></div></div>${videoEmbed(p.video)}`:'';
-  content.innerHTML=`<div class="project-overline">${isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'} / ${escapeHtml(p.category)}</div><h1>${escapeHtml(p.title)}</h1><div class="project-actions"><a class="btn outline" href="portfolio.html?type=${projectType}">← TOUS LES PROJETS</a><span class="project-state">${p.demoGallery?'GALERIE DE DÉMONSTRATION — PHOTOS À REMPLACER':isEmpty?'DOSSIER PRÊT À RECEVOIR VOS FICHIERS':`${gallery.length} PHOTO${gallery.length>1?'S':''}${hasVideo?' · 1 VIDÉO':''}`}</span></div>${videoMarkup}${mansCarousel?galleryCarouselMarkup:(hasVideo?'':galleryMarkup)}<div class="project-next"><div><span class="eyebrow">POUR ALLER PLUS LOIN</span><h2>À DÉCOUVRIR AUSSI</h2></div><div class="catalog-grid">${related.map(card).join('')}</div></div>`;
+  const videoMarkup=hasVideo?`<div class="gallery-heading"><div><span class="eyebrow">${videos.length>1?'FILMS':'FILM'}</span><h2>${videos.length>1?'LES VIDÉOS':'LA VIDÉO'}</h2></div><span>${String(videos.length).padStart(2,'0')} VIDÉO${videos.length>1?'S':''}</span></div><div class="yruz-video-collection ${videos.length>1?'is-multi':''}">${videos.map((url,i)=>`<article class="yruz-video-entry"><div class="yruz-video-entry-label">VIDÉO ${String(i+1).padStart(2,'0')} / ${String(videos.length).padStart(2,'0')}</div>${videoEmbed(url,i)}</article>`).join('')}</div>`:'';
+  content.innerHTML=`<div class="project-overline">${isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'} / ${escapeHtml(p.category)}</div><h1>${escapeHtml(p.title)}</h1><div class="project-actions"><a class="btn outline" href="portfolio.html?type=${projectType}">← TOUS LES PROJETS</a><span class="project-state">${p.demoGallery?'GALERIE DE DÉMONSTRATION — PHOTOS À REMPLACER':isEmpty?'DOSSIER PRÊT À RECEVOIR VOS FICHIERS':`${gallery.length} PHOTO${gallery.length>1?'S':''}${hasVideo?` · ${videos.length} VIDÉO${videos.length>1?'S':''}`:''}`}</span></div>${videoMarkup}${mansCarousel?galleryCarouselMarkup:(hasVideo?'':galleryMarkup)}<div class="project-next"><div><span class="eyebrow">POUR ALLER PLUS LOIN</span><h2>À DÉCOUVRIR AUSSI</h2></div><div class="catalog-grid">${related.map(card).join('')}</div></div>`;
   refreshProjectUI=()=>{
     const translated=localizedProject(p),heading=content.querySelector('h1'),overline=content.querySelector('.project-overline');
     if(heading)heading.textContent=translated.title;
