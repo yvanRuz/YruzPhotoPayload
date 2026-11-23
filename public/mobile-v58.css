@@ -364,3 +364,117 @@
  .equip-page .equip-item-main strong{font-size:clamp(15px,4.3vw,19px)!important}
  .equip-page .equip-spec-button{min-height:43px!important;padding:9px 5px!important;font-size:10px!important}
 }
+
+/* V82 — Inventaire: deux actions independantes dans chaque carte.
+   Le bouton SPEC ne peut plus recouvrir la categorie ni l'etat EQUIPE.
+   Regles applicables sur desktop et mobile, sans modifier les interactions. */
+.equip-page #equipGrid .equip-item {
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  grid-template-rows:minmax(0,1fr) auto !important;
+  align-content:stretch !important;
+  align-items:stretch !important;
+  justify-content:stretch !important;
+  gap:12px !important;
+  height:auto !important;
+  min-height:246px !important;
+  padding:13px !important;
+  overflow:hidden !important;
+  text-align:center !important;
+}
+.equip-page #equipGrid .equip-item-main {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:8px !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:0 !important;
+  height:auto !important;
+  padding:0 !important;
+  margin:0 !important;
+  text-align:center !important;
+}
+.equip-page #equipGrid .equip-item-main .item-tag,
+.equip-page #equipGrid .equip-item-main .item-status {
+  position:static !important;
+  inset:auto !important;
+  display:block !important;
+  max-width:100% !important;
+  margin:0 auto !important;
+  line-height:1.35 !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  transform:none !important;
+}
+.equip-page #equipGrid .equip-item-main .gear-glyph {
+  position:static !important;
+  display:grid !important;
+  place-items:center !important;
+  flex:0 0 auto !important;
+  height:74px !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 !important;
+}
+.equip-page #equipGrid .equip-item-main .gear-glyph img {
+  display:block !important;
+  max-width:100% !important;
+  max-height:70px !important;
+  width:auto !important;
+  height:auto !important;
+  object-fit:contain !important;
+}
+.equip-page #equipGrid .equip-item-main > span:last-child {
+  display:block !important;
+  width:100% !important;
+  min-width:0 !important;
+  margin:0 !important;
+}
+.equip-page #equipGrid .equip-item-main strong,
+.equip-page #equipGrid .equip-item-main small {
+  display:block !important;
+  width:100% !important;
+  overflow-wrap:anywhere !important;
+}
+.equip-page #equipGrid .equip-spec-button {
+  position:static !important;
+  inset:auto !important;
+  top:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  left:auto !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  align-self:stretch !important;
+  justify-self:stretch !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:43px !important;
+  height:auto !important;
+  margin:0 !important;
+  padding:10px 8px !important;
+  transform:none !important;
+  background:#173a50 !important;
+  color:#f3f8fc !important;
+  border:1px solid #86a8bb !important;
+  border-radius:8px !important;
+  font-size:11px !important;
+  font-weight:800 !important;
+  line-height:1.2 !important;
+  z-index:2 !important;
+}
+.equip-page #equipGrid .equip-spec-button:focus-visible { outline:2px solid #e7f2fd !important; outline-offset:2px !important; }
+@media (max-width:767px) {
+  .equip-page #equipGrid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+  .equip-page #equipGrid .equip-item { min-height:270px !important; padding:10px !important; gap:10px !important; }
+  .equip-page #equipGrid .equip-item-main strong { font-size:clamp(15px,4.1vw,19px) !important; line-height:1.1 !important; }
+  .equip-page #equipGrid .equip-item-main .gear-glyph { height:68px !important; }
+  .equip-page #equipGrid .equip-item-main .gear-glyph img { max-height:65px !important; }
+}
+@media (max-width:355px) {
+  .equip-page #equipGrid .equip-item { padding:8px !important; }
+  .equip-page #equipGrid .equip-spec-button { padding:9px 5px !important; font-size:10px !important; }
+}

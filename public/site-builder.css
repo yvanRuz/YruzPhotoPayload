@@ -42,3 +42,7 @@
 /* V44 : sections propres a chaque onglet du portfolio */
 .cms-portfolio-kind[hidden]{display:none!important}
 .cms-portfolio-kind{max-width:1380px;margin:22px auto 45px}
+
+/* V82: retirer les bandeaux de demonstration sur l'ensemble des pages publiques.
+   L'en-tete principal est deja fixe en haut par style.css. */
+body > .demo, body .demo { display:none !important; }
