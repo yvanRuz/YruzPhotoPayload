@@ -60,7 +60,7 @@ export async function POST(request:Request){
     videoEntries=parsed.videos.map((v:any)=>({
      url:clean(v?.url,2000),title:clean(v?.title,160),
      cover:v?.cover?.url?{url:clean(v.cover.url,2000),alt:clean(v.cover.alt,250)}:null
-    })).filter(v=>v.url)
+    })).filter((v: {url:string;title:string;cover:{url:string;alt:string}|null})=>Boolean(v.url))
    }catch{return Response.json({error:'Métadonnées des vidéos invalides'},{status:400,headers})}
   }else{
    videoEntries=originalVideo.split(/\r?\n/).map(url=>url.trim()).filter(Boolean).map(url=>({url,title:'',cover:null}))
