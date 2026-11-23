@@ -286,3 +286,84 @@
  .pd-detail-card{max-width:100%}
  .pd-page-controls button{min-width:44px;min-height:44px}
 }
+
+
+/* V81 — Album mobile : une grande page, deux cartes par ligne.
+   Le classeur PC conserve deux pages et sa perspective actuelle. */
+@media screen and (max-width:760px){
+ .pd-book{
+   display:block!important;width:100%!important;max-width:540px!important;
+   padding:clamp(10px,3vw,16px)!important;min-height:0!important;
+   background:linear-gradient(145deg,#193346,#081927 80%)!important;
+   border:1px solid #63879e86!important;border-radius:17px!important;
+ }
+ .pd-book .pd-leaf-left{
+   display:block!important;width:100%!important;height:auto!important;
+   padding:clamp(9px,2.7vw,17px)!important;border-radius:11px!important;
+   background:linear-gradient(155deg,#153247,#0a1b2b 80%)!important;
+   box-shadow:inset 0 0 20px #030e1c7a!important;
+ }
+ .pd-book .pd-leaf-right,.pd-book .pd-spine{display:none!important}
+ .pd-book .pd-slot-grid{
+   display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+   grid-template-rows:repeat(3,auto)!important;gap:clamp(9px,3vw,16px)!important;
+ }
+ .pd-book .pd-slot-grid>.pd-card,.pd-book .pd-slot-grid>.pd-slot-empty{
+   display:block!important;width:100%!important;height:auto!important;min-width:0!important;
+   min-height:0!important;aspect-ratio:.72!important;border-radius:9px!important;
+ }
+ .pd-book .pd-slot-grid>.pd-slot-empty{display:grid!important;place-items:center}
+ .pd-book .pd-card{padding:3px!important;border-width:1px!important;box-shadow:0 0 10px var(--rarity-glow)!important}
+ .pd-book .pd-card-photo{inset:4px 4px 2px!important;border-radius:6px!important}
+ .pd-book .pd-corner{width:12px;height:12px;top:6px;left:6px}
+ .pd-book .pd-card-index{font-size:10px!important;top:9px!important;left:10px!important}
+ .pd-book .pd-card-rank{font-size:14px!important;top:7px!important;right:9px!important}
+ .pd-book .pd-card-meta{bottom:9px!important;left:9px!important;right:7px!important;gap:4px!important;max-width:calc(100% - 17px)!important}
+ .pd-book .pd-card-meta strong{
+   display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;
+   font-family:'Barlow Condensed',Impact,sans-serif!important;
+   font-size:clamp(15px,4.5vw,22px)!important;line-height:1.05!important;
+   white-space:normal!important;overflow:hidden!important;
+ }
+ .pd-book .pd-card-meta small{display:block!important;font-size:clamp(8px,2.1vw,10px)!important;line-height:1.1!important;letter-spacing:0!important}
+ .pd-book .pd-card.is-selected{outline:2px solid #f0f8ff!important;outline-offset:2px!important}
+ .pd-book .yruz-photo-enlarge,.pd-mobile-zoom{display:none!important}
+ .pd-detail{scroll-margin-top:16px!important}
+}
+@media screen and (max-width:350px){
+ .pd-book{padding:7px!important}
+ .pd-book .pd-leaf-left{padding:8px!important}
+ .pd-book .pd-slot-grid{gap:8px!important}
+ .pd-book .pd-card-meta strong{font-size:14px!important}
+}
+/* Each detail view has a single selected portrait, with its own photo controls.
+   No horizontal gallery can accidentally include photographs from other cards. */
+.pd-detail-card{position:relative}
+.pd-card-expand{
+ position:absolute;z-index:5;top:13px;right:36px;
+ display:grid;place-items:center;width:36px;height:36px;
+ border:1px solid #d9eaf5ae;border-radius:9px;
+ background:#102f42df;color:#fff;font-size:20px;line-height:1;
+}
+.pd-card-expand:hover,.pd-card-expand:focus-visible{background:#e7f4fc;color:#0a2234}
+.pd-photo-controls{
+ width:min(275px,100%);align-self:center;display:flex;align-items:center;
+ justify-content:space-between;gap:8px;margin:0 auto 16px;
+ padding:7px;border:1px solid #52728a9c;border-radius:11px;background:#092133;
+}
+.pd-photo-controls button{
+ min-width:40px;min-height:40px;border-radius:8px;
+ border:1px solid #6b92a5;background:#16384e;color:#fff;
+ font-size:21px;display:grid;place-items:center
+}
+.pd-photo-controls button:disabled{opacity:.3;cursor:default}
+.pd-photo-controls button:not(:disabled):hover{background:#e6f2fa;color:#0b2030}
+.pd-photo-controls>span{font-size:10px;letter-spacing:.12em;font-weight:800;color:#d0e4f0;text-align:center}
+.pd-detail-gallery-title{line-height:1.5;overflow-wrap:anywhere}
+.pd-detail-gallery-hint{font-size:11px;line-height:1.7;color:#b1c7d5;margin:4px 0 2px}
+@media screen and (max-width:760px){
+ .pd-detail-card{width:min(262px,100%);height:338px}
+ .pd-card-expand{top:9px;right:34px;width:41px;height:41px}
+ .pd-photo-controls{width:min(270px,100%)}
+ .pd-detail-gallery-hint{font-size:12px}
+}

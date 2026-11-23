@@ -35,7 +35,16 @@
   }catch{return null}
  };
 
- const projectVideoLinks=p=>{const sources=Array.isArray(p.videos)?p.videos:String(p.video||'').split(/\r?\n/);return sources.map(v=>validMedia(v)).filter(Boolean).slice(0,12)};
+ const projectVideoEntries=p=>{
+  const raw=String(p.video||'').trim();let items=[];
+  if(raw.startsWith('{')){
+    try{const parsed=JSON.parse(raw);if(parsed?.version===2&&Array.isArray(parsed.videos))items=parsed.videos}catch{}
+  }else items=Array.isArray(p.videos)?p.videos:raw.split(/\r?\n/).map(url=>({url}));
+  return items.slice(0,12).map(item=>typeof item==='string'?{url:validMedia(item),title:'',cover:''}:{
+   url:validMedia(item?.url),title:String(item?.title||'').trim().slice(0,160),cover:validMedia(item?.cover?.url||item?.cover)
+  }).filter(item=>item.url);
+ };
+ const projectVideoLinks=p=>projectVideoEntries(typeof p==='string'?{video:p}:p).map(item=>item.url);
 
  const isGraphic = p => p && p.mode !== 'video' && /graphis|design|cr[eé]ation graphique|identit[eé] visuelle|branding/i.test(String(p.category || ''));
  const matchesFilter = (p, filter) => filter === 'graphisme' ? isGraphic(p) : filter === 'photo' ? p.mode === 'photo' && !isGraphic(p) : p.mode === 'video';
@@ -55,7 +64,7 @@
   // V54: The media carousel is the first visual element of every project.
   // The cover remains on the portfolio thumbnail; it is not repeated above the carousel.
   const gallery=(Array.isArray(p.gallery)?p.gallery:[]).map(validMedia).filter(Boolean);
-  const videos=projectVideoLinks(p);
+  const videos=projectVideoEntries(p);
   const hasVideo=videos.length>0;
   // A project with only a cover still gets a one-image viewer, not an empty page.
   if(!gallery.length && !hasVideo && validMedia(p.cover))gallery.push(validMedia(p.cover));
@@ -63,26 +72,30 @@
   const mansCarousel=gallery.length>0;
   const galleryCarouselMarkup=mansCarousel?`<div class="mans-carousel" aria-label="Carrousel du reportage"><div class="mans-carousel-view"><button type="button" class="mans-slide-button" data-gallery-index="0" aria-label="Agrandir la photographie affichée"><img class="mans-main-image" src="${escapeHtml(gallery[0])}" alt="${escapeHtml(p.title)} — photo 1"><span class="mans-open">AGRANDIR ↗</span></button><button type="button" class="mans-arrow mans-arrow-prev" ${gallery.length===1?'hidden':''} aria-label="Photographie précédente">←</button><button type="button" class="mans-arrow mans-arrow-next" ${gallery.length===1?'hidden':''} aria-label="Photographie suivante">→</button></div><div class="mans-carousel-footer"><span class="mans-carousel-count">01 / ${String(gallery.length).padStart(2,'0')}</span><div class="mans-progress"><span></span></div><span class="mans-carousel-label">GLISSER OU CLIQUER</span></div><div class="mans-filmstrip" aria-label="Choisir une photographie">${gallery.map((url,i)=>`<button class="mans-thumb" type="button" data-slide-index="${i}" aria-label="Afficher la photo ${i+1}" aria-current="${i===0?'true':'false'}"><img src="${escapeHtml(url)}" alt="" loading="lazy"></button>`).join('')}</div></div>`:'';
   const galleryMarkup=gallery.length?`<div class="gallery-heading"><div><span class="eyebrow">${p.demoGallery?'PHOTOS DE DÉMONSTRATION':'GALERIE DU PROJET'}</span><h2>LES IMAGES</h2></div><span>${String(gallery.length).padStart(2,'0')} VISUELS · CLIQUEZ POUR AGRANDIR</span></div><div class="project-gallery">${gallery.map((url,i)=>`<button class="gallery-image" type="button" data-gallery-index="${i}" aria-label="Agrandir la photo ${i+1} sur ${gallery.length}">${mediaImg(url,`${p.title} — photo ${i+1}`)}<span class="gallery-zoom">↗</span></button>`).join('')}</div>`:'<div class="gallery-empty">Les médias de ce projet seront ajoutés prochainement.</div>';
-  const videoEmbed=(raw,position)=>{
-    const src=validMedia(raw);if(!src)return '';
+  const videoEmbed=(video,position)=>{
+    const src=validMedia(video.url);if(!src)return '';
+    const label=video.title||p.title,customCover=validMedia(video.cover);
     const yt=youtubeInfo(src);
     if(yt){
-      const cover=(position===0?validMedia(p.cover):'')||yt.thumb;
-      return `<div class="yruz-youtube-player ${yt.vertical?'yruz-youtube-vertical':''}" data-youtube-player="${yt.id}"><button type="button" class="yruz-youtube-poster" data-youtube-play="${yt.id}" aria-label="Lire la vidéo ${escapeHtml(p.title)}"><img src="${escapeHtml(cover)}" alt="" loading="lazy"><span class="yruz-youtube-shade"></span><span class="yruz-youtube-play-icon" aria-hidden="true">▶</span><span class="yruz-youtube-caption"><small>YRUZPHOTO / VIDÉO</small><strong>REGARDER LE FILM</strong></span></button><noscript><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Regarder sur YouTube</a></noscript></div>`;
+      const cover=customCover||(position===0?validMedia(p.cover):'')||yt.thumb;
+      return `<div class="yruz-youtube-player ${yt.vertical?'yruz-youtube-vertical':''}" data-youtube-player="${yt.id}"><button type="button" class="yruz-youtube-poster" data-youtube-play="${yt.id}" aria-label="Lire la vidéo ${escapeHtml(label)}"><img src="${escapeHtml(cover)}" alt="" loading="lazy"><span class="yruz-youtube-shade"></span><span class="yruz-youtube-play-icon" aria-hidden="true">▶</span><span class="yruz-youtube-caption"><small>YRUZPHOTO / VIDÉO</small><strong>${escapeHtml(label)}</strong></span></button><noscript><a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">Regarder sur YouTube</a></noscript></div>`;
     }
     // Preserve older Vimeo and self-hosted MP4 projects.
     try{
       const u=new URL(src,location.origin),host=u.hostname.toLowerCase().replace(/^www\./,'');
       if(host==='vimeo.com'||host==='player.vimeo.com'){
         const id=u.pathname.match(/\d{6,12}/)?.[0];
-        if(id)return `<iframe class="project-video-embed" src="https://player.vimeo.com/video/${id}" title="Vidéo ${escapeHtml(p.title)}" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+        if(id){
+         if(customCover)return `<div class="yruz-vimeo-poster" data-vimeo-id="${id}"><button type="button" class="yruz-vimeo-play" data-vimeo-play="${id}" aria-label="Lire la vidéo ${escapeHtml(label)}"><img src="${escapeHtml(customCover)}" alt="Couverture de ${escapeHtml(label)}" loading="lazy"><span class="yruz-youtube-play-icon" aria-hidden="true">▶</span></button></div>`;
+         return `<iframe class="project-video-embed" src="https://player.vimeo.com/video/${id}" title="Vidéo ${escapeHtml(label)}" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+        }
       }
       // Only actual video files are passed to HTML5 video, not arbitrary URLs.
-      if(/\.(mp4|webm|ogg)(?:[?#]|$)/i.test(u.pathname))return `<video controls playsinline preload="none" poster="${escapeHtml(validMedia(p.cover))}" src="${escapeHtml(src)}">Votre navigateur ne prend pas en charge cette vidéo.</video>`;
+      if(/\.(mp4|webm|ogg)(?:[?#]|$)/i.test(u.pathname))return `<video controls playsinline preload="none" poster="${escapeHtml(customCover||(position===0?validMedia(p.cover):''))}" src="${escapeHtml(src)}">Votre navigateur ne prend pas en charge cette vidéo.</video>`;
     }catch{}
     return '<div class="yruz-video-error">Lien vidéo non reconnu. Ajoute une URL YouTube valide depuis le Studio.</div>';
   };
-  const videoMarkup=hasVideo?`<div class="gallery-heading"><div><span class="eyebrow">${videos.length>1?'FILMS':'FILM'}</span><h2>${videos.length>1?'LES VIDÉOS':'LA VIDÉO'}</h2></div><span>${String(videos.length).padStart(2,'0')} VIDÉO${videos.length>1?'S':''}</span></div><div class="yruz-video-collection ${videos.length>1?'is-multi':''}">${videos.map((url,i)=>`<article class="yruz-video-entry"><div class="yruz-video-entry-label">VIDÉO ${String(i+1).padStart(2,'0')} / ${String(videos.length).padStart(2,'0')}</div>${videoEmbed(url,i)}</article>`).join('')}</div>`:'';
+  const videoMarkup=hasVideo?`<div class="gallery-heading"><div><span class="eyebrow">${videos.length>1?'FILMS':'FILM'}</span><h2>${videos.length>1?'LES VIDÉOS':'LA VIDÉO'}</h2></div><span>${String(videos.length).padStart(2,'0')} VIDÉO${videos.length>1?'S':''}</span></div><div class="yruz-video-collection ${videos.length>1?'is-multi':''}">${videos.map((video,i)=>`<article class="yruz-video-entry"><div class="yruz-video-entry-label">VIDÉO ${String(i+1).padStart(2,'0')} / ${String(videos.length).padStart(2,'0')}</div>${video.title?`<h3 class="yruz-video-entry-title">${escapeHtml(video.title)}</h3>`:''}${videoEmbed(video,i)}</article>`).join('')}</div>`:'';
   content.innerHTML=`<div class="project-overline">${isGraphic(p)?'GRAPHISME':p.mode==='photo'?'PHOTOGRAPHIE':'VIDÉO'} / ${escapeHtml(p.category)}</div><h1>${escapeHtml(p.title)}</h1><div class="project-actions"><a class="btn outline" href="portfolio.html?type=${projectType}">← TOUS LES PROJETS</a><span class="project-state">${p.demoGallery?'GALERIE DE DÉMONSTRATION — PHOTOS À REMPLACER':isEmpty?'DOSSIER PRÊT À RECEVOIR VOS FICHIERS':`${gallery.length} PHOTO${gallery.length>1?'S':''}${hasVideo?` · ${videos.length} VIDÉO${videos.length>1?'S':''}`:''}`}</span></div>${videoMarkup}${mansCarousel?galleryCarouselMarkup:(hasVideo?'':galleryMarkup)}<div class="project-next"><div><span class="eyebrow">POUR ALLER PLUS LOIN</span><h2>À DÉCOUVRIR AUSSI</h2></div><div class="catalog-grid">${related.map(card).join('')}</div></div>`;
   refreshProjectUI=()=>{
     const translated=localizedProject(p),heading=content.querySelector('h1'),overline=content.querySelector('.project-overline');
@@ -96,12 +109,19 @@
    if(!/^[a-zA-Z0-9_-]{11}$/.test(id||''))return;
    const frame=document.createElement('iframe');
    frame.className='yruz-youtube-frame';
-   frame.title='Lecture : '+p.title;
+   frame.title='Lecture : '+(button.closest('.yruz-video-entry')?.querySelector('.yruz-video-entry-title')?.textContent||p.title);
    frame.src=`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
    frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';
    frame.referrerPolicy='strict-origin-when-cross-origin';
    frame.allowFullscreen=true;
    button.replaceWith(frame);
+  }));
+  content.querySelectorAll('[data-vimeo-play]').forEach(button=>button.addEventListener('click',()=>{
+   const id=button.dataset.vimeoPlay;if(!/^\d{6,12}$/.test(id||''))return;
+   const iframe=document.createElement('iframe');iframe.className='project-video-embed';
+   iframe.src=`https://player.vimeo.com/video/${id}?autoplay=1`;iframe.title=button.getAttribute('aria-label')||'Vimeo';
+   iframe.allow='autoplay; fullscreen; picture-in-picture';iframe.allowFullscreen=true;
+   button.parentElement.replaceWith(iframe);
   }));
   if(gallery.length){
    const overlay=document.createElement('div');overlay.className='yruz-lightbox';overlay.hidden=true;overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Visionneuse de photos');

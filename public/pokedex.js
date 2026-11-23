@@ -10,8 +10,8 @@ let originalCards=[],publishedPage=null;
 let cards=[],filter='all',term='',page=0,selected=null,chosenPhoto=0,turning=false;
 const mobile=()=>matchMedia('(max-width:760px)').matches;
 // V64: 3 columns x 3 rows per leaf on phone AND desktop.
-const slotsPerLeaf=()=>9;
-const perSpread=()=>2*slotsPerLeaf();
+const slotsPerLeaf=()=>mobile()?6:9;
+const perSpread=()=>mobile()?slotsPerLeaf():2*slotsPerLeaf();
 const getFiltered=()=>cards.filter(c=>(filter==='all'||c.rarity===filter)&&(!term||[c.title,c.subtitle,c.category,c.event,c.date,c.description].some(v=>String(v||'').toLocaleLowerCase('fr').includes(term))));
 const pad=i=>String(i).padStart(3,'0');
 function numberOf(card){return pad(cards.indexOf(card)+1)}
@@ -29,26 +29,37 @@ function renderBook(){
  if(!matches.length&&cards.length&&term){book.innerHTML='<div class="pd-no-match">Aucune carte ne correspond à cette recherche.</div>'}
  else{
   const blank=Array.from({length:per},(_,i)=>slice[i]||null);
-  book.innerHTML=leafHTML(blank.slice(0,slotsPerLeaf()),'left')+'<div class="pd-spine" aria-hidden="true">'+Array.from({length:4},()=>'<span class="pd-ring"></span>').join('')+'</div>'+leafHTML(blank.slice(slotsPerLeaf()),'right');
+  book.innerHTML=mobile()?leafHTML(blank,'left'):leafHTML(blank.slice(0,slotsPerLeaf()),'left')+'<div class="pd-spine" aria-hidden="true">'+Array.from({length:4},()=>'<span class="pd-ring"></span>').join('')+'</div>'+leafHTML(blank.slice(slotsPerLeaf()),'right');
  }
  $('#pd-pagination').textContent=`${String(page+1).padStart(2,'0')} / ${String(max).padStart(2,'0')}`;
  $('#pd-prev').disabled=page===0;$('#pd-next').disabled=page>=max-1;
  if(!cards.length)$('#pd-book').setAttribute('aria-label','La collection attend ses premières cartes');
 }
+// The photo viewer must never navigate to portraits from another card.
+function selectedGallery(){
+ const card=cards.find(c=>c.id===selected&&c.published!==false);
+ if(!card)return [];
+ const seen=new Set();
+ return [card.cover,...(Array.isArray(card.gallery)?card.gallery:[])].filter(item=>{
+  const url=safeImage(item);if(!url||seen.has(url))return false;seen.add(url);return true;
+ }).map(item=>({url:safeImage(item),alt:String(item?.alt||card.title||'Photographie')}));
+}
+window.YRUZ_POKEDEX_GALLERY=selectedGallery;
 function renderDetails(){
  const card=cards.find(c=>c.id===selected&&c.published!==false),pane=$('#pd-detail');
  if(!card){pane.innerHTML='<div class="pd-detail-placeholder"><span class="pd-detail-symbol">◇</span><strong>UNE RENCONTRE,<br>UNE HISTOIRE.</strong><p>'+(!cards.length?'La collection est prête. Ajoute tes premiers portraits depuis le Studio YRUZPHOTO.':'Sélectionne une carte du classeur pour découvrir son histoire et ses photographies.')+'</p></div>';return}
  const r=rarities[card.rarity]||rarities.commun;
- const gallery=[card.cover,...(card.gallery||[])].filter(item=>safeImage(item));
+ const gallery=selectedGallery();
  chosenPhoto=Math.max(0,Math.min(chosenPhoto,gallery.length-1));
  const featured=gallery[chosenPhoto]||card.cover,cover=safeImage(featured);
  pane.innerHTML=`<div class="pd-detail-tagline"><span>FICHE DE RENCONTRE</span><span>#${numberOf(card)}</span></div>
- <div class="pd-card pd-detail-card rarity-${escapeHtml(card.rarity)}"><span class="pd-card-photo">${cover?`<img src="${escapeHtml(cover)}" alt="${escapeHtml(featured?.alt||card.title||'Portrait')}">`:''}</span><span class="pd-corner"></span><span class="pd-card-index">#${numberOf(card)}</span><span class="pd-card-rank">${r.symbol}</span><span class="pd-card-meta"><strong>${escapeHtml(card.title||'RENCONTRE')}</strong><small>${escapeHtml(card.subtitle||card.category||'YRUZPHOTO')}</small></span></div>
+ <div class="pd-card pd-detail-card rarity-${escapeHtml(card.rarity)}"><span class="pd-card-photo">${cover?`<img src="${escapeHtml(cover)}" alt="${escapeHtml(featured?.alt||card.title||'Portrait')}">`:''}</span><span class="pd-corner"></span><span class="pd-card-index">#${numberOf(card)}</span><span class="pd-card-rank">${r.symbol}</span><span class="pd-card-meta"><strong>${escapeHtml(card.title||'RENCONTRE')}</strong><small>${escapeHtml(card.subtitle||card.category||'YRUZPHOTO')}</small></span>${cover?`<button type="button" class="pd-card-expand" data-photo-open aria-label="Agrandir la photo de ${escapeHtml(card.title)}" title="Voir la photo en grand">⛶</button>`:''}</div>
+ ${gallery.length?`<div class="pd-photo-controls" role="group" aria-label="Photos de ${escapeHtml(card.title)} seulement"><button type="button" data-gallery-step="-1" aria-label="Photo précédente de ${escapeHtml(card.title)}" ${gallery.length===1?'disabled':''}>←</button><span aria-live="polite">PHOTO ${String(chosenPhoto+1).padStart(2,'0')} / ${String(gallery.length).padStart(2,'0')}</span><button type="button" data-gallery-step="1" aria-label="Photo suivante de ${escapeHtml(card.title)}" ${gallery.length===1?'disabled':''}>→</button></div>`:''}
  <div class="pd-detail-body"><div class="pd-detail-line"><h2>${escapeHtml(card.title||'Rencontre')}</h2><span class="pd-chip ${escapeHtml(card.rarity)}">${r.label}</span></div><p class="pd-detail-role">${escapeHtml(card.subtitle||card.category||'PORTRAIT')}</p>
  ${card.description?`<p class="pd-description">${escapeHtml(card.description)}</p>`:''}
  <div class="pd-facts">${card.category?`<div class="pd-fact"><strong>CATÉGORIE</strong><span>${escapeHtml(card.category)}</span></div>`:''}${card.event?`<div class="pd-fact"><strong>ÉVÉNEMENT</strong><span>${escapeHtml(card.event)}</span></div>`:''}${card.date?`<div class="pd-fact"><strong>DATE</strong><span>${escapeHtml(card.date)}</span></div>`:''}</div>
- <div class="pd-detail-gallery-title">PHOTOGRAPHIES ASSOCIÉES · ${gallery.length}</div>
- ${gallery.length?`<div class="pd-detail-gallery">${gallery.map((photo,i)=>`<button type="button" data-gallery="${i}" class="pd-gallery-photo ${i===chosenPhoto?'active':''}" aria-label="Voir la photo ${i+1}"><img src="${escapeHtml(safeImage(photo))}" alt="${escapeHtml(photo.alt||'Portrait')}" loading="lazy"></button>`).join('')}</div>`:'<p class="pd-gallery-empty">Photographies à venir.</p>'}
+ <div class="pd-detail-gallery-title">GALERIE DE ${escapeHtml(card.title||'CETTE RENCONTRE')} · ${gallery.length} PHOTO${gallery.length>1?'S':''}</div>
+ ${gallery.length?'<p class="pd-detail-gallery-hint">Utilise les flèches pour voir uniquement les photos de cette personne, puis agrandis la photo si tu le souhaites.</p>':'<p class="pd-gallery-empty">Photographies à venir.</p>'}
  </div>`;
 }
 function refreshFilters(){
@@ -64,7 +75,7 @@ function turn(direction){
  const max=Math.max(1,Math.ceil(getFiltered().length/perSpread()));const next=page+direction;if(next<0||next>=max)return;
  const book=$('#pd-book'),source=book.querySelector(direction>0?'.pd-leaf-right':'.pd-leaf-left');
  const finish=()=>{page=next;turning=false;selected=null;chosenPhoto=0;renderBook();renderDetails()};
- if(!source||matchMedia('(prefers-reduced-motion:reduce)').matches){finish();return}
+ if(mobile()||!source||matchMedia('(prefers-reduced-motion:reduce)').matches){finish();return}
  turning=true;const layer=document.createElement('div');layer.className='pd-turn-layer '+(direction>0?'next':'previous');layer.innerHTML=source.outerHTML;book.appendChild(layer);
  requestAnimationFrame(()=>requestAnimationFrame(()=>layer.classList.add('go')));
  setTimeout(finish,550);
@@ -95,9 +106,23 @@ async function init(){
 $('#pd-filters').addEventListener('click',event=>{const btn=event.target.closest('[data-filter]');if(!btn)return;filter=btn.dataset.filter;page=0;rerender(false)});
 $('#pd-query').addEventListener('input',event=>{term=event.target.value.trim().toLocaleLowerCase('fr');page=0;rerender(false)});
 $('#pd-book').addEventListener('click',event=>{const btn=event.target.closest('[data-card]');if(!btn||turning)return;selected=btn.dataset.card;chosenPhoto=0;renderBook();renderDetails();if(mobile())$('#pd-detail').scrollIntoView({behavior:'smooth',block:'start'})});
-$('#pd-detail').addEventListener('click',event=>{const photo=event.target.closest('[data-gallery]');if(!photo)return;chosenPhoto=Number(photo.dataset.gallery)||0;renderDetails()});
+$('#pd-detail').addEventListener('click',event=>{
+ const zoom=event.target.closest('[data-photo-open]');
+ if(zoom){
+  const photo=selectedGallery()[chosenPhoto];
+  if(photo)window.dispatchEvent(new CustomEvent('yruz:photo-open',{detail:photo}));
+  return;
+ }
+ const step=event.target.closest('[data-gallery-step]');
+ if(step){
+  const gallery=selectedGallery();if(!gallery.length)return;
+  const delta=Number(step.dataset.galleryStep)||0;
+  chosenPhoto=(chosenPhoto+delta+gallery.length)%gallery.length;
+  renderDetails();return;
+ }
+});
 $('#pd-prev').addEventListener('click',()=>turn(-1));$('#pd-next').addEventListener('click',()=>turn(1));
-document.addEventListener('keydown',event=>{if(/input|textarea/i.test(document.activeElement.tagName))return;if(event.key==='ArrowRight')turn(1);if(event.key==='ArrowLeft')turn(-1)});
+document.addEventListener('keydown',event=>{if(document.querySelector('#yruz-photo-viewer')?.open)return;if(/input|textarea/i.test(document.activeElement.tagName))return;if(event.key==='ArrowRight')turn(1);if(event.key==='ArrowLeft')turn(-1)});
 let touchX=null;$('#pd-book').addEventListener('touchstart',e=>{touchX=e.touches[0]?.clientX??null},{passive:true});$('#pd-book').addEventListener('touchend',e=>{if(touchX===null)return;const dx=(e.changedTouches[0]?.clientX??touchX)-touchX;touchX=null;if(Math.abs(dx)>70)turn(dx<0?1:-1)},{passive:true});
 let wasMobile=mobile();window.addEventListener('resize',()=>{if(wasMobile!==mobile()){wasMobile=mobile();page=0;rerender()}});
 init();

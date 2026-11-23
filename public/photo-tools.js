@@ -11,7 +11,7 @@
     '.project-cover img', '.cms-carousel-open img', '.cms-photo-grid img',
     '.cms-image-text-media img', '.cms-project-cover img',
     '.service-visual img', '.story-photo img', '.gallery-image img',
-    '.pd-card img', '.pd-detail img'
+    '.pd-detail img'
   ].join(',');
   let frames = {}, lastFocus = null, current = null, scheduled = false;
   const viewer = document.createElement('dialog');
@@ -21,7 +21,15 @@
   document.body.appendChild(viewer);
   const image = viewer.querySelector('figure img');
   const caption = viewer.querySelector('figcaption');
-  const getTargets = () => [...document.querySelectorAll(selectors)].filter(img => safe(img.getAttribute('src')) && img.getAttribute('src') !== '#');
+  const getTargets = () => [...document.querySelectorAll(selectors)].filter(img => safe(img.getAttribute('src')) && img.getAttribute('src') !== '#' && !img.closest('#pd-book'));
+  const photoCollection = () => {
+    const selected = document.getElementById('pd-book') && window.YRUZ_POKEDEX_GALLERY;
+    const entries = typeof selected === 'function' ? selected() : getTargets().map(img => ({url:img.getAttribute('src'),alt:img.alt}));
+    const seen = new Set();
+    return entries.filter(row => {
+      const url = safe(row.url);if(!url||seen.has(url))return false;seen.add(url);return true;
+    });
+  };
   function applyFrame(img) {
     const url = img.getAttribute('src') || '';
     const frame = frames[url] || frames[img.src];
@@ -52,8 +60,7 @@
     if (!viewer.open) viewer.showModal();
   }
   function navigate(dir) {
-    const all = getTargets().map(img => ({url:img.getAttribute('src'),alt:img.alt}));
-    const filtered = all.filter(x => safe(x.url));
+    const filtered = photoCollection();
     if (!filtered.length) return;
     const index = filtered.findIndex(x => x.url === current);
     const next = filtered[(index + dir + filtered.length) % filtered.length];
@@ -82,7 +89,7 @@
       applyFrame(img);
       if (img.dataset.yruzZoomAttached === 'yes') continue;
       const box = img.parentElement;
-      if (!box || box.closest('.mans-filmstrip, .cms-carousel-thumbs, .pd-detail-thumbs')) continue;
+      if (!box || box.closest('.mans-filmstrip, .cms-carousel-thumbs, .pd-detail-thumbs') || (document.getElementById('pd-book') && img.closest('#pd-detail'))) continue;
       img.dataset.yruzZoomAttached = 'yes';
       // A span avoids nesting a button within interactive portfolio cards.
       const button = document.createElement('span');
@@ -103,6 +110,10 @@
     }
   }
   function schedule() { if (scheduled) return; scheduled = true; requestAnimationFrame(attach); }
+  // Photo enlargement requested by the selected Pokédex card.
+  window.addEventListener('yruz:photo-open', event => {
+    const photo=event.detail;if(photo&&safe(photo.url))open(photo.url,photo.alt);
+  });
   viewer.querySelector('.ypv-close').addEventListener('click', () => viewer.close());
   viewer.querySelector('.ypv-prev').addEventListener('click', () => navigate(-1));
   viewer.querySelector('.ypv-next').addEventListener('click', () => navigate(1));

@@ -32,16 +32,44 @@ function storyEditor(page){
  return `<section class="form-panel v65-story-editor"><div class="panel-eyebrow">MON HISTOIRE / PARCOURS</div><h2>Les 3 chapitres de ton histoire</h2><p>Les chapitres suivent l'ordre de défilement actuel, de 01 à 03. Tu peux modifier chaque texte, sa position identifiée ci-dessous, et sa photographie. Le défilement et la mise en page du site ne changent pas.</p>${page.storyCards.map((chapter,i)=>`<article class="v65-chapter"><div class="v65-chapter-head"><span>CHAPITRE ${String(i+1).padStart(2,'0')}</span><strong>${e(chapter.title||['Tout part d’un regard','Le mouvement. L’émotion.','La suite s’écrit.'][i])}</strong></div><div class="v65-chapter-fields">${mediaField(`storyCards.${i}.image`,chapter.image,`Photo du chapitre ${i+1}`)}${field('Étiquette en haut du chapitre',`storyCards.${i}.kicker`,chapter.kicker||'')}${field('🇬🇧 English · étiquette',`storyCards.${i}.en.kicker`,chapter.en?.kicker||'')}${field('🇧🇷 Português · étiquette',`storyCards.${i}.ptBr.kicker`,chapter.ptBr?.kicker||'')}${field('Numéro et sous-titre du chapitre',`storyCards.${i}.indexLabel`,chapter.indexLabel||'')}${field('🇬🇧 English · numéro et sous-titre',`storyCards.${i}.en.indexLabel`,chapter.en?.indexLabel||'')}${field('🇧🇷 Português · numéro et sous-titre',`storyCards.${i}.ptBr.indexLabel`,chapter.ptBr?.indexLabel||'')}${field('Grand titre',`storyCards.${i}.title`,chapter.title||'')}${field('🇬🇧 English · titre',`storyCards.${i}.en.title`,chapter.en?.title||'')}${field('🇧🇷 Português · titre',`storyCards.${i}.ptBr.title`,chapter.ptBr?.title||'')}${field('Paragraphe',`storyCards.${i}.body`,chapter.body||'','textarea')}${field('🇬🇧 English · paragraphe',`storyCards.${i}.en.body`,chapter.en?.body||'','textarea')}${field('🇧🇷 Português · paragraphe',`storyCards.${i}.ptBr.body`,chapter.ptBr?.body||'','textarea')}${field('Légende sur la photo',`storyCards.${i}.caption`,chapter.caption||'')}${field('🇬🇧 English · légende',`storyCards.${i}.en.caption`,chapter.en?.caption||'')}${field('🇧🇷 Português · légende',`storyCards.${i}.ptBr.caption`,chapter.ptBr?.caption||'')}${i===1?(field('Petite note sous la photo',`storyCards.${i}.note`,chapter.note||'')+field('🇬🇧 Note en anglais',`storyCards.${i}.en.note`,chapter.en?.note||'')+field('🇧🇷 Nota em português',`storyCards.${i}.ptBr.note`,chapter.ptBr?.note||'')):''}${i===2?`<div class="field-row">${field('Texte du bouton final',`storyCards.${i}.buttonLabel`,chapter.buttonLabel||'')}${field('🇬🇧 Bouton anglais',`storyCards.${i}.en.buttonLabel`,chapter.en?.buttonLabel||'')}${field('🇧🇷 Botão em português',`storyCards.${i}.ptBr.buttonLabel`,chapter.ptBr?.buttonLabel||'')}${field('Lien du bouton final',`storyCards.${i}.buttonUrl`,chapter.buttonUrl||'')}</div>`:''}</div></article>`).join('')}</section>`;
 }
 const universeNames={photo:'Photo',video:'Vidéo',graphisme:'Graphisme'};
-// V80: several video links live in the existing Payload `video` text field.
-// One URL per line, backwards compatible with the previous single-video format.
-const projectVideoLines=raw=>String(raw||'').replace(/\r/g,'').split('\n').slice(0,12);
-const projectVideoLinks=raw=>projectVideoLines(raw).map(v=>v.trim()).filter(Boolean);
+// V81: individual video title and cover, stored in the existing Payload text field.
+// Older projects containing only URLs (one per line) remain readable/editable.
+const projectVideoItems=raw=>{
+ const text=String(raw||'').trim();if(!text)return [];
+ if(text.startsWith('{')){
+  try{
+   const data=JSON.parse(text);
+   if(data?.version===2&&Array.isArray(data.videos))return data.videos.slice(0,12).map(v=>({
+    url:String(v.url||''),title:String(v.title||''),cover:v.cover&&typeof v.cover==='object'?
+       {url:String(v.cover.url||''),alt:String(v.cover.alt||'')}:null
+   }));
+  }catch{}
+ }
+ return text.replace(/\r/g,'').split('\n').slice(0,12).filter(Boolean).map(url=>({url:url.trim(),title:'',cover:null}));
+};
+const projectVideoLinks=raw=>projectVideoItems(raw).map(v=>v.url.trim()).filter(Boolean);
+const encodeProjectVideos=items=>JSON.stringify({version:2,videos:items.slice(0,12).map(item=>({
+ url:String(item.url||'').trim(),title:String(item.title||'').trim().slice(0,160),
+ cover:item.cover?.url?{url:String(item.cover.url),alt:String(item.cover.alt||'')}:null
+}))});
+const updateProjectVideo=(index,key,value)=>{
+ const items=projectVideoItems(projectDraft.video);
+ if(!items[index])items[index]={url:'',title:'',cover:null};
+ items[index][key]=value;
+ projectDraft.video=encodeProjectVideos(items);
+};
 const validLegacyVideoLink=raw=>/^https:\/\/(?:www\.)?(?:vimeo\.com|player\.vimeo\.com)\//i.test(raw)||/^https:\/\/[^\s]+\.(?:mp4|webm|ogg)(?:[?#]|$)/i.test(raw);
 function renderVideoEntries(d){
- const lines=projectVideoLines(d.video);
- return `<div class="v80-video-entries">${lines.map((link,i)=>`<div class="v80-video-entry"><div class="v80-video-entry-head"><strong>VIDÉO ${String(i+1).padStart(2,'0')}</strong><div class="mini-actions">${action('project-video-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-video-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-video-remove','Retirer',`data-index="${i}"`,true)}</div></div><label class="field"><span>Lien YouTube / Shorts / Vimeo / MP4</span><input type="url" data-project-video-index="${i}" value="${e(link)}" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" inputmode="url"></label><div class="v80-video-entry-preview" data-video-preview-index="${i}">${youtubeStudioPreview({...d,cover:i===0?d.cover:null,legacyCover:i===0?d.legacyCover:'',video:link})}</div></div>`).join('')}</div><div class="add-row">${action('project-video-add','+ Ajouter une vidéo')}${lines.length>=12?'<span>12 vidéos maximum par projet</span>':''}</div>`;
+ const videos=projectVideoItems(d.video);
+ if(!videos.length)videos.push({url:'',title:'',cover:null});
+ return `<div class="v80-video-entries">${videos.map((item,i)=>{
+  const thumb=validSrc(item.cover?.url);
+  return `<div class="v80-video-entry v81-video-entry"><div class="v80-video-entry-head"><strong>VIDÉO ${String(i+1).padStart(2,'0')}</strong><div class="mini-actions">${action('project-video-move','↑',`data-index="${i}" data-dir="-1"`)}${action('project-video-move','↓',`data-index="${i}" data-dir="1"`)}${action('project-video-remove','Retirer',`data-index="${i}"`,true)}</div></div>
+   <div class="v81-video-fields"><label class="field"><span>Lien vidéo (YouTube, Shorts, Vimeo, MP4)</span><input type="url" data-project-video-index="${i}" data-project-video-key="url" value="${e(item.url)}" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off" inputmode="url"></label>
+   <label class="field"><span>Titre de cette vidéo</span><input type="text" maxlength="160" data-project-video-index="${i}" data-project-video-key="title" value="${e(item.title)}" placeholder="Ex. : Le Mans — Coulisses du tournage"></label></div>
+   <div class="v81-video-cover"><div class="v81-video-cover-visual">${thumb?`<img src="${e(thumb)}" alt="Couverture de la vidéo ${i+1}" loading="lazy">`:'<span>COUVERTURE PERSONNALISÉE</span>'}</div><div class="v81-video-cover-actions"><strong>Couverture de cette vidéo</strong><small>Indépendante des autres vidéos du projet. Si vide, miniature YouTube automatique.</small><div class="mini-actions">${action('project-video-cover-choose','▧ Médiathèque',`data-index="${i}"`)}${action('project-video-cover-upload','↑ Importer',`data-index="${i}"`)}${thumb?action('project-video-cover-clear','Supprimer',`data-index="${i}"`,true):''}</div></div></div>
+   <div class="v80-video-entry-preview" data-video-preview-index="${i}">${youtubeStudioPreview({cover:item.cover,legacyCover:'',video:item.url})}</div></div>`}).join('')}</div><div class="add-row">${action('project-video-add','+ Ajouter une vidéo')}${videos.length>=12?'<span>12 vidéos maximum par projet</span>':''}</div>`;
 }
-
 
 // Read the standard YouTube, Shorts, Live and short links without loading YouTube on the editor.
 function youtubeInfo(raw){
@@ -204,8 +232,8 @@ async function saveProject(){
   const invalid=links.find(url=>!youtubeInfo(url)&&!validLegacyVideoLink(url));
   if(invalid){message('Lien vidéo non reconnu : utilise YouTube, Shorts, Vimeo ou un MP4 HTTPS.',true);return}
   if(projectDraft.published&&!links.length){message('Ajoute au moins une vidéo avant de publier ce projet.',true);return}
-  if(links.join('\n').length>2000){message('Liens trop longs : 2 000 caractères maximum au total.',true);return}
-  projectDraft.video=links.join('\n');
+  if(projectVideoItems(projectDraft.video).length>12){message('12 vidéos maximum par projet.',true);return}
+  projectDraft.video=encodeProjectVideos(projectVideoItems(projectDraft.video).filter(item=>item.url.trim()));
  }
  savingProject=true;render();
  try{const payload={...projectDraft,universe:projectUniverse};const r=await fetch('/studio-projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:'same-origin'});const data=await r.json();if(!r.ok)throw Error(data.error||'Enregistrement impossible');
@@ -596,6 +624,7 @@ function applyUploaded(photos,target){
    if(!Array.isArray(card.gallery))card.gallery=[];
    photos.forEach(photo=>card.gallery.push({url:photo.url,alt:photo.alt}));markDirty();render();return;
  }
+ if(target?.kind==='project-video-cover'&&projectDraft){const photo=photos[0];updateProjectVideo(Number(target.index),'cover',{url:photo.url,alt:photo.alt});render();return}
  if(target?.kind==='project-cover'&&projectDraft){const photo=photos[0];projectDraft.cover={id:photo.id,url:photo.url,alt:photo.alt};render();return}
  if(target?.kind==='project-gallery'&&projectDraft){photos.forEach(photo=>projectDraft.gallery.push({photo:{id:photo.id,url:photo.url,alt:photo.alt},legacyUrl:''}));render();return}
  const root=currentRoot();
@@ -748,18 +777,24 @@ function onAction(btn){const command=btn.dataset.action,index=Number(btn.dataset
  if(command==='featured-move'){if(move(root.featuredCards[featuredUniverse],index,index+dir)){markDirty();render()}return}
  if(command==='crop-image'){openCrop(btn.dataset.url);return}
  if(command==='project-video-add'&&projectDraft){
-  const lines=projectVideoLines(projectDraft.video);
-  if(lines.length>=12){message('12 vidéos maximum par projet.',true);return}
-  projectDraft.video=lines.join('\n')+'\n';render();return;
+  const items=projectVideoItems(projectDraft.video);
+  if(items.length>=12){message('12 vidéos maximum par projet.',true);return}
+  items.push({url:'',title:'',cover:null});projectDraft.video=encodeProjectVideos(items);render();return;
  }
  if(command==='project-video-remove'&&projectDraft){
-  const lines=projectVideoLines(projectDraft.video);lines.splice(index,1);
-  projectDraft.video=lines.join('\n');render();return;
+  const items=projectVideoItems(projectDraft.video);items.splice(index,1);
+  projectDraft.video=encodeProjectVideos(items);render();return;
  }
  if(command==='project-video-move'&&projectDraft){
-  const lines=projectVideoLines(projectDraft.video);
-  if(move(lines,index,index+dir)){projectDraft.video=lines.join('\n');render()};return;
+  const items=projectVideoItems(projectDraft.video);
+  if(move(items,index,index+dir)){projectDraft.video=encodeProjectVideos(items);render()}return;
  }
+ if(command==='project-video-cover-choose'&&projectDraft){
+  const at=index;
+  openPicker(photo=>{updateProjectVideo(at,'cover',{url:photo.url,alt:photo.alt});render()});return;
+ }
+ if(command==='project-video-cover-upload'&&projectDraft){uploadTarget={kind:'project-video-cover',index};$('#directUploadInput').click();return}
+ if(command==='project-video-cover-clear'&&projectDraft){updateProjectVideo(index,'cover',null);render();return}
  if(command==='project-new'){projectDraft=newProject();render();return}
  if(command==='project-cover-choose'){openPicker(photo=>{projectDraft.cover={id:photo.id,url:photo.url,alt:photo.alt};render();openCrop(photo.url,{project:true})});return}
  if(command==='project-cover-upload'){uploadTarget={kind:'project-cover'};$('#directUploadInput').click();return}
@@ -812,7 +847,15 @@ $('#editor').addEventListener('input',event=>{
   librarySearchTimer=setTimeout(()=>loadLibrary(1),300);return;
  }
  const videoInput=event.target.closest('[data-project-video-index]');
- if(videoInput&&projectDraft){const index=Number(videoInput.dataset.projectVideoIndex),lines=projectVideoLines(projectDraft.video);lines[index]=videoInput.value;projectDraft.video=lines.join('\n');const preview=$(`[data-video-preview-index="${index}"]`);if(preview)preview.innerHTML=youtubeStudioPreview({...projectDraft,cover:index===0?projectDraft.cover:null,legacyCover:index===0?projectDraft.legacyCover:'',video:videoInput.value});return}
+ if(videoInput&&projectDraft){
+  const index=Number(videoInput.dataset.projectVideoIndex),key=videoInput.dataset.projectVideoKey||'url';
+  if(key==='title'||key==='url')updateProjectVideo(index,key,videoInput.value);
+  if(key==='url'&&event.type==='change'){
+   const item=projectVideoItems(projectDraft.video)[index],preview=$(`[data-video-preview-index="${index}"]`);
+   if(preview&&item)preview.innerHTML=youtubeStudioPreview({cover:item.cover,legacyCover:'',video:item.url});
+  }
+  return;
+ }
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;if(projectInput.dataset.projectField==='video')updateYoutubeStudioPreview();return}
  if(selection==='equipement'&&event.target.matches('[data-equipment-specs]')){const i=Number(event.target.dataset.equipmentSpecs);const item=currentRoot().equipmentItems?.[i];if(item){item.specs=event.target.value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,20);currentRoot().equipmentCustomized=true;markDirty()}return}
  const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;markDirty()});
@@ -820,7 +863,15 @@ $('#editor').addEventListener('change',event=>{
  if(event.target.id==='libraryDestination'){libraryDestination=event.target.value;return}
  if(event.target.id==='libraryUniverse'){libraryUniverse=event.target.value;return}
  const videoInput=event.target.closest('[data-project-video-index]');
- if(videoInput&&projectDraft){const index=Number(videoInput.dataset.projectVideoIndex),lines=projectVideoLines(projectDraft.video);lines[index]=videoInput.value;projectDraft.video=lines.join('\n');const preview=$(`[data-video-preview-index="${index}"]`);if(preview)preview.innerHTML=youtubeStudioPreview({...projectDraft,cover:index===0?projectDraft.cover:null,legacyCover:index===0?projectDraft.legacyCover:'',video:videoInput.value});return}
+ if(videoInput&&projectDraft){
+  const index=Number(videoInput.dataset.projectVideoIndex),key=videoInput.dataset.projectVideoKey||'url';
+  if(key==='title'||key==='url')updateProjectVideo(index,key,videoInput.value);
+  if(key==='url'&&event.type==='change'){
+   const item=projectVideoItems(projectDraft.video)[index],preview=$(`[data-video-preview-index="${index}"]`);
+   if(preview&&item)preview.innerHTML=youtubeStudioPreview({cover:item.cover,legacyCover:'',video:item.url});
+  }
+  return;
+ }
  const projectInput=event.target.closest('[data-project-field]');if(projectInput&&projectDraft){projectDraft[projectInput.dataset.projectField]=projectInput.type==='checkbox'?projectInput.checked:projectInput.value;if(projectInput.dataset.projectField==='video')updateYoutubeStudioPreview();return}
  const input=event.target.closest('[data-field]');if(!input)return;const value=input.type==='checkbox'?input.checked:input.value;setNested(currentRoot(),input.dataset.field,value);if(selection==='equipement'&&input.dataset.field.startsWith('equipmentItems.'))currentRoot().equipmentCustomized=true;if(selection==='pokedex'&&(input.dataset.field==='sortMode'||/^cards\.\d+\.rarity$/.test(input.dataset.field)))sortPokedexCards(currentRoot());markDirty();if(input.dataset.field.endsWith('selection')||input.dataset.field.endsWith('.rarity')||input.dataset.field==='sortMode')render()});
 $('#saveBtn').addEventListener('click',save);

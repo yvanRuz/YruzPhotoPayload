@@ -30,3 +30,11 @@
 .yruz-video-entry video{background:#061524;aspect-ratio:16/9;object-fit:contain}
 @media(max-width:800px){.yruz-video-collection.is-multi{grid-template-columns:minmax(0,1fr);gap:30px}}
 @media(max-width:767px){.yruz-video-entry-label{font-size:9px}.yruz-video-collection{gap:22px;margin-bottom:36px}.yruz-video-entry .yruz-youtube-player{border-radius:10px}}
+
+
+/* V81 — readable per-video titles and personal covers. */
+.yruz-video-entry-title{margin:8px 0 14px;font:800 clamp(19px,2.6vw,30px)/1.13 'Barlow Condensed',Impact,sans-serif;color:#edf6fc;letter-spacing:.015em;overflow-wrap:anywhere}
+.yruz-vimeo-poster{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:12px;background:#081927}
+.yruz-vimeo-play{display:block;width:100%;height:100%;padding:0;border:0;position:relative;cursor:pointer;background:transparent;color:white}
+.yruz-vimeo-play img{width:100%;height:100%;object-fit:cover}
+.yruz-vimeo-play .yruz-youtube-play-icon{position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%)}

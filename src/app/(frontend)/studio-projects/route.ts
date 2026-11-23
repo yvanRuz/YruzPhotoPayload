@@ -51,8 +51,24 @@ export async function POST(request:Request){
   if(!title||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))return Response.json({error:'Titre et identifiant valides requis (lettres minuscules et tirets)'},{status:400,headers})
   // V80: store up to 12 video URLs in the existing text field (one per line).
   // Avoid PostgreSQL schema changes and keep old single-video projects readable.
-  const originalVideo=clean(input.video,2000)
-  const videoItems=originalVideo.split(/\r?\n/).map(url=>url.trim()).filter(Boolean)
+  const originalVideo=clean(input.video,12000)
+  let videoEntries:{url:string,title:string,cover:{url:string,alt:string}|null}[]=[]
+  if(originalVideo.startsWith('{')){
+   try{
+    const parsed=JSON.parse(originalVideo)
+    if(parsed?.version!==2||!Array.isArray(parsed.videos)||parsed.videos.length>12)throw Error('Format des vidéos invalide')
+    videoEntries=parsed.videos.map((v:any)=>({
+     url:clean(v?.url,2000),title:clean(v?.title,160),
+     cover:v?.cover?.url?{url:clean(v.cover.url,2000),alt:clean(v.cover.alt,250)}:null
+    })).filter(v=>v.url)
+   }catch{return Response.json({error:'Métadonnées des vidéos invalides'},{status:400,headers})}
+  }else{
+   videoEntries=originalVideo.split(/\r?\n/).map(url=>url.trim()).filter(Boolean).map(url=>({url,title:'',cover:null}))
+  }
+  const videoItems=videoEntries.map(v=>v.url)
+  // Covers refer to already uploaded public media, not untrusted inline files or scripts.
+  if(videoEntries.some(v=>v.cover&&!/^(https:\/\/[^\s<>\"'`]+|\/api\/media\/[^\s<>\"'`]+|\/assets\/[^\s<>\"'`]+)$/i.test(v.cover.url)))
+   return Response.json({error:'Adresse de couverture vidéo invalide'},{status:400,headers})
   if(videoItems.length>12)return Response.json({error:'12 vidéos maximum par projet'},{status:400,headers})
   if(kind==='video'){
    for(const url of videoItems){
@@ -77,7 +93,7 @@ export async function POST(request:Request){
    if(existing.docs.length)return Response.json({error:'Ce projet existe déjà dans Payload. Actualise le Studio avant de le modifier.'},{status:409,headers})
   }
   const data:any={title,slug,mode:kind==='video'?'video':'photo',category:kind==='graphisme'?'GRAPHISME':clean(input.category,150),
-    video:videoItems.join('\n'),order:Math.max(0,Math.min(99999,Math.round(Number(input.order)||0))),published:input.published!==false,
+    video:originalVideo.startsWith('{')?JSON.stringify({version:2,videos:videoEntries}):videoItems.join('\n'),order:Math.max(0,Math.min(99999,Math.round(Number(input.order)||0))),published:input.published!==false,
     cover:uploadId(input.cover),legacyCover:clean(input.legacyCover,2000),
     gallery:(Array.isArray(input.gallery)?input.gallery:[]).slice(0,150).map((row:any)=>({photo:uploadId(row.photo),legacyUrl:clean(row.legacyUrl,2000)}))}
   const result=id&&!isStarter?await payload.update({collection:'projects',id,data,overrideAccess:true}):await payload.create({collection:'projects',data,overrideAccess:true});

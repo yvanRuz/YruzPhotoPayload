@@ -251,3 +251,23 @@ body.v56-is-sorting,body.v56-is-sorting *{cursor:grabbing!important}
  .v80-video-entry-head .mini-btn{min-height:40px}
  .project-editor .project-gallery-items .item-actions{flex-wrap:wrap}
 }
+
+
+/* V81 — independent metadata for each video in every portfolio project. */
+.v81-video-entry{display:grid;gap:14px}
+.v81-video-entry .v80-video-entry-preview{margin-top:0}
+.v81-video-fields{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px}
+.v81-video-cover{display:flex;align-items:center;gap:16px;padding:12px;border:1px solid #3e647a;border-radius:10px;background:#081c2a}
+.v81-video-cover-visual{width:136px;aspect-ratio:16/9;flex:none;overflow:hidden;border:1px solid #537991;border-radius:7px;background:#102c3e;display:grid;place-items:center;text-align:center}
+.v81-video-cover-visual img{width:100%;height:100%;object-fit:cover}
+.v81-video-cover-visual span{font-size:8px;letter-spacing:.11em;line-height:1.6;padding:8px;color:#b4cede}
+.v81-video-cover-actions{min-width:0;display:grid;gap:7px;flex:1}
+.v81-video-cover-actions strong{font-size:11px;color:#e7f3fb}
+.v81-video-cover-actions small{color:#9ebccc;line-height:1.5;font-size:10px}
+.v81-video-cover-actions .mini-actions{display:flex;flex-wrap:wrap;gap:7px}
+@media(max-width:680px){
+ .v81-video-fields{grid-template-columns:1fr}
+ .v81-video-cover{flex-direction:column;align-items:stretch}
+ .v81-video-cover-visual{width:100%;max-width:300px}
+ .v81-video-cover-actions .mini-btn{min-height:42px}
+}
